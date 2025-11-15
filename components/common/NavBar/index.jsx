@@ -12,7 +12,6 @@ import { handleLoadJson, isProd, shouldDisplayDrawer } from '../../../utility/he
 import { Adsense } from '@ctrl/react-adsense';
 import { Stack, Typography, useMediaQuery } from '@mui/material';
 import { AppContext } from '../context/AppProvider';
-import AdBlockerPopup from '@components/common/AdBlockerPopup';
 import Pin from '@components/common/favorites/Pin';
 import QuickSearch from '@components/common/QuickSearch';
 import UserMenu from '@components/common/NavBar/UserMenu';
@@ -70,7 +69,6 @@ const NavBar = ({ children }) => {
       </AppBar>
     </Box>
     <AppDrawer permanent/>
-    <AdBlockerPopup/>
     <Box component={'main'} sx={{
       pt: 3,
       pr: 3,
@@ -81,31 +79,6 @@ const NavBar = ({ children }) => {
       <ContentWrapper isTools={router?.pathname?.includes('tools')} isLoading={state?.isLoading}>
         {children}
       </ContentWrapper>
-    </Box>
-    <Box
-      key={router?.asPath}
-      style={{
-        backgroundColor: isProd ? '' : '#d73333',
-        position: 'fixed',
-        bottom: 0,
-        left: { xs: 'inherit', lg: displayDrawer ? drawerWidth : 3 },
-        height: isXs ? 50 : 90,
-        maxHeight: isXs ? 50 : 90,
-        width: '100%'
-      }}>
-      <Adsense
-        style={{
-          display: 'block',
-          height: isXs ? 50 : 90,
-          maxHeight: isXs ? 50 : 90,
-          maxWidth: 1200,
-          margin: '0 auto'
-        }}
-        client="ca-pub-1842647313167572"
-        slot="1488341218"
-        format=""
-        responsive={isXs ? 'false': 'true'}
-      />
     </Box>
   </>
 };
@@ -123,25 +96,6 @@ const ContentWrapper = ({ isTools, isLoading, children }) => {
       }}>
       {children}
     </Stack>
-    {showWideSideBanner || showNarrowSideBanner ? <Box
-      key={router.asPath}
-      sx={{
-        backgroundColor: isProd ? '' : '#d73333',
-        width: showWideSideBanner ? 300 : showNarrowSideBanner ? 160 : 0,
-        height: 600,
-        position: 'sticky',
-        top: { xs: '75px', sm: '110px' },
-        alignSelf: 'flex-start'
-      }}>
-      {isProd && showWideSideBanner ? <Adsense
-        client="ca-pub-1842647313167572"
-        slot="7052896184"
-      /> : null}
-      {isProd && showNarrowSideBanner && !showWideSideBanner ? <Adsense
-        client="ca-pub-1842647313167572"
-        slot="5548242827"
-      /> : null}
-    </Box> : null}
   </Stack>
 }
 

@@ -134,17 +134,17 @@ const Characters = ({ characters = [], account, lastUpdated, trackers }) => {
                 <Alert title={`${name} has a passive card equipped`}
                        iconPath={`etc/PassiveCard`}/> : null}
               {trackers?.obols && alerts?.obols?.missingObols?.length > 0 ?
-                <Alert title={`${name} has ${alerts?.obols?.missingObols?.length} empty obol slots`}
-                       iconPath={'data/ObolLocked1'}/> : null}
+                <><Alert title={`${name} has ${alerts?.obols?.missingObols?.length} empty obol slots`}
+                       iconPath={'data/ObolLocked1'} notificationNum={alerts?.obols?.missingObols?.length}/></> : null}
               {trackers?.postOffice && alerts?.postOffice?.unspentPoints ?
-                <Alert title={`${name} has ${Math.floor(postOffice?.unspentPoints)} unspent post office points`}
-                       iconPath={'data/UIboxUpg0'}/> : null}
+                <><Alert title={`${name} has ${Math.floor(postOffice?.unspentPoints)} unspent post office points`}
+                       iconPath={'data/UIboxUpg0'} notificationNum={Math.floor(postOffice?.unspentPoints)}/></> : null}
               {trackers?.anvil && alerts?.anvil?.missingHammers > 0 ?
                 <Alert title={`${name} is missing ${alerts?.anvil?.missingHammers} hammers`}
                        iconPath={'data/GemP1'}/> : null}
               {trackers?.anvil && alerts?.anvil?.unspentPoints > 0 ?
-                <Alert title={`${name} has ${alerts?.anvil?.unspentPoints} unspent anvil points`}
-                       iconPath={'data/ClassIcons43'}/> : null}
+                <><Alert title={`${name} has ${alerts?.anvil?.unspentPoints} unspent anvil points`}
+                       iconPath={'data/ClassIcons43'} notificationNum={Math.floor(alerts?.anvil?.unspentPoints)}/></> : null}
               {trackers?.classSpecific && alerts?.classSpecific?.wrongItems?.acWeapon ?
                 <Alert title={`${name} is not in Arcanist form but is using an Arcanist-form weapon`}
                        iconPath={'data/EquipmentWandsArc0'}/> : null}
@@ -237,7 +237,7 @@ const Characters = ({ characters = [], account, lastUpdated, trackers }) => {
                   showNonMaxed = showNonMaxed?.checked;
                   const ready = crystalCountdown > 0 && reduction >= crystalCountdown;
                   if (!showMaxed && ready || !showNonMaxed && (showMaxed && !ready) || (!showNonMaxed && !showMaxed)) return null;
-                  return <Alert key={icon + '-' + index + '-' + characterIndex}
+                  return <><Alert key={icon + '-' + index + '-' + characterIndex}
                                 style={{
                                   border: '1px solid',
                                   borderColor: ready ? '#66bb6a' : reduction > 0 ? '#d1921e' : '',
@@ -249,7 +249,7 @@ const Characters = ({ characters = [], account, lastUpdated, trackers }) => {
                                   : ''} ${Math.round(reduction * 100) / 100}% ${!ready
                                   ? `(Max: ${Math.round(crystalCountdown * 100) / 100})`
                                   : ''}`}
-                                iconPath={`data/${icon}`}/>
+                                iconPath={`data/${icon}`} notificationNum={(Math.round(reduction * 100) / 100) + "%"} /></>
                 }
               ) : null}
             </Stack>
@@ -260,12 +260,16 @@ const Characters = ({ characters = [], account, lastUpdated, trackers }) => {
   </>
 };
 
-const Alert = ({ title, iconPath, style = {}, extra }) => {
+//with a small superscript number layered on top
+const Alert = ({ title, iconPath, style = {}, extra, notificationNum: notification = "" }) => {
   return <Stack sx={{ position: 'relative' }}>
     <HtmlTooltip title={title}>
       <IconImg style={style} src={`${prefix}${iconPath}.png`} alt=""/>
     </HtmlTooltip>
     {extra}
+    <Typography variant={'caption'} sx={{ position: 'absolute', top: 0, right: 0, fontSize: 8, pointerEvents: 'none' }}>
+      {notification}
+    </Typography>
   </Stack>
 }
 

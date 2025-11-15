@@ -66,34 +66,6 @@ const Home = () => {
         description="Power up your Legends of Idleon adventure with Idleon Toolbox's essential tools and resources for optimizing gameplay, character builds, crafting, and more."
       />
       <StructuredData data={faqData} />
-      {showSideAds ? <>
-        <div style={{
-          height: 600,
-          backgroundColor: isProd ? '' : '#d73333',
-          width: 160,
-          position: 'absolute',
-          top: 100,
-          left: 50
-        }}>
-          {isProd && <Adsense
-            client="ca-pub-1842647313167572"
-            slot="8673408690"
-          />}
-        </div>
-        <div style={{
-          height: 600,
-          backgroundColor: isProd ? '' : '#d73333',
-          width: 160,
-          position: 'absolute',
-          top: 100,
-          right: 50
-        }}>
-          {isProd && <Adsense
-            client="ca-pub-1842647313167572"
-            slot="6626749728"
-          />}
-        </div>
-      </> : null}
 
       <Stack mt={breakpointLg ? 5 : breakpoint ? 1 : 1} direction={'row'} flexWrap={'wrap'}
              sx={{ textAlign: breakpoint ? 'center' : 'inherit' }}

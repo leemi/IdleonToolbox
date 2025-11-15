@@ -300,24 +300,6 @@ To exclude your profile, simply uncheck the box and re-upload your profile.`}</F
       </>
     </> : null}
 
-    {showWideSideBanner || showNarrowSideBanner ? <Box
-      sx={{
-        backgroundColor: isProd ? '' : '#d73333',
-        width: showWideSideBanner ? 300 : showNarrowSideBanner ? 160 : 0,
-        height: 600,
-        position: 'absolute',
-        top: 150,
-        right: 100
-      }}>
-      {isProd && showWideSideBanner ? <Adsense
-        client="ca-pub-1842647313167572"
-        slot="9767369641"
-      /> : null}
-      {isProd && showNarrowSideBanner && !showWideSideBanner ? <Adsense
-        client="ca-pub-1842647313167572"
-        slot="7851151731"
-      /> : null}
-    </Box> : null}
   </Container>
 };
 

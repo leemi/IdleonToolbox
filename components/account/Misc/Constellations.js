@@ -35,7 +35,7 @@ const ConstellationsComp = ({ constellations = [] }) => {
           <Typography pl={!isMd ? 6 : 0} variant={'body1'} component={'span'}>Points</Typography></Grid>
         <Grid item md={1}/>
       </Grid>
-      {constellations?.map((constellation, index) => {
+      {constellations?.filter(({ done }) => !done).map((constellation, index) => {
         const { name, points, done, requirement, completedChars, requiredPlayers, location } = constellation;
         return <React.Fragment key={name + ' ' + index}>
           <Grid rowGap={2} gap={1} container>
@@ -56,7 +56,7 @@ const ConstellationsComp = ({ constellations = [] }) => {
             <Grid item xs={2}>
               {completedChars?.length > 0
                 ?
-                <><Typography variant={'caption'} component={'div'}>Completed Chars</Typography>
+                <><Typography variant={'caption'} component={'div'}>{completedChars.length} Completed Chars</Typography>
                   <Typography variant={'caption'}
                               sx={{ wordBreak: 'break-word' }}>indexes: {constellationIndexes(completedChars)}</Typography></>
                 : null}

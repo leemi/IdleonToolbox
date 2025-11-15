@@ -29,10 +29,7 @@ const noOverlayWorkaroundScript = `
   })
 `;
 
-const preConnections = ['https://firestore.googleapis.com', 'https://tpc.googlesyndication.com',
-  'https://partner.googleadservices.com', 'https://pagead2.googlesyndication.com',
-  'https://identitytoolkit.googleapis.com', 'https://googleads.g.doubleclick.net', 'https://www.google-analytics.com',
-  'https://adservice.google.co.il', 'https://www.googletagmanager.com', 'https://adservice.google.com']
+const preConnections = []
 
 const MyApp = (props) => {
   const { Component, emotionCache = clientSideEmotionCache, pageProps } = props;

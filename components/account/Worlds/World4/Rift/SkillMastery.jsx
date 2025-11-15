@@ -92,7 +92,7 @@ const SkillBreakdown = ({ characters, skillName }) => {
   const charactersSkills = characters.reduce((res, char) => ([
     ...res,
     { name: char?.name, level: char?.skillsInfo?.[skillName]?.level }
-  ]), [])
+  ]), []).sort((a, b) => b.level - a.level);
   return <Stack>
     {charactersSkills?.map(({ name, level }) => {
       return <TitleAndValue key={name} title={name} value={`Lv. ${level}`}/>

@@ -17,6 +17,23 @@ const Looty = () => {
   const [sortByStackSize, setSortByStackSize] = useState(false);
   const [items, setItems] = useState();
   const [orderByGroup, setOrderByGroup] = useState(false);
+  
+  const { printer, lab } = state?.account;
+
+  const printingItems = useMemo(() => {
+    return printer?.flat().filter(i => i.active);
+  }, [printer]);
+
+  const greenstacks = useMemo(() => {
+    if (!items) return [];
+    console.log(items);
+    if (orderByGroup) {
+      return Object.values(items).flat().filter(i => i.amount > 10000000);
+    } else {
+      return items.filter(i => i.amount > 10000000);
+    }
+  }, [items]);
+
   const sortedItems = useMemo(() => [...state?.account?.storage?.list]?.sort((a, b) => b?.amount - a?.amount), [state]);
   useEffect(() => {
     let result
@@ -44,8 +61,13 @@ const Looty = () => {
 
   const renderItems = (items) => {
     if (!items || !Array.isArray(items)) return null;
+
     return items?.map((item, index) => {
       const { name, rawName, amount } = item;
+
+      const checkPrint = printingItems.find(i => i.item === rawName);
+      const printInfo = checkPrint ? `\n${notateNumber(checkPrint.boostedValue, 'Big')}↑` : '';
+
       return (
         <Card variant={'outlined'} sx={{ width: 75 }} key={`${name}-${index}`}>
           <CardContent>
@@ -54,9 +76,13 @@ const Looty = () => {
                 <Image loading="lazy" data-index={index} width={30} height={30} style={{ objectFit: 'contain' }}
                        src={`${prefix}data/${rawName}.png`} alt={rawName}/>
                 <Typography
+                  align='center'
                   color={amount >= 1e7
                     ? 'success.light'
                     : ''}>{notateNumber(amount, 'Big')}</Typography>
+                <Typography variant="caption" align='center' color="textSecondary">
+                  {lab?.items?.[rawName]?.active ? `Lab: ${notateNumber(lab.items[rawName].boostedValue, 'Big')}${printInfo}` : printInfo.trim()}
+                </Typography>
               </Stack>
             </HtmlTooltip>
           </CardContent>
@@ -80,6 +106,8 @@ const Looty = () => {
               label={'Group by type'}/>
             <FormControlLabel control={<Checkbox checked={sortByStackSize} onChange={handleChange}/>}
                               label="Sort by stack size"/>
+            <FormControlLabel control={<Checkbox />}
+                              label={greenstacks.length + " greenstacks"} />
           </Stack>
           {orderByGroup && !Array.isArray(items) ? <Stack gap={2}>
               {Object.entries(items || {}).map(([group, groupedItems], index) => {

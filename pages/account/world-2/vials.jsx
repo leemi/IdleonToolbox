@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useMemo } from 'react';
 import { AppContext } from 'components/common/context/AppProvider';
 import { Box, Stack, Typography } from '@mui/material';
 import { cleanUnderscore, growth, notateNumber, pascalCase, prefix } from 'utility/helpers';
@@ -15,6 +15,38 @@ import { getLabBonus } from '@parsers/lab';
 const Vials = () => {
   const { state } = useContext(AppContext);
   const [CheckboxEl, hideMaxed] = useCheckbox('Hide maxed vials');
+
+  const { printer, lab } = state?.account;
+
+  const printingItems = useMemo(() => {
+    return printer?.flat().filter(i => i.active);
+  }, [printer]);
+
+  const VialTooltip = ({ name, itemReq, func, x1, x2, level, desc, multiplier = 1 }) => {
+    const bonus = growth(func, level, x1, x2) * multiplier;
+
+    return <>
+      <Typography variant={'h5'}>{pascalCase(cleanUnderscore(name))}</Typography>
+      <Typography sx={{ color: level > 0 && multiplier > 1 ? 'multi' : '' }}
+                  variant={'body1'}>{cleanUnderscore(desc.replace(/{|\$/g, notateNumber(bonus, 'MultiplierInfo')))}</Typography>
+      <Stack direction={'row'}>
+        {itemReq?.map(({ name, rawName }, index) => {
+          console.log(name, rawName)
+
+          const checkPrint = printingItems.find(i => i.item === rawName);
+          const printInfo = checkPrint ? `\n\n(${notateNumber(checkPrint.boostedValue, 'Big')}↑)` : '';
+
+          return name && name !== 'Blank' && name !== 'ERROR' ?
+            <Stack alignItems={'center'} justifyContent={'center'} key={name + '' + index}>
+              <ItemIcon tooltip src={`${prefix}data/${rawName}.png`} alt="vial-required-item-icon"/>
+              <span>{name?.includes('Liquid') ? 3 * level : notateNumber(vialCostsArray[parseFloat(level)], 'Big')}
+              <span>{printInfo}</span>
+            </span>
+            </Stack> : null
+        })}
+      </Stack>
+    </>;
+  }
 
   const getVialBonus = () => {
     let vialMastery = 0;
@@ -59,25 +91,6 @@ const Vials = () => {
     </Stack>
   </>;
 };
-
-const VialTooltip = ({ name, itemReq, func, x1, x2, level, desc, multiplier = 1 }) => {
-  const bonus = growth(func, level, x1, x2) * multiplier;
-  return <>
-    <Typography variant={'h5'}>{pascalCase(cleanUnderscore(name))}</Typography>
-    <Typography sx={{ color: level > 0 && multiplier > 1 ? 'multi' : '' }}
-                variant={'body1'}>{cleanUnderscore(desc.replace(/{|\$/g, notateNumber(bonus, 'MultiplierInfo')))}</Typography>
-    <Stack direction={'row'}>
-      {itemReq?.map(({ name, rawName }, index) => {
-        return name && name !== 'Blank' && name !== 'ERROR' ?
-          <Stack alignItems={'center'} justifyContent={'center'} key={name + '' + index}>
-            <ItemIcon tooltip src={`${prefix}data/${rawName}.png`} alt="vial-required-item-icon"/>
-            <span>{name?.includes('Liquid') ? 3 * level : notateNumber(vialCostsArray[parseFloat(level)], 'Big')}
-          </span>
-          </Stack> : null
-      })}
-    </Stack>
-  </>;
-}
 
 const ItemIcon = styled.img`
   width: ${({ tooltip }) => tooltip ? '45px' : '56px'};

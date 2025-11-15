@@ -80,7 +80,8 @@ export const getInventoryList = (chestOrderRaw, chestQuantityRaw, name, chestSto
     const description = [1, 2, 3, 4, 5, 6, 7,
       8].reduce((res, num) => items?.[itemName]?.[`desc_line${num}`]
       ? res + `${items?.[itemName]?.[`desc_line${num}`]} `
-      : res, '')
+      : res, '').replaceAll("Filler", "") ;
+      console.log('description', description);
     const maxUpgradeSlots = Math.max(data?.Upgrade_Slots_Left, items?.[itemName]?.Upgrade_Slots_Left);
     const it = { ...items?.[itemName], ...data, maxUpgradeSlots };
     let misc = '';

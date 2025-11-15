@@ -38,8 +38,6 @@ const NavItemsList = ({ drawer }) => {
           )
             return null;
 
-          if (state?.profile && navItem === 'guilds') return null;
-
           if (isXs && (navItem === 'account' || navItem === 'tools')) {
             const isAccount = navItem === 'account';
             const isTools = navItem === 'tools';
