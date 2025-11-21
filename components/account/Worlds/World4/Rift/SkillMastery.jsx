@@ -51,6 +51,9 @@ const SkillMastery = ({ totalSkillsLevels, characters }) => {
     <Typography variant={'h5'}>Skills</Typography>
     <Stack direction={'row'} gap={2} flexWrap={'wrap'}>
       {Object.entries(totalSkillsLevels)?.map(([skillName, { icon, level, rank, color }], index) => {
+
+        const nextLevel = thresholds.find(d => level < d);
+
         if (skillName === 'character') return;
         return <Card key={`${skillName}-${index}`} sx={{
           width: 250,
@@ -65,6 +68,7 @@ const SkillMastery = ({ totalSkillsLevels, characters }) => {
                 <Typography>{cleanUnderscore(skillName.capitalize())}</Typography>
                 <Typography variant={'caption'} component={'span'} sx={{ color, fontWeight: 'bold' }}>Total
                   Level {level}</Typography>
+                <Typography variant={'caption'} component={'span'} sx={{ color }}>{nextLevel - level} to next</Typography>
               </Stack>
               <Tooltip  title={<SkillBreakdown characters={characters} skillName={skillName}/>}>
                 <IconInfoCircleFilled style={{ marginLeft: 'auto' }} size={18}/>
