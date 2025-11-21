@@ -1,4 +1,5 @@
 import React from 'react';
+import { useRouter } from 'next/router';
 import { Card, CardContent, Divider, Stack, Typography } from '@mui/material';
 import styled from '@emotion/styled';
 import {
@@ -43,6 +44,8 @@ const Account = ({ account, characters, trackers, lastUpdated }) => {
     trackers,
     lastUpdated
   });
+
+  const router = useRouter();
 
   return <>
     <Card sx={{ width: 'fit-content' }}>
@@ -118,18 +121,27 @@ const Account = ({ account, characters, trackers, lastUpdated }) => {
           {!emptyAlertRows?.['World 1'] ? <Stack direction={'row'} gap={4}>
             <Typography sx={{ flexShrink: 0 }} color={'text.secondary'}>World 1</Typography>
             <Stack direction={'row'} gap={2} flexWrap={'wrap'}>
-              {alerts?.['World 1']?.stamps?.gildedStamps > 0 ?
+              {alerts?.['World 1']?.stamps?.gildedStamps > 0 &&
                 <Alert title={`You have ${alerts?.['World 1']?.stamps?.gildedStamps} available gilded stamps`}
-                  iconPath={'data/GildedStamp'} /> : null}
-              {alerts?.['World 1']?.owl?.featherRestart ?
+                  iconPath={'data/GildedStamp'}
+                  onClick={() => router.push({ pathname: '/account/world-1/stamps'})}
+                />}
+              {alerts?.['World 1']?.owl?.featherRestart &&
                 <Alert title={`Feather restart can be upgraded`}
-                  iconPath={'etc/Owl_4'} /> : null}
-              {alerts?.['World 1']?.owl?.megaFeatherRestart ?
+                  iconPath={'etc/Owl_4'}
+                  onClick={() => router.push({ pathname: '/account/world-1/stamps'})}
+                />}
+              {alerts?.['World 1']?.owl?.megaFeatherRestart &&
                 <Alert title={`Mega feather restart can be upgraded`}
-                  iconPath={'etc/Owl_8'} /> : null}
-              {alerts?.['World 1']?.forge?.emptySlots ?
+                  iconPath={'etc/Owl_8'}
+                  onClick={() => router.push({ pathname: '/account/world-1/stamps'})}
+                />}
+              {alerts?.['World 1']?.forge?.emptySlots &&
                 <Alert title={`You have empty forge slots`}
-                  iconPath={'data/ForgeA'} /> : null}
+                  iconPath={'data/ForgeA'}
+                  onClick={() => router.push({ pathname: '/account/world-1/forge', query: {t: "Slots"} })}
+                  />
+                }
             </Stack>
           </Stack> : null}
           {!emptyAlertRows?.['World 2'] ? <Stack direction={'row'} gap={4}>
@@ -299,9 +311,12 @@ const Account = ({ account, characters, trackers, lastUpdated }) => {
                   title={`You can claim ${cleanUnderscore(name)} in jewel repository`}
                   iconPath={`data/${rawName}`} />)
                 : null}
-              {alerts?.['World 4']?.cooking?.spices > 0 ?
-                <Alert title={`You have ${alerts?.['World 4']?.cooking?.spices} spice clicks left`}
-                  iconPath={'data/CookingSpice0'} /> : null}
+              {alerts?.['World 4']?.cooking?.spices > 0 &&
+                <Alert
+                  title={`You have ${alerts?.['World 4']?.cooking?.spices} spice clicks left`}
+                  iconPath={'data/CookingSpice0'}
+                  onClick={() => router.push({ pathname: '/account/world-4/breeding', query: {t: "Territory"} })}
+                />}
               {alerts?.['World 4']?.cooking?.ribbons ?
                 <Alert
                   title={`You have reached your threshold of ${alerts?.['World 4']?.cooking?.ribbons} empty ribbon slots`}
@@ -323,7 +338,9 @@ const Account = ({ account, characters, trackers, lastUpdated }) => {
                     title={`${cleanUnderscore(monsterName)} has reached ${shinyLevel === 20
                       ? 'level 20 (max)'
                       : `the shiny threshold (${alerts?.['World 4']?.breeding?.shinies?.threshold})`}`}
-                    iconPath={`afk_targets/${monsterName}`} />
+                    iconPath={`afk_targets/${monsterName}`}
+                    onClick={() => router.push({ pathname: '/account/world-4/breeding', query: {nt: "Shinies", t: "Pets"} })}
+                    />
                 }) : null}
               {alerts?.['World 4']?.breeding?.breedability?.pets?.length > 0 ?
                 alerts?.['World 4']?.breeding?.breedability?.pets?.map(({ monsterName, icon }, index) => {
@@ -331,7 +348,9 @@ const Account = ({ account, characters, trackers, lastUpdated }) => {
                     key={monsterName + index}
                     breedability
                     title={`${cleanUnderscore(monsterName)} has surpassed the breedability level threshold (${alerts?.['World 4']?.breeding?.breedability?.threshold})`}
-                    iconPath={`afk_targets/${monsterName}`} />
+                    iconPath={`afk_targets/${monsterName}`}
+                    onClick={() => router.push({ pathname: '/account/world-4/breeding', query: {nt: "Breedability", t: "Pets"} })}
+                    />
                 }) : null}
             </Stack>
           </Stack> : null}
@@ -377,7 +396,9 @@ const Account = ({ account, characters, trackers, lastUpdated }) => {
                         })}
                       </Stack>
                     </Stack>}
-                    iconPath={`etc/Captain_${captain?.captainType}`} />
+                    iconPath={`etc/Captain_${captain?.captainType}`}
+                    onClick={() => router.push({ pathname: '/account/world-5/sailing', query: {t: "Boats and Captains"} })}
+                    />
                 }) : null}
               {alerts?.['World 5']?.hole?.buckets ?
                 <Alert title={`One of your sediments has reached the threshold`}
@@ -471,10 +492,10 @@ const Account = ({ account, characters, trackers, lastUpdated }) => {
   </>
 };
 
-const Alert = ({ title, iconPath, vial, atom, breedability, style = {}, imgStyle = {}, onError = () => { }, extra }) => {
+const Alert = ({ title, iconPath, vial, atom, breedability, style = {}, imgStyle = {}, onError = () => { }, onClick, extra }) => {
   return <HtmlTooltip title={title}>
-    <Stack sx={{ position: 'relative', ...style }}>
-      <IconImg onError={onError} style={{ ...imgStyle }} vial={vial} src={`${prefix}${iconPath}.png`} alt="" />
+    <Stack sx={{ position: 'relative', cursor: onClick ? 'pointer' : 'auto', ...style }}>
+      <IconImg onError={onError} style={{ ...imgStyle }} vial={vial} src={`${prefix}${iconPath}.png`} alt="" onClick={() => onClick?.() } />
       {atom || breedability ? <FloatingIcon vial={vial} src={`${prefix}etc/${atom ? 'Particle' : breedability
         ? 'PetHeart'
         : ''}.png`} alt="" /> : null}
