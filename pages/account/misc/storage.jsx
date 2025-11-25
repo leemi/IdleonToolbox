@@ -26,7 +26,6 @@ const Looty = () => {
 
   const greenstacks = useMemo(() => {
     if (!items) return [];
-    console.log(items);
     if (orderByGroup) {
       return Object.values(items).flat().filter(i => i.amount > 10000000);
     } else {

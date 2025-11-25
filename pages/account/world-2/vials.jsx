@@ -31,7 +31,6 @@ const Vials = () => {
                   variant={'body1'}>{cleanUnderscore(desc.replace(/{|\$/g, notateNumber(bonus, 'MultiplierInfo')))}</Typography>
       <Stack direction={'row'}>
         {itemReq?.map(({ name, rawName }, index) => {
-          console.log(name, rawName)
 
           const checkPrint = printingItems.find(i => i.item === rawName);
           const printInfo = checkPrint ? `\n\n(${notateNumber(checkPrint.boostedValue, 'Big')}↑)` : '';
