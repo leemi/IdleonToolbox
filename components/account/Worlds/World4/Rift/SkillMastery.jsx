@@ -68,7 +68,7 @@ const SkillMastery = ({ totalSkillsLevels, characters }) => {
                 <Typography>{cleanUnderscore(skillName.capitalize())}</Typography>
                 <Typography variant={'caption'} component={'span'} sx={{ color, fontWeight: 'bold' }}>Total
                   Level {level}</Typography>
-                <Typography variant={'caption'} component={'span'} sx={{ color }}>{nextLevel - level} to next</Typography>
+                {nextLevel && <Typography variant={'caption'} component={'span'} sx={{ color }}>({nextLevel - level} to next)</Typography>}
               </Stack>
               <Tooltip  title={<SkillBreakdown characters={characters} skillName={skillName}/>}>
                 <IconInfoCircleFilled style={{ marginLeft: 'auto' }} size={18}/>
