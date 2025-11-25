@@ -6,6 +6,7 @@ import HtmlTooltip from '@components/Tooltip';
 import { NextSeo } from 'next-seo';
 import Image from 'next/image';
 import { CardTitleAndValue } from '@components/common/styles';
+import { hover } from 'framer-motion';
 
 
 const Slab = () => {
@@ -75,7 +76,10 @@ const Slab = () => {
           <Icon src={`${prefix}data/${rawName}.png`}
                 fallback={`${prefix}data/${rawName}_x1.png`}
                 size={50}
-                alt={rawName}/>
+                alt={rawName}
+                sx={{ input: { cursor: 'pointer' } }}
+                onClick={() => window.open(`https://idleon.wiki/wiki/${cleanUnderscore(name)}`, '_blank')}
+          />
         </HtmlTooltip>
       })}
     </Stack>
@@ -93,6 +97,7 @@ const Icon = forwardRef((props, ref) => {
     alt={alt}
     width={size} height={size}
     onError={() => setError(true)}
+    style={{ cursor: 'pointer' }}
   />
 })
 
