@@ -49,6 +49,7 @@ const Skills = ({ skills, charName, account, characters, character, showSkillsRa
                                             expMulti={expMulti}/>}>
                 <img src={`${prefix}data/${icon}.png`} style={{ width: 38, height: 36 }} alt=""/>
               </Tooltip>
+              <ProgressBar label={''} sx={{width: '50px'}} percent={skills?.[skillName].exp / skills?.[skillName].expReq * 100} bgColor={'#f3dd4c'}/>
               <Typography>Lv {level}</Typography>
               {globalSkills[skillName] ? null : <Tooltip title={'Rank across the account'}>
                 <Typography
