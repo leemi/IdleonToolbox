@@ -28,8 +28,9 @@ const Totems = () => {
                 <Stack direction={'row'} gap={4} flexWrap={'wrap'}>
                   <CardTitleAndValue title={'Name'} value={cleanUnderscore(index === 5 ? 'Citric Conflict' : index === 6 ? 'Breezy Battle' : name)}/>
                   <CardTitleAndValue title={'Map name'} value={cleanUnderscore(map)}/>
+                  <CardTitleAndValue title={'Charge per Use'} value={chargeReq}/>
                   <CardTitleAndValue title={'Max Wave'} value={maxWave}/>
-                  <CardTitleAndValue title={'Exp Per Charge'} value={Math.floor(expReward / chargeReq)}/>
+                  <CardTitleAndValue title={'Exp per Charge'} value={Math.floor(expReward / chargeReq)}/>
                   <CardTitleAndValue title={'Min eff. for souls bonus'} value={minEfficiency}/>
                   <CardTitleAndValue title={'Souls'}
                                      value={getSoulsReward({ ...totem, efficiency: worshipEff, foodEffect: foodEff })}/>
@@ -51,8 +52,8 @@ const TotemImg = styled.img`
 
 const CardTitleAndValue = ({ title, value, children }) => {
   return <Stack sx={{ width: 130 }}>
-    <Typography sx={{ fontSize: 14 }} color="text.secondary" gutterBottom>{title}</Typography>
-    {value ? <Typography>{value}</Typography> : children}
+    <Typography sx={{ fontSize: 12 }} color="text.secondary" gutterBottom>{title}</Typography>
+    {value ? <Typography sx={{ fontSize: 16 }}>{value}</Typography> : children}
   </Stack>
 }
 
