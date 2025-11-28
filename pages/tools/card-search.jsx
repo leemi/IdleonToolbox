@@ -143,7 +143,6 @@ export default function CardSearch() {
               const cardsArr = localCardObject[cardSet];
               if (!cardsArr || cardsArr?.length === 0) return null;
               const isCardSets = cardSet === 'Card Sets';
-              console.log(cardsArr)
               return (
                 <React.Fragment key={cardSet + '' + cardSetIndex}>
                   {isCardSets ? <Typography my={1} variant={'h4'}>Card Sets</Typography> :
