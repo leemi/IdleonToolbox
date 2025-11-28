@@ -1,4 +1,3 @@
-import { Stack } from '@mui/material';
 import ObolsView from 'components/account/Worlds/World2/ObolsView';
 import Currencies from 'components/account/Misc/Currencies';
 import Shrines from '@components/account/Worlds/World3/Shrines';
@@ -6,9 +5,10 @@ import Statues from '@components/account/Worlds/World1/Statues';
 import Highscores from 'components/account/Misc/Highscores';
 import Totals from 'components/account/Misc/Totals';
 import { AppContext } from 'components/common/context/AppProvider';
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import { NextSeo } from 'next-seo';
-import Box from '@mui/material/Box';
+import { Stack, Typography, Box } from '@mui/material';
+import { format, formatDistanceToNowStrict  } from 'date-fns';
 
 const General = () => {
   const { state } = useContext(AppContext);
@@ -19,6 +19,11 @@ const General = () => {
     />
     <>
       <Stack sx={{ '& > div': { maxWidth: 300 } }} gap={4} justifyContent={'center'} direction={'row'} flexWrap={'wrap'}>
+        {state?.account?.accountCreateTime && <Box>
+          <Typography variant={'h5'}>Account created</Typography>
+          <Typography>{format(state?.account?.accountCreateTime, 'dd/MM/yyyy HH:mm:ss')}</Typography>
+          <Typography>{formatDistanceToNowStrict(state?.account?.accountCreateTime, { unit: 'day', addSuffix: true })}</Typography>
+        </Box>}
         <ObolsView obols={state?.account?.obols} type={'account'} characters={state?.characters}/>
         <Currencies {...(state?.account?.currencies || {})}/>
         <Shrines shrines={state?.account?.shrines} shrinesExpBonus={state?.account?.shrinesExpBonus}/>

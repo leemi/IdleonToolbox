@@ -46,8 +46,6 @@ const AccountDrawer = ({ fromList }) => {
   return (
     (<Stack sx={{ height: '100%', overflowY: 'auto' }}>
       <List sx={{ ...(fromList ? { padding: 0 } : {}) }}>
-        {!fromList && state?.account?.accountCreateTime ? <ListItem>Account created
-          at: {format(state?.account?.accountCreateTime, 'dd/MM/yyyy HH:mm:ss')}</ListItem> : null}
         {Object.entries(PAGES.ACCOUNT).map(([key, value], index) => {
           const { icon, categories, style } = value;
           const selectedSection = isSelected(key?.split(' ')?.join('-'));
