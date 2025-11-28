@@ -93,7 +93,7 @@ const Traps = () => {
                                  variant={'outlined'}
                                  key={`${slot?.rawName || 'trap'}-${slotIndex}`}>
                       <CardContent>
-                        <Stack sx={{ width: { xs: 65, sm: 80 }, height: 50 }} position={'relative'}
+                        <Stack sx={{ width: { xs: 65, sm: 80 }, height: 70 }} position={'relative'}
                                justifyContent={'flex-start'}
                                alignItems={'center'}>
                           {slot?.name ? <>
@@ -105,6 +105,7 @@ const Traps = () => {
                                 </Tooltip>
                                 <ItemIcon src={`${prefix}data/${slot?.rawName}.png`} alt="item-icon"/>
                               </Stack>
+                              <Typography>{notateNumber(slot?.crittersQuantity * bonuses?.[bonus]?.critter)}</Typography>
                               <Timer type={'countdown'} date={slot?.timeLeft}
                                      lastUpdated={state?.lastUpdated}/></> :
                             <Typography color={slot?.name ? '' : 'error.light'}>Empty</Typography>}
