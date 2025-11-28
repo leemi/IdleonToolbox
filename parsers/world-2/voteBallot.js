@@ -3,15 +3,21 @@ import { ninjaExtraInfo } from '../../data/website-data';
 import { getCosmoBonus } from '@parsers/world-5/hole';
 import { getWinnerBonus } from '@parsers/world-6/summoning';
 import { getEventShopBonus, isCompanionBonusActive } from '@parsers/misc';
+import { getLegendTalentBonus } from '@parsers/world-7/legendTalents';
+import { getArcadeBonus } from '@parsers/arcade';
+import { getClamWorkBonus } from '@parsers/world-7/clamWork';
 
 export const getVoteBallot = (idleonData, accountData) => {
   return parseVoteBallot(idleonData, accountData);
 }
 
 const parseVoteBallot = (idleonData, accountData) => {
-  const { votePercent, voteCategories } = accountData?.serverVars || {};
+  const { votePercent, voteCategories, voteCat2, votePercent2 } = accountData?.serverVars || {};
   const [selectedCategory, ...currentCategories] = voteCategories || [];
+  const [selectedCategory2, ...currentCategories2] = voteCat2 || [];
   const companionBonus = isCompanionBonusActive(accountData, 19) ? accountData?.companions?.list?.at(19)?.bonus : 0;
+
+  // VotingBonusz == e
   const voteMulti = 1 + (getEquinoxBonus(accountData?.equinox?.upgrades, 'Voter_Rights') +
     (getCosmoBonus({ majik: accountData?.hole?.holesObject?.idleonMajiks, t: 2, i: 3 })
       + getWinnerBonus(accountData, '+{% Ballot Bonus')
@@ -29,14 +35,64 @@ const parseVoteBallot = (idleonData, accountData) => {
     }
   });
 
+  // "MeritocBonusz" == e
+  const companionBonus2 = isCompanionBonusActive(accountData, 39) ? accountData?.companions?.list?.at(39)?.bonus : 0;
+  const arcadeBonus = getArcadeBonus(accountData?.arcade?.shop, 'Meritocracy_Bonus')?.bonus;
+  const legendTalentBonus = getLegendTalentBonus(accountData, 24) ?? 0;
+  const clamWorkBonus = getClamWorkBonus(accountData, 3) ?? 0;
+  const meritocracyMult = 1 + (5 * clamWorkBonus 
+    + (companionBonus2 
+    + (legendTalentBonus 
+    + (arcadeBonus
+      + 20 * getEventShopBonus(accountData, 23))))) / 100;   
+
+  const parts = ninjaExtraInfo[41].split(" ");
+  const upgrades = [];
+  let meritocracyBonuses;
+
+  for (let i = 0; i < parts.length;) {
+    let desc = [];
+
+    while (isNaN(Number(parts[i]))) {
+      desc.push(parts[i]);
+      i++;
+    }
+
+    const value = Number(parts[i++]);
+    const extra = Number(parts[i++]); // always 0
+
+    upgrades.push({ description: desc.join(" "), value, extra });
+  }
+
+  // Step 2: Apply your transformation logic
+  meritocracyBonuses = upgrades.map((bonus, index) => {
+    const bonusIndex = currentCategories2.findIndex(ind => ind === index);
+
+    return {
+      ...bonus,
+      icon: `MeritBon${index}.png`,
+      active: bonusIndex > -1,
+      selected: selectedCategory2 === index,
+      percent: votePercent2?.[bonusIndex] || 0,
+      bonus: bonus.value * meritocracyMult
+    };
+  });
   return {
     bonuses,
+    meritocracyBonuses,
     voteMulti,
-    selectedBonus: { ...bonuses?.[selectedCategory], index: selectedCategory }
+    meritocracyMult,
+    selectedBonus: { ...bonuses?.[selectedCategory], index: selectedCategory },
+    selectedMeritocracyBonus: { ...meritocracyBonuses?.[selectedCategory2], index: selectedCategory2 }
   }
 }
 
 export const getVoteBonus = (account, index) => {
   const isSelected = account?.voteBallot?.bonuses?.[index]?.selected;
   return isSelected ? account?.voteBallot?.bonuses?.[index]?.bonus : 0;
+}
+
+export const getMeritocracyBonus = (account, index) => {
+  const isSelected = account?.voteBallot?.meritocracyBonuses?.[index]?.selected;
+  return isSelected ? account?.voteBallot?.meritocracyBonuses?.[index]?.bonus : 0;
 }

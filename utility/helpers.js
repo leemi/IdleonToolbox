@@ -270,7 +270,7 @@ export const pascalCase = (str) => {
 
 export const getCoinsArray = (coins) => {
   if (!Number.isFinite(coins)) return [];
-  const highestCoinIndex = 15;
+  const highestCoinIndex = 20;
   let n = BigInt(Math.floor(coins)).toString();
 
   let ret = new Map();
@@ -650,7 +650,7 @@ export const handleDownload = (jsonData, fileName) => {
 export const handleLoadJson = async (dispatch) => {
   try {
     const content = JSON.parse(await navigator.clipboard.readText());
-    const { data, charNames, companion, guildData, serverVars } = content;
+    let { data, charNames, companion, guildData, serverVars = {} } = content;
     const { parseData } = await import('@parsers/index');
     const parsedData = parseData(data, charNames, companion, guildData, serverVars);
     const lastUpdated = new Date().getTime();
@@ -793,4 +793,4 @@ export function parseShorthandNumber(input) {
   return num * (multipliers[suffix] || 1);
 }
 
-export const worldColor = ['#64b564', '#f1ac45', '#00bcd4', '#864ede', '#de4e4e', '#5FF1B4FF'];
+export const worldColor = ['#64b564', '#f1ac45', '#00bcd4', '#864ede', '#de4e4e', '#5FF1B4FF', '#40e0d0'];

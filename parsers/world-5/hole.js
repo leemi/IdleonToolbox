@@ -25,6 +25,7 @@ import { getStatueBonus } from '@parsers/statues';
 import { getCompassBonus } from '@parsers/compass';
 import { getCharmBonus } from '@parsers/world-6/sneaking';
 import { getTesseractBonus } from '@parsers/tesseract';
+import { getLegendTalentBonus } from '@parsers/world-7/legendTalents';
 
 const VILLAGERS = {
   EXPLORE: 0,
@@ -113,7 +114,7 @@ const parseHole = (holeRaw, jarsRaw, accountData) => {
   const engineerBonuses = engineerIndexes?.map((index, order) => {
     const upgrade = holesBuildings?.[index];
     const owned = wellSediment?.[upgrade?.x2];
-    const { description, value: totalBonus } = getEngineerTotalBonus(upgrade, holesObject, Number(index));
+    const { description, value: totalBonus } = getEngineerTotalBonus(upgrade, holesObject, Number(index), accountData);
 
     return {
       ...upgrade,
@@ -151,17 +152,17 @@ const parseHole = (holeRaw, jarsRaw, accountData) => {
   const studies = getStudies(holesObject, villagers?.[VILLAGERS.STUDIES]?.level, accountData);
 
   const theWell = getTheWell(holesObject, accountData);
-  const motherlode = getMotherlode(holesObject);
+  const motherlode = getMotherlode(holesObject, accountData);
   const theDen = getTheDen(holesObject);
   const bravery = getBravery(holesObject, accountData);
   const theBell = getTheBell(holesObject, accountData);
   const theHarp = getTheHarp(holesObject, accountData);
   const theLamp = getLamp(holesObject, accountData, unlockedCaverns);
-  const theHive = getHive(holesObject);
+  const theHive = getHive(holesObject, accountData);
   const grotto = getGrotto(holesObject);
   const justice = getJustice(holesObject, accountData);
   const theJars = getTheJars(holesObject, jarsRaw, accountData);
-  const evertree = getEvertree(holesObject);
+  const evertree = getEvertree(holesObject, accountData);
   const wisdom = getWisdom(holesObject, accountData);
   const gambit = getGambit(holesObject, accountData);
   const theTemple = getTheTemple(holesObject);
@@ -274,7 +275,7 @@ const parseHole = (holeRaw, jarsRaw, accountData) => {
   }
 }
 
-export const getEngineerTotalBonus = (upgrade, holesObject, index) => {
+export const getEngineerTotalBonus = (upgrade, holesObject, index, accountData) => {
   let formattedDescription = upgrade?.description;
   let value = 0;
 
@@ -350,7 +351,7 @@ export const getEngineerTotalBonus = (upgrade, holesObject, index) => {
       break;
 
     case 76:
-      value = Math.pow(1.02, getNewCollectibleChance(holesObject));
+      value = Math.pow(1.02, getNewCollectibleChance(holesObject, accountData));
       formattedDescription = formattedDescription.replace('{', notateNumber(value, 'Small'));
       break;
 
@@ -406,9 +407,9 @@ const getMeasurementQuantity = ({ holesObject, accountData, t }) => {
   const mapping = {
     0: { label: 'Gloomie Kills', value: holesObject?.extraCalculations?.[28] },
     1: { label: 'Crops', value: accountData?.farming?.cropsFound },
-    2: { label: 'Account lv', value: accountData?.tome?.tome?.[5]?.quantity },
+    2: { label: 'Account lv', value: accountData?.tome?.tome?.[0]?.quantity },
     3: { label: 'Tome score', value: accountData?.tome?.totalPoints },
-    4: { label: 'All skill lv', value: accountData?.tome?.tome?.[13]?.quantity },
+    4: { label: 'All skill lv', value: accountData?.tome?.tome?.[1]?.quantity },
     5: { label: 'N/A', value: 0 },
     6: {
       label: 'Deathnote pts',
@@ -435,7 +436,7 @@ const getMeasurementQuantityFound = ({ holesObject, accountData, t, i }) => {
       break;
     case 2:
       // Case 2: Tome Quantity Check
-      const tomeQuantity = accountData?.tome?.tome?.[5]?.quantity;
+      const tomeQuantity = accountData?.tome?.tome?.[0]?.quantity;
       result = (i === 99) ? tomeQuantity / 500 : tomeQuantity;
       break;
     case 3:
@@ -443,7 +444,7 @@ const getMeasurementQuantityFound = ({ holesObject, accountData, t, i }) => {
       result = (i === 99) ? points / 2500 : points;
       break;
     case 4:
-      let tomeQuantityAdditional = accountData?.tome?.tome?.[13]?.quantity;
+      let tomeQuantityAdditional = accountData?.tome?.tome?.[1]?.quantity;
       result = (i === 99)
         ? tomeQuantityAdditional / 5e3 + Math.max(0, tomeQuantityAdditional - 18e3) / 1500
         : tomeQuantityAdditional;
@@ -515,18 +516,19 @@ const getVillagerExpPerHour = (holesObject, accountData, t, leastOpalInvestedVil
   const arcadeBonus = (getArcadeBonus(accountData?.arcade?.shop, 'Villager_XP_multi')?.bonus ?? 0);
   const companionBonus = isCompanionBonusActive(accountData, 13) ? 1 : 0;
   const statueBonus = getStatueBonus(accountData, 28);
-  const jarBonuses = getJarBonus({ holesObject, i: 4 })
-    + (getJarBonus({ holesObject, i: 10 })
-      + (getJarBonus({ holesObject, i: 12 })
-        + (getJarBonus({ holesObject, i: 22 })
-          + (getJarBonus({ holesObject, i: 29 })
-            + getJarBonus({ holesObject, i: 35 })))));
+  const jarBonuses = getJarBonus({ holesObject, i: 4, account: accountData })
+    + (getJarBonus({ holesObject, i: 10, account: accountData })
+      + (getJarBonus({ holesObject, i: 12, account: accountData })
+        + (getJarBonus({ holesObject, i: 22, account: accountData })
+          + (getJarBonus({ holesObject, i: 29, account: accountData })
+            + getJarBonus({ holesObject, i: 35, account: accountData })))));
   const compassBonus = getCompassBonus(accountData, 59);
   const charmBonus = getCharmBonus(accountData, 'Candy_Cache');
   const firstVillagerExp = t === 0 && unlockedCaverns < 13 ? Math.pow(1.5, accountData?.accountOptions?.[355]) : 1;
   const value = firstVillagerExp
     * (100 + getSchematicBonus({ holesObject, t: 0, i: 25 }))
     * Math.max(1, (1 + compassBonus / 100)
+      * (1 + getLegendTalentBonus(accountData, 12) / 100)
       * (1 + charmBonus / 100)
       * (1 + 2 * companionBonus)
       * (1 + statueBonus / 100)
@@ -594,7 +596,8 @@ const getVillagerExpPerHour = (holesObject, accountData, t, leastOpalInvestedVil
     },
     { name: 'Cards', value: cardBonus },
     { name: 'Bell', value: getBellBonus({ holesObject, t: 1 }) },
-    { name: 'Summoning', value: getWinnerBonus(accountData, '+{% Villager EXP') }
+    { name: 'Summoning', value: getWinnerBonus(accountData, '+{% Villager EXP') },
+    { name: 'Legend Talent', value: getLegendTalentBonus(accountData, 12) },
   ];
 
   return {
@@ -662,7 +665,7 @@ const getStudies = (holesObject, villagerLevel, account) => {
       (getSchematicBonus({ holesObject, t: 85, i: 2 })
         + (getSchematicBonus({ holesObject, t: 87, i: 3 })
           + getSchematicBonus({ holesObject, t: 88, i: 5 })))) * villagerLevel) / 100)
-    * (1 + (getJarBonus({ holesObject, i: 16 })
+    * (1 + (getJarBonus({ holesObject, i: 16, account })
       + (stampBonus
         + getCosmoBonus({ majik: holesObject?.villageMajiks, t: 1, i: 4 }))) / 100);
 

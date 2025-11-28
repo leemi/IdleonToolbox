@@ -4,7 +4,77 @@ import React from 'react';
 /* eslint-disable react/jsx-key */
 export const patchNotes = [
   {
-    'ver': '3.3.10',
+    'ver': '3.3.16',
+    'gameVer': '2.0.45',
+    'date': '27/11/2025',
+    'features': [
+      'Added breakdown for Reef Day Gains in Coral Reef page',
+      'Monument timers are now shown as "current / max soft cap" in the dashboard (with a timer to soft cap on hover)',
+      'Added an alert for available cheaper masterclass upgrades (due to a legend talent)',
+      'Added an alert for available exotic market purchases',
+      
+    ],
+    'fixes': [
+      'Fixed a bug where the activity filter would not show when character is afk in divinity with goat god linked',
+      'Fixed a bug in spelunking upgrade optimizer',
+      'Fixed a bug where kruk was displaying wrong bubble',
+      '*Hopefully* fixed future sailing trades display'
+    ]
+  },
+  {
+    'ver': '3.3.15',
+    'gameVer': '2.0.45',
+    'date': '25/11/2025',
+    'features': [
+      'Updated the website with version 2.0.46 data and assets',
+      'Added Bubba page under Account -> Clickers with upgrades, bonuses and meatslice rate',
+      'Moved Owl and Kangaroo pages to Account -> Clickers', 
+    ],
+    'fixes': []
+  },
+  {
+    'ver': '3.3.14',
+    'gameVer': '2.0.45',
+    'date': '22/11/2025',
+    'features': [
+      'Added Overstim Rate display to Spelunking page with tooltip showing characters at max stamina',
+      'Added dashboard alerts for full stamina characters in Spelunking',
+      'Added dashboard alert for overstim level threshold in Spelunking',
+      'Added dashboard alert for jeweled cog pulls left in Construction (World 7)',
+      'Added dashboard alert for Double Clusters upgrade affordability in Zenith Market',
+      'Enhanced Zenith Market page with cluster inventory tracking showing clusters in character inventories',
+      'Added "Cost to Max" calculation display in Zenith Market page',
+      'Enhanced Zenith Market page with visual indicators for affordable upgrades',
+      'Added summoning stones\' locations under World 6 -> Summoning -> Stones'
+    ],
+    'fixes': [
+      'Fixed trophy display to properly handle Replica trophies in character display',
+      'Fixed a bug where Deathskull artifact bonus was not being calculated correctly in Gallery page'
+    ]
+  },
+  {
+    'ver': '3.3.13',
+    'gameVer': '2.0.45',
+    'date': '18/11/2025',
+    'features': [
+      'Updated the website with version 2.0.45 data and assets',
+      'Updated bonuses across the website to include World 7 bonuses',
+      'Added Spelunking page under Account -> World 7 with Upgrades, Lore (Chapters and Bosses), and Elixirs tabs',
+      'Added Gallery page under Account -> World 7 with Trophies and Nametags tabs',
+      'Added Legend Talents page under Account -> World 7',
+      'Added Coral Reef page under Account -> World 7 with Reef Upgrades, Coral Kid Upgrades, and Dancing Coral tabs',
+      'Added Zenith Market page under Account -> World 7',
+      'Added Clam Work page under Account -> World 7 with Upgrades and Compensations tabs',
+      'Added World 7 dashboard alerts for missing Gallery trophies and nametags',
+      'Added Gaming palette to Gaming page',
+      'Added the ability to filter out passive cards in card search page',
+      'Updated bubbles page with additional bubble levels (Kattlekruk)',
+      'Added the ability to filter by tradable companions in the companions page'
+    ],
+    'fixes': []
+  },
+  {
+    'ver': '3.3.12',
     'gameVer': '2.0.43',
     'date': '28/09/2025',
     'features': [
@@ -13,7 +83,7 @@ export const patchNotes = [
     'fixes': []
   },
   {
-    'ver': '3.3.10',
+    'ver': '3.3.11',
     'gameVer': '2.0.41',
     'date': '28/09/2025',
     'features': [
@@ -1401,7 +1471,7 @@ export const patchNotes = [
     features: [
       <Typography>Added 2 guild related pages, <Link
         href={'https://idleontoolbox.com/account/guild'}>Guild</Link> page and <Link
-        href={'https://idleontoolbox.com/guilds'}>Guilds</Link> page</Typography>
+          href={'https://idleontoolbox.com/guilds'}>Guilds</Link> page</Typography>
     ],
     fixes: [
       'Fixed a bug with lab line width calculations',
@@ -1499,7 +1569,7 @@ export const patchNotes = [
     features: [
       'Updated the login flow of the website 🎉',
       <Typography component={'span'}><Typography component={'span'}
-                                                 sx={{ fontWeight: 'bold' }}>Deprecated</Typography> the ability to
+        sx={{ fontWeight: 'bold' }}>Deprecated</Typography> the ability to
         paste data into the website (steam data extractor is no longer supported, please use one of the other 3 login
         methods [Email, Google, Apple])</Typography>
 
@@ -2077,10 +2147,10 @@ export const patchNotes = [
     date: '21/03/2023',
     features: [<Typography><Link
       href={'https://idleontoolbox.com/dashboard'}>Dashboard</Link> page!</Typography>,
-      <Typography>Added a tooltip for boss keys + colo tickets on <Link
-        href={'https://idleontoolbox.com/account/general'}>General</Link> page</Typography>,
-      <Typography>Added Stamp Reducer indication on <Link
-        href={'https://idleontoolbox.com/account/world-3/atom-collider'}>Atom Collider</Link> page</Typography>,
+    <Typography>Added a tooltip for boss keys + colo tickets on <Link
+      href={'https://idleontoolbox.com/account/general'}>General</Link> page</Typography>,
+    <Typography>Added Stamp Reducer indication on <Link
+      href={'https://idleontoolbox.com/account/world-3/atom-collider'}>Atom Collider</Link> page</Typography>,
       'Added Subtract Green Stacks option for vials in dashboard (this will subtract 10M from your current amount to make sure you will still have green stack after upgrading)',
       'Added a tooltip for exact quantity for items in storage'],
     fixes: ['Fixed wizard towers max level (from atom collider)', 'Some bug fixes for low level accounts',

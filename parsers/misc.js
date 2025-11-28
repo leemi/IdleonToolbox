@@ -13,14 +13,14 @@ import {
   ninjaExtraInfo,
   randomList,
   rawMapNames,
-  slab
+  slab,
+  generalSpelunky
 } from '../data/website-data';
 import { checkCharClass, CLASSES, getTalentBonus, mainStatMap, talentPagesMap } from './talents';
 import { getMealsBonusByEffectOrStat } from './cooking';
 import { getBubbleBonus, getSigilBonus, getVialsBonusByEffect, getVialsBonusByStat } from './alchemy';
 import { getStampsBonusByEffect } from './stamps';
 import { getAchievementStatus } from './achievements';
-import { getJewelBonus, getLabBonus } from './lab';
 import { getAtomBonus } from './atomCollider';
 import { getPrayerBonusAndCurse } from './prayers';
 import { getShrineBonus } from './shrines';
@@ -34,10 +34,54 @@ import { getStarSignBonus } from './starSigns';
 import { getPlayerFoodBonus } from './character';
 import { getCharmBonus, isJadeBonusUnlocked } from '@parsers/world-6/sneaking';
 import { getBribeBonus } from '@parsers/bribes';
-import { getVoteBonus } from '@parsers/world-2/voteBallot';
+import { getMeritocracyBonus, getVoteBonus } from '@parsers/world-2/voteBallot';
 import { getUpgradeVaultBonus } from '@parsers/misc/upgradeVault';
 import { getArmorSetBonus } from '@parsers/misc/armorSmithy';
 import { getObolsBonus } from '@parsers/obols';
+import { getLegendTalentBonus } from '@parsers/world-7/legendTalents';
+import { getCardBonusByEffect } from '@parsers/cards';
+
+export const getAdviceFish = (idleonData) => {
+  const rawSpelunking = tryToParse(idleonData?.Spelunk) || [];
+  const adviceUpgrades = generalSpelunky?.[18]?.split(' ') || [];
+  const upgrades = adviceUpgrades.map((upgrade, index) => {
+    const [name, description, x2, x3, filler] = upgrade.split(',');
+    const level = rawSpelunking?.[11]?.[index] ?? 0;
+    return {
+      level,
+      cost: Math.pow(1.15, level) * Math.pow(10.01, x3),
+      bonus: level / (100 + level) * parseFloat(x2),
+      name,
+      description,
+      x2: parseFloat(x2),
+      x3: parseFloat(x3),
+      filler
+    }
+  });
+  return {
+    upgrades
+  };
+}
+
+export const getAdviceFishBonus = (account, upgradeIndex) => {
+  return account?.adviceFish?.upgrades?.[upgradeIndex]?.bonus ?? 0;
+}
+
+export const getGuaranteedCrystalMobs = (account) => {
+  const meritocracyBonus = getMeritocracyBonus(account, 15);
+  const legendPTSBonus = getLegendTalentBonus(account, 37);
+  const sigilBonus = getSigilBonus(account?.alchemy?.p2w?.sigils, 'SHINY_BEACON');
+  const taskBonus = account?.tasks?.[2]?.[3]?.[0];
+  const achievementBonus = getAchievementStatus(account?.achievements, 285);
+
+  return Math.ceil((1 + meritocracyBonus / 100)
+    * (1 + legendPTSBonus / 100) * (sigilBonus
+      + (taskBonus + 4 * achievementBonus)))
+}
+
+export const getMasterclassCostReduction = (account) => {
+  return account?.accountOptions?.[480] < getLegendTalentBonus(account, 23) ? .2 : 1;
+}
 
 export const getLibraryBookTimes = (idleonData, characters, account) => {
   const { bookCount, libTime, breakdown } = calcBookCount(account, characters, idleonData);
@@ -49,7 +93,7 @@ export const getLibraryBookTimes = (idleonData, characters, account) => {
     }
   })
   breakpoints = [...breakpoints,
-    { breakpoint: 0, time: calcTimeToXBooks(0, 20, account, characters, idleonData) }]
+  { breakpoint: 0, time: calcTimeToXBooks(0, 20, account, characters, idleonData) }]
   return {
     bookCount,
     next: getTimeToNextBooks(bookCount, account, characters, idleonData)?.value - libTime,
@@ -96,13 +140,13 @@ export const getTimeToNextBooks = (bookCount, account, characters, idleonData) =
     superbitBonus = superbit?.totalBonus;
   }
   const math = Math.round(4 * (3600 / ((1 + mealBonus / 100)
-      * (1 + libraryBooker / 100) *
-      (1 + (5 * libraryTowerLevel
-        + bubbleBonus
-        + (vialBonus
-          + (stampBonus
-            + Math.min(30, Math.max(0, 30 * getAchievementStatus(account?.achievements, 145)))
-            + superbitBonus))) / 100)))
+    * (1 + libraryBooker / 100) *
+    (1 + (5 * libraryTowerLevel
+      + bubbleBonus
+      + (vialBonus
+        + (stampBonus
+          + Math.min(30, Math.max(0, 30 * getAchievementStatus(account?.achievements, 145)))
+          + superbitBonus))) / 100)))
     * (1 + 10 * Math.pow(bookCount, 1.4) / 100))
 
   const breakdown = [
@@ -124,6 +168,10 @@ export const getTimeToNextBooks = (bookCount, account, characters, idleonData) =
     value: math,
     breakdown
   };
+}
+
+export const hasItemDropped = (account, itemName) => {
+  return account?.looty?.lootyRaw?.includes(itemName);
 }
 
 export const getSlab = (idleonData) => {
@@ -181,7 +229,7 @@ export const getCurrencies = (account, idleonData, processedData) => {
     'Cosmic_Time_Candy': { min: 5, max: 500 }
   };
   const allItems = [...account?.storage?.list,
-    ...(processedData?.charactersData || [])?.map(({ inventory }) => inventory)?.flat()];
+  ...(processedData?.charactersData || [])?.map(({ inventory }) => inventory)?.flat()];
   const allCandies = allItems?.filter(({ Type } = {}) => Type === 'TIME_CANDY');
   const guaranteedCandies = allCandies?.reduce((sum, { displayName, amount }) => {
     if (specialCandy[displayName]) return sum;
@@ -223,13 +271,13 @@ export const enhanceColoTickets = (tickets, characters, account) => {
     // const amountPerDay = getAmountPerDay(npc, characters);
     const daysSincePickup = account?.accountOptions?.[npc?.daysSinceIndex];
     return [...res,
-      {
-        rawName: `TixEZ${index}`,
-        amountPerDay: 1,
-        daysSincePickup,
-        amount: tickets,
-        totalAmount: Math.min(daysSincePickup, 3)
-      }];
+    {
+      rawName: `TixEZ${index}`,
+      amountPerDay: 1,
+      daysSincePickup,
+      amount: tickets,
+      totalAmount: Math.min(daysSincePickup, 3)
+    }];
   }, [])
   return {
     allTickets,
@@ -239,7 +287,7 @@ export const enhanceColoTickets = (tickets, characters, account) => {
 
 const getKeysObject = (keys) => {
   return keys.reduce((res, keyAmount, index) => (index < 5 ? [...res,
-    { amount: keyAmount, ...keysMap[index] }] : res), []);
+  { amount: keyAmount, ...keysMap[index] }] : res), []);
 }
 
 export const enhanceKeysObject = (keysAll, characters, account) => {
@@ -493,9 +541,9 @@ export const getExpReq = (skillIndex, t) => {
       ? (15 + Math.pow(t, 2) + 13 * t) * Math.pow(1.225 - Math.min(0.114, (0.135 * t) / (t + 50)), t) - 26
       :
       8 === skillIndex ? (71 > t
-          ? ((10 + Math.pow(t, 2.81) + 4 * t) * Math.pow(1.117 - (0.135 * t) / (t + 5), t) - 6) * (1 + Math.pow(t, 1.72) / 300)
-          :
-          (((10 + Math.pow(t, 2.81) + 4 * t) * Math.pow(1.003, t) - 6) / 2.35) * (1 + Math.pow(t, 1.72) / 300)) :
+        ? ((10 + Math.pow(t, 2.81) + 4 * t) * Math.pow(1.117 - (0.135 * t) / (t + 5), t) - 6) * (1 + Math.pow(t, 1.72) / 300)
+        :
+        (((10 + Math.pow(t, 2.81) + 4 * t) * Math.pow(1.003, t) - 6) / 2.35) * (1 + Math.pow(t, 1.72) / 300)) :
         9 === skillIndex
           ? (15 + Math.pow(t, 1.3) + 6 * t) * Math.pow(1.17 - Math.min(0.07, (0.135 * t) / (t + 50)), t) - 26
           :
@@ -513,8 +561,8 @@ export const getGiantMobChance = (character, account) => {
     chance = (1 / ((100 + 50 * Math.pow(giantsAlreadySpawned + 1, 2)) * (1 + glitterbugPrayer / 100))) * (1 + (crescentShrineBonus + giantMobVial) / 100);
   } else {
     chance = (1 / (2 * Math.pow(giantsAlreadySpawned + 1, 1.95)
-        * (1 + glitterbugPrayer / 100)
-        * Math.pow(giantsAlreadySpawned + 1, 1.5 + giantsAlreadySpawned / 15)))
+      * (1 + glitterbugPrayer / 100)
+      * Math.pow(giantsAlreadySpawned + 1, 1.5 + giantsAlreadySpawned / 15)))
       * (1 + (crescentShrineBonus + giantMobVial) / 100);
   }
   return {
@@ -546,6 +594,10 @@ export const getGoldenFoodMulti = (character, account, characters) => {
   const achievementBonus = getAchievementStatus(account?.achievements, 380);
   const secondAchievementBonus = getAchievementStatus(account?.achievements, 383);
   const voteBonus = getVoteBonus(account, 26);
+  const companionBonus = isCompanionBonusActive(account, 48) ? account?.companions?.list?.at(48)?.bonus : 0;
+  const legendTalentBonus = getLegendTalentBonus(account, 25);
+  const cardBonus = getCardBonusByEffect(account?.cards, 'Gold_Food_Effect_(Passive)');
+
   // select first death bringer
   const deathBringer = characters?.find((character) => checkCharClass(character?.class, CLASSES.Death_Bringer));
   const apocalypseWow = getTalentBonus(deathBringer?.flatTalents, 'APOCALYPSE_WOW');
@@ -561,7 +613,7 @@ export const getGoldenFoodMulti = (character, account, characters) => {
               + (goldenFoodAchievement
                 + (goldenFoodBubbleBonus
                   + goldenFoodSigilBonus) + mealBonus + starSignBonus + bribeBonus + charmBonus
-                + (2 * achievementBonus + 3 * secondAchievementBonus + voteBonus + apocalypseWow * apocalypses))))) / 100),
+                + (2 * achievementBonus + 3 * secondAchievementBonus + voteBonus + apocalypseWow * apocalypses + companionBonus + legendTalentBonus + cardBonus))))) / 100),
     expression: `(1 + armorSetBonus / 100)
 * (Math.max(isShaman ? amplifiedFamilyBonus : familyBonus, 1)
 + (equipmentGoldFoodBonus
@@ -889,17 +941,27 @@ export const getCompanions = (companionObject = {}) => {
   const [companionIndex] = companionObject?.e?.split(',') || [];
   const companion = companions?.[companionIndex];
   const ownedCompanions = companionObject?.l?.reduce((result, comp) => {
-    const [companionIndex] = comp?.split(',');
+    const [companionIndex, isTradable] = comp?.split(',');
+    const current = result[companionIndex] || { count: 0, tradableCount: 0, nonTradableCount: 0 };
+    const tradable = isTradable === '1';
     return {
       ...result,
-      [companionIndex]: true
+      [companionIndex]: {
+        count: current.count + 1,
+        tradableCount: current.tradableCount + (tradable ? 1 : 0),
+        nonTradableCount: current.nonTradableCount + (tradable ? 0 : 1)
+      }
     }
   }, {});
 
   const updatedCompanions = companions?.map((comp, index) => ({
     ...comp,
-    acquired: !!ownedCompanions?.[index]
+    acquired: (ownedCompanions?.[index]?.count || 0) > 0,
+    copies: ownedCompanions?.[index]?.count ?? 0,
+    tradableCount: ownedCompanions?.[index]?.tradableCount ?? 0,
+    nonTradableCount: ownedCompanions?.[index]?.nonTradableCount ?? 0,
   }))
+
   return {
     totalBoxesOpened: companionObject?.x,
     currentCompanion: companion,
@@ -1068,14 +1130,25 @@ export const getKillRoy = (idleonData, charactersData, accountData, serverVars) 
 export const getKillroyBonus = (account, index) => {
   return account?.killroy?.permanentUpgrades?.[index]?.bonus;
 }
-const getKillRoyShopBonus = (account, index) => {
+
+export const getKillRoyShopBonus = (account, index) => {
   return 0 === index
     ? 1 + (account?.accountOptions?.[228]) / (300 + (account?.accountOptions?.[228]))
     : 1 === index
       ? 1 + ((account?.accountOptions?.[229]) / (300 + (account?.accountOptions?.[229]))) * 9
       : 2 === index
         ? 1 + ((account?.accountOptions?.[230]) / (300 + (account?.accountOptions?.[230]))) * 2
-        : 1
+        : 3 === index
+          ? ((account?.accountOptions?.[467]) / (200 + (account?.accountOptions?.[467]))) * 10
+          : 4 === index
+            ? 1 + ((account?.accountOptions?.[468]) / (200 + (account?.accountOptions?.[468]))) * 1.3
+            : 5 === index
+              ? 1 + ((account?.accountOptions?.[469]) / (150 + (account?.accountOptions?.[469]))) * 0.8
+              : 6 === index
+                ? ((account?.accountOptions?.[470]) / (250 + (account?.accountOptions?.[470]))) * 25
+                : 7 === index
+                  ? 1 + ((account?.accountOptions?.[471]) / (200 + (account?.accountOptions?.[471]))) * 2
+                  : 1
 }
 
 export const calcTotalQuestCompleted = (characters) => {

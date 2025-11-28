@@ -2,6 +2,7 @@ import { isGodEnabledBySorcerer } from './lab';
 import { isCompanionBonusActive } from './misc';
 import { getActiveBubbleBonus } from './alchemy';
 import { isJadeBonusUnlocked } from '@parsers/world-6/sneaking';
+import { getCoralKidUpgBonus } from './world-7/coralReef';
 
 const { tryToParse } = require('../utility/helpers');
 const { gods } = require('../data/website-data');
@@ -130,6 +131,7 @@ export const getGodByIndex = (linkedDeities, characters, gIndex) => {
 }
 
 export const getDeityLinkedIndex = (account, characters, deityIndex) => {
+  const coralKidLinked = account?.accountOptions?.[425] > 0 && account?.accountOptions?.[425] === deityIndex;
   const pocketLinked = account?.hole?.godsLinks?.find(({ index }) => index === deityIndex);
   const normalLink = account?.divinity?.linkedDeities?.map((deity, index) => deityIndex === deity || (isCompanionBonusActive(account, 0) && account?.finishedWorlds?.World4)
     ? index
@@ -139,8 +141,8 @@ export const getDeityLinkedIndex = (account, characters, deityIndex) => {
     : -1);
   // Check if pocketLinked exists and add it to the result
   return normalLink?.map((charIndex, index) => {
-    // First check for pocket link
-    if (pocketLinked) {
+    // First check for pocket link or coral kid link
+    if (pocketLinked || coralKidLinked) {
       return index;
     }
     // Then check for normal and ES links as before
@@ -157,5 +159,6 @@ export const getMinorDivinityBonus = (character, account, forcedDivinityIndex, c
   const linkedDeity = forcedDivinityIndex ?? account?.divinity?.linkedDeities?.[character.playerId];
   const godIndex = gods?.[linkedDeity]?.godIndex;
   const multiplier = gods?.[godIndex]?.minorBonusMultiplier;
-  return Math.max(1, bigPBubble) * (divinityLevel / (60 + divinityLevel)) * multiplier;
+  const coralKidUpgBonus = getCoralKidUpgBonus(account, 3);
+  return Math.max(1, bigPBubble) * (1 + coralKidUpgBonus / 100) * (divinityLevel / (60 + divinityLevel)) * multiplier;
 }

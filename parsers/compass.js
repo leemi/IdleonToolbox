@@ -26,6 +26,7 @@ import { getEmperorBonus } from '@parsers/world-6/emperor';
 import { getEventShopBonus } from '@parsers/misc';
 import { altStampsMapping } from '@parsers/stamps';
 import { getOptimizedGenericUpgrades } from './genericUpgradeOptimizer';
+import { getMasterclassCostReduction } from './misc';
 
 export const dustNames = {
   0: 'Stardust',
@@ -151,7 +152,7 @@ const parseCompass = (compassRaw, charactersData, accountData, serverVars) => {
   upgrades = upgrades.map((upgrade, index) => {
     const bonus = getLocalCompassBonus(upgrades, index);
     const nextLevelBonus = getCompassBonusAtLevel(upgrades, index, upgrade?.level + 1);
-    const cost = getUpgradeCost(upgrades, index, serverVars);
+    const cost = getUpgradeCost(upgrades, index, serverVars, accountData);
     const isMulti = upgrade?.description.includes('}');
     let extraData;
     if (upgrade?.name === 'Top_of_the_Mornin\'') {
@@ -556,7 +557,7 @@ export const getExtraDust = (character, account) => {
                       + arcadeBonus))))))))) / 100);
 }
 
-const getUpgradeCost = (upgrades, index, serverVars) => {
+const getUpgradeCost = (upgrades, index, serverVars, accountData) => {
   // Set base cost reduction and surplus
   let redCost = 1;
   let surplusCost = 0;
@@ -621,7 +622,7 @@ const getUpgradeCost = (upgrades, index, serverVars) => {
   }
 
 // Final cost calculation
-  const dustCost = Math.max(serverVars?.DustCost, 1);
+  const dustCost = Math.max(serverVars?.DustCost, 6.2);
   const bonusReduction = 1 + (
     getLocalCompassBonus(upgrades, 36) +
     getLocalCompassBonus(upgrades, 77)
@@ -630,9 +631,9 @@ const getUpgradeCost = (upgrades, index, serverVars) => {
   const compassUpg = compass?.[index];
   const randoListIndex = Math.round(105 + compassUpg?.x10);
   const randoList = randomList[randoListIndex]?.split(' ');
-  const randoMultiplier = Math.max(1, Math.pow(3.2 - randoList.length / 60, randoList.indexOf('' + index)));
+  const randoMultiplier = Math.max(1, Math.pow(3.69 - randoList.length / 27, randoList.indexOf('' + index)));
 
-  const finalCost = (
+  const finalCost = getMasterclassCostReduction(accountData) * (
     surplusCost +
     dustCost * (1 / bonusReduction) *
     (1 / Math.max(1, redCost)) *

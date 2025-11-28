@@ -109,7 +109,7 @@ const Account = ({ account, characters, trackers, lastUpdated }) => {
                 alerts?.General?.shops?.items?.map((shop, index) => shop?.length > 0 ?
                   <Alert key={'shop' + index + shop?.[0]?.rawName}
                     title={<ShopTitle shop={shop} />}
-                    iconPath={index === 7 ? `etc/ShopEZ${index}` : `data/ShopEZ${index}`} /> : null) : null}
+                    iconPath={index === 8 ? `etc/ShopEZ${index}` : `data/ShopEZ${index}`} /> : null) : null}
               {alerts?.General?.guild?.daily ?
                 <Alert title={`You have ${alerts?.General?.guild?.daily} uncompleted daily tasks`} iconPath={`etc/GP`}
                   imgStyle={{ filter: 'sepia(1) hue-rotate(46deg) saturate(1)' }} /> : null}
@@ -480,10 +480,59 @@ const Account = ({ account, characters, trackers, lastUpdated }) => {
                 <Alert
                   title={`Your bean trade has reached ${numberWithCommas(Math.floor(alerts?.['World 6']?.farming?.beanTrade))}`}
                   iconPath={'data/Quest80_x1'} /> : null}
+              {alerts?.['World 6']?.farming?.exoticPurchases ?
+                <Alert
+                  title={`You have ${alerts?.['World 6']?.farming?.exoticPurchases.available} exotic purchase${alerts?.['World 6']?.farming?.exoticPurchases.available > 1 ? 's' : ''} available (${alerts?.['World 6']?.farming?.exoticPurchases.purchased}/${alerts?.['World 6']?.farming?.exoticPurchases.max})`}
+                  iconPath={'data/FarmStT3'} /> : null}
               {alerts?.['World 6']?.etc?.emperorAttempts > 0 ?
                 <Alert
                   title={`You have reached ${alerts?.['World 6']?.etc?.emperorAttempts} emperor attempts`}
                   iconPath={'data/Boss6'} /> : null}
+            </Stack>
+          </Stack> : null}
+          {!emptyAlertRows?.['World 7'] ? <Stack direction={'row'} gap={4}>
+            <Typography sx={{ flexShrink: 0 }} color={'text.secondary'}>World 7</Typography>
+            <Stack direction={'row'} gap={2} flexWrap={'wrap'}>
+              {alerts?.['World 7']?.gallery?.missingTrophies?.length > 0 ?
+                alerts?.['World 7']?.gallery?.missingTrophies?.map(({ itemName, owner, rawName }, index) =>
+                  <Alert
+                    key={`missing-trophy-${rawName}-${index}`}
+                    title={`${cleanUnderscore(itemName)} is missing from gallery (${owner})`}
+                    iconPath={`data/${rawName}`} />) : null}
+              {alerts?.['World 7']?.gallery?.missingNametags?.length > 0 ?
+                alerts?.['World 7']?.gallery?.missingNametags?.map(({ itemName, owner, rawName }, index) =>
+                  <Alert
+                    key={`missing-nametag-${rawName}-${index}`}
+                    title={`${cleanUnderscore(itemName)} is missing from gallery (${owner})`}
+                    iconPath={`data/${rawName}`} />) : null}
+              {alerts?.['World 7']?.spelunking?.pageReads?.available > 0 ?
+                <Alert
+                  title={`You have ${alerts?.['World 7']?.spelunking?.pageReads?.available} page read${alerts?.['World 7']?.spelunking?.pageReads?.available === 1 ? '' : 's'} available (${alerts?.['World 7']?.spelunking?.pageReads?.current}/${alerts?.['World 7']?.spelunking?.pageReads?.max})`}
+                  iconPath={'data/Spelunking0'} /> : null}
+              {alerts?.['World 7']?.spelunking?.fullStaminaCharacters?.count >= alerts?.['World 7']?.spelunking?.fullStaminaCharacters?.threshold ?
+                <Alert
+                  title={`${alerts?.['World 7']?.spelunking?.fullStaminaCharacters?.count} character${alerts?.['World 7']?.spelunking?.fullStaminaCharacters?.count === 1 ? '' : 's'} ${alerts?.['World 7']?.spelunking?.fullStaminaCharacters?.count === 1 ? 'has' : 'have'} full stamina`}
+                  iconPath={'data/CaveShopUpg4'} /> : null}
+              {alerts?.['World 7']?.spelunking?.overstimLevel?.current >= alerts?.['World 7']?.spelunking?.overstimLevel?.threshold ?
+                <Alert
+                  title={`Overstim level has reached ${alerts?.['World 7']?.spelunking?.overstimLevel?.current} (threshold: ${alerts?.['World 7']?.spelunking?.overstimLevel?.threshold})`}
+                  iconPath={'data/CaveShopUpg6'} /> : null}
+              {alerts?.['World 7']?.legendTalents?.legendPointsLeftToSpend > 0 ?
+                <Alert
+                  title={`You have ${alerts?.['World 7']?.legendTalents?.legendPointsLeftToSpend} unspent legend talent point${alerts?.['World 7']?.legendTalents?.legendPointsLeftToSpend === 1 ? '' : 's'}`}
+                  iconPath={'data/LegendTalentIcon0'} /> : null}
+              {alerts?.['World 7']?.legendTalents?.cheaperMasterclassUpgrades ?
+                <Alert
+                  title={`You have ${alerts?.['World 7']?.legendTalents?.cheaperMasterclassUpgrades.available} cheaper masterclass upgrade${alerts?.['World 7']?.legendTalents?.cheaperMasterclassUpgrades.available === 1 ? '' : 's'} available (${alerts?.['World 7']?.legendTalents?.cheaperMasterclassUpgrades.used}/${alerts?.['World 7']?.legendTalents?.cheaperMasterclassUpgrades.max})`}
+                  iconPath={'data/LegendTalentIcon12'} /> : null}
+              {alerts?.['World 7']?.zenithMarket?.doubleCluster ?
+                <Alert
+                  title={'You can afford Double Clusters upgrade'}
+                  iconPath={'etc/Cluster'} /> : null}
+              {alerts?.['World 7']?.construction?.jeweledCogs ? 
+                <Alert
+                  title={`You have ${alerts?.['World 7']?.construction?.jeweledCogs?.available} jeweled cog pull${alerts?.['World 7']?.construction?.jeweledCogs?.available > 1 ? 's' : ''} left (${alerts?.['World 7']?.construction?.jeweledCogs?.current}/${alerts?.['World 7']?.construction?.jeweledCogs?.max})`}
+                  iconPath={'data/CogCry0'} /> : null}
             </Stack>
           </Stack> : null}
         </Stack> : <Typography>There are no account alerts to display</Typography>}

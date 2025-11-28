@@ -5,7 +5,9 @@ import {
   summoningBonuses,
   summoningEndless,
   summoningEnemies,
-  summoningUpgrades
+  summoningUpgrades,
+  mapEnemiesArray,
+  mapNames
 } from '../../data/website-data';
 import { getCharmBonus } from '@parsers/world-6/sneaking';
 import { isArtifactAcquired } from '@parsers/sailing';
@@ -71,6 +73,7 @@ const parseSummoning = (rawSummon, killRoyKills, account, serializedCharactersDa
       allBattles[world + 1].push({ ...monsterData, ...extraData });
     }
   })
+
   let rawWinnerBonuses = wonBattles?.reduce((acc, enemyId) => {
     const monsterData = summoningEnemies.find((enemy) => enemy.enemyId === enemyId);
     if (monsterData && monsterData?.bonusId < 20) {
@@ -112,6 +115,7 @@ const parseSummoning = (rawSummon, killRoyKills, account, serializedCharactersDa
       baseValue: rawValue
     };
   });
+
   const gambitStuff = account?.hole?.holesObject?.gambitStuff;
   let upgrades = summoningUpgrades.map((upgrade, index) => {
     const doubled = gambitStuff && gambitStuff?.includes(index);
@@ -138,7 +142,18 @@ const parseSummoning = (rawSummon, killRoyKills, account, serializedCharactersDa
   const armyHealth = getArmyHealth(upgrades, totalUpgradesLevels, account);
   const armyDamage = getArmyDamage(upgrades, totalUpgradesLevels, account);
   upgrades = groupByKey(upgrades, ({ colour }) => colour);
-  const summoningStones = Object.entries(killRoyKills)
+
+  const stoneMapsIds = {
+    0: 256, // Bamboo Laboredge
+    1: 257, // Lightway Path
+    2: 262, // Yolkrock Basin
+    3: 120, // Equinox Valley
+    4: 157, // Jelly Cube Bridge
+    5: 212, // Crawly Catacombs
+    6: 264, // Emperor's Castle Doorstep
+  }
+
+  const summoningStones = Object.entries(killRoyKills || {})
     .filter(([name]) => name.includes('SummzTrz'))
     .map(([name, kills]) => {
       const index = parseInt(name.match(/\d+$/)[0], 10);
@@ -150,6 +165,8 @@ const parseSummoning = (rawSummon, killRoyKills, account, serializedCharactersDa
       const nextLevelHps = createRange(kills + 1, kills + 14).map((futureKills) => {
         return 2 * enemy?.hp * Math.pow(4000, futureKills)
       })
+
+      const mapMonsterName = monsters?.[mapEnemiesArray[stoneMapsIds[index]]]?.Name;
       return {
         name: enemy?.territoryName,
         monsterIcon: isBoss6 ? `data/${enemy?.enemyId}` : `afk_targets/${monsterName}`,
@@ -158,7 +175,10 @@ const parseSummoning = (rawSummon, killRoyKills, account, serializedCharactersDa
         index,
         bonus: `${summonEssenceColor[index]}_` + Math.max(2, 1 + kills) + 'x_higher_bonuses',
         bossHp,
-        nextLevelHps
+        nextLevelHps,
+        mapName: mapNames[stoneMapsIds[index]],
+        mapMonsterName: mapMonsterName,
+        mapMonsterIcon: mapMonsterName ? `afk_targets/${mapMonsterName}` : null
       }
     })
     .toSorted((a, b) => a.index - b.index);
@@ -217,6 +237,7 @@ const getLocalWinnerBonus = (rawWinnerBonuses, account, index) => {
   const rawValue = rawWinnerBonuses?.[index] || 0;
   const charmBonus = getCharmBonus(account, 'Crystal_Comb');
   const artifactBonus = isArtifactAcquired(account?.sailing?.artifacts, 'The_Winz_Lantern')?.bonus ?? 0;
+  const gemShopBonus = account?.gemShopPurchases?.find((value, index) => index === 11) ?? 0;
   const firstAchievement = getAchievementStatus(account?.achievements, 373);
   const secondAchievement = getAchievementStatus(account?.achievements, 379);
   const emperorBonus = getEmperorBonus(account, 8);
@@ -230,6 +251,7 @@ const getLocalWinnerBonus = (rawWinnerBonuses, account, index) => {
   else if (index === 19) {
     val = 3.5 * rawValue *
       (1 + charmBonus / 100) *
+      (1 + (10 * gemShopBonus) / 100) *
       (1 + (artifactBonus +
         Math.min(10, level * bonusPerLevel) +
         firstAchievement +
@@ -241,6 +263,7 @@ const getLocalWinnerBonus = (rawWinnerBonuses, account, index) => {
     const multi = multiCalc === 0 ? 0 : multiCalc;
     val = rawValue *
       (1 + charmBonus / 100) *
+      (1 + (10 * gemShopBonus) / 100) *
       (1 + (artifactBonus +
         Math.min(10, level * bonusPerLevel) +
         firstAchievement +
@@ -254,6 +277,7 @@ const getLocalWinnerBonus = (rawWinnerBonuses, account, index) => {
     const multi = multiCalc === 0 ? 0 : multiCalc;
     val = 3.5 * rawValue *
       (1 + charmBonus / 100) *
+      (1 + (10 * gemShopBonus) / 100) *
       (1 + (artifactBonus +
         Math.min(10, level * bonusPerLevel) +
         firstAchievement +

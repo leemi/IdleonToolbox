@@ -14,6 +14,9 @@ import { getRequirementAmount } from '@parsers/lab';
 import { getLandRank, getProductDoubler, getRanksTotalBonus } from '@parsers/world-6/farming';
 import { isPast } from 'date-fns';
 import { getIsland } from '@parsers/world-2/islands';
+import { addEquippedItems, mergeItemsByOwner } from '@parsers/items';
+import { getLegendTalentBonus } from '@parsers/world-7/legendTalents';
+import { isSuperbitUnlocked } from '@parsers/gaming';
 
 export const getOptions = (data) => {
   return Object.entries(data)?.reduce((res, [fieldName, fieldData]) => {
@@ -904,7 +907,7 @@ export const getWorld6Alerts = (account, fields, options) => {
   }
   if (fields?.farming?.checked) {
     const farming = {};
-    const { plots, totalCrops, missingPlots, beanTrade } = options?.farming || {};
+    const { plots, totalCrops, missingPlots, beanTrade, exoticPurchases } = options?.farming || {};
     if (plots?.checked) {
       const availablePots = account?.farming?.plot?.filter(({ currentOG }) => plots?.props?.value > 0
         ? currentOG >= plots?.props?.value
@@ -942,6 +945,17 @@ export const getWorld6Alerts = (account, fields, options) => {
         farming.beanTrade = account?.farming?.beanTrade;
       }
     }
+    if (exoticPurchases?.checked) {
+      const exoticMarketUpgradesPurchased = account?.farming?.exoticMarketUpgradesPurchased ?? 0;
+      const exoticMarkeMaxPurchases = account?.farming?.exoticMarkeMaxPurchases ?? 4;
+      if (exoticMarketUpgradesPurchased < exoticMarkeMaxPurchases) {
+        farming.exoticPurchases = {
+          available: exoticMarkeMaxPurchases - exoticMarketUpgradesPurchased,
+          purchased: exoticMarketUpgradesPurchased,
+          max: exoticMarkeMaxPurchases
+        };
+      }
+    }
     if (Object.keys(farming).length > 0) {
       alerts.farming = farming;
     }
@@ -974,10 +988,166 @@ export const getWorld6Alerts = (account, fields, options) => {
   return alerts;
 };
 
-export const getWorld7Alerts = (account, fields, options) => {
+export const getWorld7Alerts = (account, fields, options, characters) => {
   const alerts = {};
   if (!account?.finishedWorlds?.World6) return alerts;
-  // Placeholder: add World 7 systems when defined
+  const equippedItems = addEquippedItems(characters, true);
+  const totalItems = getAllItems(characters, account)
+  const totalOwnedItems = mergeItemsByOwner([...(totalItems || []), ...(equippedItems || [])]);
+  const gallery = {};
+  if (fields?.gallery?.checked) {
+    if (options?.gallery?.trophiesMissing?.checked) {
+      const trophiesUsed = account?.gallery?.trophiesUsed || [];
+      const trophiesUsedRawNames = new Set(
+        trophiesUsed
+          .filter(trophy => !trophy?.isEmpty && trophy?.rawName)
+          .map(trophy => trophy.rawName)
+      );
+      const ownedTrophies = totalOwnedItems?.filter(({ rawName }) =>
+        rawName?.includes('Trophy')
+      );
+      const inventoryTrophies = account?.gallery?.inventoryTrophies || [];
+      const inventoryTrophiesRawNames = new Set(
+        inventoryTrophies
+          .filter(trophy => trophy?.rawName)
+          .map(trophy => trophy.rawName)
+      );
+      const missingTrophies = ownedTrophies?.filter(({ rawName, Type }) =>
+        rawName && !trophiesUsedRawNames.has(rawName) && !inventoryTrophiesRawNames.has(rawName) && (Type !== "REPLICA_TROPHY")
+      );
+      if (missingTrophies?.length > 0) {
+        gallery.missingTrophies = missingTrophies.map(({ displayName, name, owner, rawName }) => ({
+          itemName: displayName || name,
+          owner: owner,
+          rawName: rawName
+        }));
+      }
+    }
+    if (options?.gallery?.nametagsMissing?.checked) {
+      const nametagsUsed = account?.gallery?.nametagsUsed || [];
+      const nametagsUsedRawNames = new Set(
+        nametagsUsed
+          .filter(nametag => nametag?.rawName)
+          .map(nametag => nametag.rawName)
+      );
+      const ownedNametags = totalOwnedItems?.filter(({ rawName }) =>
+        rawName?.includes('Nametag')
+      );
+      const missingNametags = ownedNametags?.filter(({ rawName, Type }) =>
+        rawName && !nametagsUsedRawNames.has(rawName) && (Type !== "REPLICA_NAMETAG")
+      );
+      if (missingNametags?.length > 0) {
+        gallery.missingNametags = missingNametags.map(({ displayName, name, owner, rawName }) => ({
+          itemName: displayName || name,
+          owner: owner,
+          rawName: rawName
+        }));
+      }
+    }
+  }
+  if (Object.keys(gallery).length > 0) {
+    alerts.gallery = gallery;
+  }
+  if (fields?.spelunking?.checked) {
+    const spelunking = {};
+    if (options?.spelunking?.pageReads?.checked) {
+      const currentPageReads = account?.accountOptions?.[410] ?? 0;
+      const maxDailyPageReads = account?.spelunking?.maxDailyPageReads ?? 0;
+      if (currentPageReads < maxDailyPageReads) {
+        const availablePageReads = maxDailyPageReads - currentPageReads;
+        spelunking.pageReads = {
+          current: currentPageReads,
+          max: maxDailyPageReads,
+          available: availablePageReads
+        };
+      }
+    }
+    if (options?.spelunking?.fullStaminaCharacters?.checked) {
+      const threshold = options?.spelunking?.fullStaminaCharacters?.props?.value ?? 1;
+      const charactersStamina = account?.spelunking?.charactersStamina ?? [];
+      const fullStaminaCount = charactersStamina.filter(({ characterStamina, currentStamina }) => 
+        currentStamina >= characterStamina
+      ).length;
+      if (fullStaminaCount >= threshold) {
+        spelunking.fullStaminaCharacters = {
+          count: fullStaminaCount,
+          threshold
+        };
+      }
+    }
+    if (options?.spelunking?.overstimLevel?.checked) {
+      const threshold = options?.spelunking?.overstimLevel?.props?.value ?? 1;
+      const overstimLevel = account?.spelunking?.overstimLevel ?? 0;
+      if (overstimLevel >= threshold) {
+        spelunking.overstimLevel = {
+          current: overstimLevel,
+          threshold
+        };
+      }
+    }
+    if (Object.keys(spelunking).length > 0) {
+      alerts.spelunking = spelunking;
+    }
+  }
+  if (fields?.legendTalents?.checked) {
+    const legendTalents = {};
+    if (options?.legendTalents?.legendPointsLeftToSpend?.checked) {
+      const pointsLeftToSpend = account?.legendTalents?.pointsLeftToSpend ?? 0;
+      if (pointsLeftToSpend > 0) {
+        legendTalents.legendPointsLeftToSpend = pointsLeftToSpend;
+      }
+    }
+    if (options?.legendTalents?.cheaperMasterclassUpgrades?.checked) {
+      const maxUpgrades = getLegendTalentBonus(account, 23) ?? 0;
+      const upgradesUsed = account?.accountOptions?.[480] ?? 0;
+      const availableUpgrades = maxUpgrades - upgradesUsed;
+      if (availableUpgrades > 0) {
+        legendTalents.cheaperMasterclassUpgrades = {
+          available: availableUpgrades,
+          used: upgradesUsed,
+          max: maxUpgrades
+        };
+      }
+    }
+    if (Object.keys(legendTalents).length > 0) {
+      alerts.legendTalents = legendTalents;
+    }
+  }
+  if (fields?.zenithMarket?.checked) {
+    const zenithMarket = {};
+    if (options?.zenithMarket?.doubleCluster?.checked) {
+      const doubleClusterUpgrade = account?.zenith?.market?.find(upgrade => upgrade?.name === 'DOUBLE_CLUSTER');
+      const clusters = account?.zenith?.clusters ?? 0;
+      if (doubleClusterUpgrade && (!doubleClusterUpgrade?.x3 || (doubleClusterUpgrade?.level || 0) < doubleClusterUpgrade?.x3)) {
+        if (clusters >= doubleClusterUpgrade?.cost) {
+          zenithMarket.doubleCluster = true;
+        }
+      }
+    }
+    if (Object.keys(zenithMarket).length > 0) {
+      alerts.zenithMarket = zenithMarket;
+    }
+  }
+  if (fields?.construction?.checked) {
+    const construction = {};
+    const { jeweledCogs } = options?.construction || {};
+    if (jeweledCogs?.checked) {
+      const isUnlocked = isSuperbitUnlocked(account, 'Jewel_Cogs')
+      const currentPulls = account?.accountOptions?.[414] ?? 0;
+      const legendBonus = getLegendTalentBonus(account, 18) ?? 0;
+      const maxPulls = Math.round(1 + legendBonus);
+      if (currentPulls < maxPulls && isUnlocked) {
+        construction.jeweledCogs = {
+          current: currentPulls,
+          max: maxPulls,
+          available: maxPulls - currentPulls
+        };
+      }
+    }
+    if (Object.keys(construction).length > 0) {
+      alerts.construction = construction;
+    }
+  }
   return alerts;
 };
 export const areKeysOverdue = (account) => {

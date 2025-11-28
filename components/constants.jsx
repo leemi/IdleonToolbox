@@ -69,14 +69,21 @@ export const PAGES = {
         { label: 'unlocks', icon: 'data/PetLockB0' }
       ]
     },
+    'clickers': {
+      icon: 'etc/Bubba_0',
+      categories: [
+        { label: 'owl', icon: 'etc/Owl' },
+        { label: 'kangaroo', icon: 'data/RooA', tabs: ['Upgrades', 'Tar Upgrades', 'Bonuses'] },
+        { label: 'bubba', icon: 'etc/Bubba', tabs: ['Upgrades', 'Bonuses'] }
+      ]
+    },
     'world 1': {
       icon: 'data/BadgeG2',
       categories: [
         { label: 'anvil', icon: 'data/ClassIcons43' },
         { label: 'forge', icon: 'data/ForgeD', tabs: ['Slots', 'Upgrades'] },
         { label: 'bribes', icon: 'data/BribeW' },
-        { label: 'stamps', icon: 'data/StampA34' },
-        { label: 'owl', icon: 'etc/Owl' }
+        { label: 'stamps', icon: 'data/StampA34' }
       ]
     },
     'world 2': {
@@ -94,8 +101,7 @@ export const PAGES = {
           tabs: ['Schedule', 'Upgrades', 'Permanent Upgrades', 'Monsters']
         },
         { label: 'weeklyBosses', icon: 'etc/SWR_Containment' },
-        { label: 'kangaroo', icon: 'data/RooA', tabs: ['Upgrades', 'Tar Upgrades', 'Bonuses'] },
-        { label: 'voteBallot', icon: 'etc/VoteBallot' }
+        { label: 'voteBallot', icon: 'etc/VoteBallot', tabs: ['Bonus', 'Meritocracy'] }
       ]
     },
     'world 3': {
@@ -118,7 +124,7 @@ export const PAGES = {
     'world 4': {
       icon: 'data/Ladle',
       categories: [
-        { label: 'cooking', icon: 'data/ClassIcons51', tabs: ['Kitchens', 'Meals'] },
+        { label: 'cooking', icon: 'data/ClassIcons51', tabs: ['Meals', 'Kitchens'] },
         {
           label: 'breeding', icon: 'data/ClassIcons52',
           tabs: ['Pets', 'Territory', 'Upgrades', 'Arena'],
@@ -151,7 +157,7 @@ export const PAGES = {
             { tab: 'Chests', icon: 'data/SailChest5' }]
         },
         { label: 'divinity', icon: 'data/ClassIcons55' },
-        { label: 'gaming', icon: 'data/ClassIcons56', tabs: ['Imports', 'Superbits', 'Mutations', 'Log book'] },
+        { label: 'gaming', icon: 'data/ClassIcons56', tabs: ['Imports', 'Superbits', 'Mutations', 'Log book', 'Palette'] },
         {
           label: 'hole',
           icon: 'data/Quest90',
@@ -200,7 +206,25 @@ export const PAGES = {
     'world 7': {
       icon: 'etc/Spelunking',
       categories: [
-        { label: 'Spelunking', icon: 'etc/Spelunking', tabs: [] },
+        {
+          label: 'spelunking', icon: 'etc/Spelunking',
+          tabs: [
+            { tab: 'Upgrades' },
+            { tab: 'Lore' },
+            { tab: 'Elixirs' },
+            { tab: 'Upgrade Optimizer' }
+          ],
+          nestedTabs: [
+            { tab: 'Lore', nestedTab: 'Chapters' },
+            { tab: 'Lore', nestedTab: 'Bosses' }
+          ]
+        },
+        { label: 'Gallery', icon: 'data/GalleryPodiumA3', tabs: ['Trophies', 'Nametags'] },
+        { label: 'LegendTalents', icon: 'etc/Whallamus', tabs: [] },
+        { label: 'coralReef', icon: 'data/ReefA1', tabs: ['Reef Upgrades', 'Coral Kid Upgrades', 'Dancing Coral'] },
+        { label: 'zenithMarket', icon: 'etc/Cluster', tabs: [] },
+        { label: 'clamWork', icon: 'data/ClamPearl0', tabs: ['Upgrades', 'Compensations'] },
+        { label: 'adviceFish', icon: 'data/W7_fish', tabs: [] },
         { label: 'S2', icon: 'data/ClassIconsNA2', tabs: [] },
         { label: 'S3', icon: 'data/ClassIconsNA2', tabs: [] },
 

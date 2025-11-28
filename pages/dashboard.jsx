@@ -17,7 +17,7 @@ import { getPrinterExclusions } from '@parsers/printer';
 import { getCrystalCountdownSkills } from '@parsers/talents';
 
 const baseTrackers = {
-  version: 26,
+  version: 31,
   account: {
     General: {
       tasks: {
@@ -323,7 +323,8 @@ const baseTrackers = {
             type: 'input',
             props: { label: 'Bean trade value', value: 1, minValue: 1, helperText: '' },
             checked: false
-          }
+          },
+          { name: 'exoticPurchases', checked: true }
         ]
       },
       summoning: {
@@ -351,7 +352,40 @@ const baseTrackers = {
       }
     },
     'World 7': {
-      // Placeholder for future World 7 systems
+      gallery: {
+        checked: true,
+        options: [{ name: 'trophiesMissing', checked: true }, { name: 'nametagsMissing', checked: true }]
+      },
+      spelunking: {
+        checked: true,
+        options: [
+          { name: 'pageReads', checked: true },
+          {
+            name: 'fullStaminaCharacters',
+            type: 'input',
+            props: { label: 'Characters threshold', value: 1, minValue: 1 },
+            checked: true
+          },
+          {
+            name: 'overstimLevel',
+            type: 'input',
+            props: { label: 'Overstim level threshold', value: 1, minValue: 1 },
+            checked: true
+          }
+        ]
+      },
+      legendTalents: {
+        checked: true,
+        options: [{ name: 'pointsLeftToSpend', checked: true }, { name: 'cheaperMasterclassUpgrades', checked: true }]
+      },
+      zenithMarket: {
+        checked: true,
+        options: [{ name: 'doubleCluster', checked: true }]
+      },
+      construction: {
+        checked: true,
+        options: [{ name: 'jeweledCogs', checked: true }]
+      }
     }
   },
   characters: {
@@ -431,6 +465,9 @@ const baseTrackers = {
         category: 'Misc',
         name: 'alwaysShowTalents',
         checked: false
+      }, {
+        name: 'superTalentLeftToSpend',
+        checked: true
       }]
     },
     equipment: { checked: true, options: [{ name: 'availableUpgradesSlots', checked: true }] },

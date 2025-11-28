@@ -1,5 +1,6 @@
 import { getPrinterExclusions } from '@parsers/printer';
 import { getCrystalCountdownSkills } from '@parsers/talents';
+import { getRawShopItems } from '@parsers/shops';
 
 export const migrateToVersion2 = (config = {}) => {
   let dashboardConfig = { ...config };
@@ -556,6 +557,185 @@ export const migrateToVersion26 = (config) => {
   return dashboardConfig
 }
 
+export const migrateToVersion27 = (config) => {
+  let dashboardConfig = { ...config };
+  if (!dashboardConfig) {
+    dashboardConfig = {};
+  }
+
+  if (!dashboardConfig?.account?.['World 7']?.gallery) {
+    if (!dashboardConfig?.account) {
+      dashboardConfig.account = {};
+    }
+    if (!dashboardConfig?.account?.['World 7']) {
+      dashboardConfig.account['World 7'] = {};
+    }
+    dashboardConfig.account['World 7'].gallery = {
+      checked: true,
+      options: [{ name: 'trophiesMissing', checked: true }, { name: 'nametagsMissing', checked: true }]
+    };
+  }
+
+  dashboardConfig.version = 27;
+  return dashboardConfig
+}
+
+export const migrateToVersion28 = (config) => {
+  let dashboardConfig = { ...config };
+  if (!dashboardConfig) {
+    dashboardConfig = {};
+  }
+
+  if (!dashboardConfig?.account) {
+    dashboardConfig.account = {};
+  }
+  if (!dashboardConfig?.account?.['World 7']) {
+    dashboardConfig.account['World 7'] = {};
+  }
+
+  if (!dashboardConfig?.account?.['World 7']?.spelunking) {
+    dashboardConfig.account['World 7'].spelunking = {
+      checked: true,
+      options: [{ name: 'pageReads', checked: true }]
+    };
+  }
+
+  if (!dashboardConfig?.account?.['World 7']?.legendTalents) {
+    dashboardConfig.account['World 7'].legendTalents = {
+      checked: true,
+      options: [{ name: 'pointsLeftToSpend', checked: true }]
+    };
+  }
+
+  const superTalentOptionExists = dashboardConfig?.characters?.talents?.options?.find(({ name }) => name === 'superTalentLeftToSpend');
+  if (dashboardConfig?.characters?.talents && !superTalentOptionExists) {
+    dashboardConfig.characters.talents.options = [
+      ...(dashboardConfig.characters.talents.options || []),
+      { name: 'superTalentLeftToSpend', checked: true }
+    ];
+  }
+
+  dashboardConfig.version = 28;
+  return dashboardConfig
+}
+
+export const migrateToVersion29 = (config) => {
+  let dashboardConfig = { ...config };
+  if (!dashboardConfig) {
+    dashboardConfig = {};
+  }
+
+  if (!dashboardConfig?.account) {
+    dashboardConfig.account = {};
+  }
+  if (!dashboardConfig?.account?.['World 7']) {
+    dashboardConfig.account['World 7'] = {};
+  }
+
+  if (!dashboardConfig?.account?.['World 7']?.zenithMarket) {
+    dashboardConfig.account['World 7'].zenithMarket = {
+      checked: true,
+      options: [{ name: 'doubleCluster', checked: true }]
+    };
+  }
+
+  if (!dashboardConfig?.account?.['World 7']?.spelunking) {
+    dashboardConfig.account['World 7'].spelunking = {
+      checked: true,
+      options: [{ name: 'pageReads', checked: true }]
+    };
+  }
+
+  if (dashboardConfig?.account?.['World 7']?.spelunking?.options?.length === 1) {
+    dashboardConfig.account['World 7'].spelunking.options = [
+      ...dashboardConfig.account['World 7'].spelunking.options,
+      {
+        name: 'fullStaminaCharacters',
+        type: 'input',
+        props: { label: 'Characters threshold', value: 1, minValue: 1 },
+        checked: true
+      },
+      {
+        name: 'overstimLevel',
+        type: 'input',
+        props: { label: 'Overstim level threshold', value: 1, minValue: 1 },
+        checked: true
+      }
+    ];
+  }
+
+  if (!dashboardConfig?.account) {
+    dashboardConfig.account = {};
+  }
+  if (!dashboardConfig?.account?.['World 7']) {
+    dashboardConfig.account['World 7'] = {};
+  }
+  if (!dashboardConfig?.account?.['World 7']?.construction) {
+    dashboardConfig.account['World 7'].construction = {
+      checked: true,
+      options: []
+    };
+  }
+
+  const jeweledCogsOptionExists = dashboardConfig?.account?.['World 7']?.construction?.options?.find(({ name }) => name === 'jeweledCogs');
+  if (!jeweledCogsOptionExists) {
+    dashboardConfig.account['World 7'].construction.options = [
+      ...(dashboardConfig.account['World 7'].construction.options || []),
+      { name: 'jeweledCogs', checked: true }
+    ];
+  }
+
+  dashboardConfig.version = 29;
+  return dashboardConfig
+}
+
+export const migrateToVersion30 = (config) => {
+  let dashboardConfig = { ...config };
+  if (!dashboardConfig) {
+    dashboardConfig = {};
+  }
+
+  if (dashboardConfig?.account?.General?.shops?.options) {
+    dashboardConfig.account.General.shops.options = dashboardConfig.account.General.shops.options.map((option) => {
+      if (option?.name === 'shops' && option?.type === 'array') {
+        return {
+          ...option,
+          props: { value: getRawShopItems(), type: 'img' }
+        };
+      }
+      return option;
+    });
+  }
+
+  dashboardConfig.version = 30;
+  return dashboardConfig
+}
+
+export const migrateToVersion31 = (config) => {
+  let dashboardConfig = { ...config };
+  if (!dashboardConfig) {
+    dashboardConfig = {};
+  }
+
+  if (dashboardConfig?.account?.['World 6']?.farming?.options?.length === 4) {
+    dashboardConfig.account['World 6'].farming.options = [
+      ...dashboardConfig.account['World 6'].farming.options,
+      { name: 'exoticPurchases', checked: true }
+    ];
+  }
+
+  if (dashboardConfig?.account?.['World 7']?.legendTalents?.options?.length === 1) {
+    dashboardConfig.account['World 7'].legendTalents.options = [
+      ...dashboardConfig.account['World 7'].legendTalents.options,
+      { name: 'cheaperMasterclassUpgrades', checked: true }
+    ];
+  }
+
+  dashboardConfig.version = 31;
+  return dashboardConfig
+}
+
+
 
 export const migrateConfig = (baseTrackers, userConfig) => {
   if (baseTrackers?.version === userConfig?.version) return userConfig;
@@ -638,6 +818,21 @@ export const migrateConfig = (baseTrackers, userConfig) => {
     }
     if (migratedConfig?.version === 25) {
       migratedConfig = migrateToVersion26(migratedConfig);
+    }
+    if (migratedConfig?.version === 26) {
+      migratedConfig = migrateToVersion27(migratedConfig);
+    }
+    if (migratedConfig?.version === 27) {
+      migratedConfig = migrateToVersion28(migratedConfig);
+    }
+    if (migratedConfig?.version === 28) {
+      migratedConfig = migrateToVersion29(migratedConfig);
+    }
+    if (migratedConfig?.version === 29) {
+      migratedConfig = migrateToVersion30(migratedConfig);
+    }
+    if (migratedConfig?.version === 30) {
+      migratedConfig = migrateToVersion31(migratedConfig);
     }
 
   }
