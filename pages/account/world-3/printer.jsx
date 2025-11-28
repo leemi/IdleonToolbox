@@ -19,6 +19,10 @@ const Printer = () => {
   const atomThreshold = getAtomColliderThreshold(state?.account?.accountOptions?.[133]);
 
   const totals = useMemo(() => calcTotals(state?.account), [state?.account]);
+  const storage = useMemo(() => {
+    const printedItems = Object.keys(totals);
+    return state?.account?.storage?.list.filter(d => printedItems.includes(d.rawName))
+  },[totals])
   const highestBrr = getCharacterByHighestTalent(state?.characters, CLASSES.Maestro, 'PRINTER_GO_BRRR');
   const highestMaxLevelBrr = getHighestMaxLevelTalentByClass(state?.characters, CLASSES.Maestro, 'PRINTER_GO_BRRR');
 
@@ -38,14 +42,17 @@ const Printer = () => {
     <Stack direction={'row'} gap={2} sx={{ mt: 2, mb: 5 }} flexWrap={'wrap'}>
       {Object.entries(totals || {})?.map(([item, { boostedValue, atomable, atoms }], index) => {
         const isAtom = item === 'atom'
+        const storageAmount = storage.find(d => d.rawName === item)?.amount;
         return <Card key={'total' + item + index}>
           <Tooltip
             title={<TotalTooltip atomable={atomable} item={item} value={boostedValue} atoms={atoms}
                                  highestMaxLevelBrr={highestMaxLevelBrr}
                                  highestBrr={highestBrr}
-                                 atomThreshold={atomThreshold}/>}>
+                                 atomThreshold={atomThreshold}
+                                 storageAmount={storageAmount}
+                                 />}>
             <CardContent>
-              <Stack alignItems={'center'} justifyContent={'center'} sx={{ width: 50, height: 50 }}>
+              <Stack alignItems={'center'} justifyContent={'center'} sx={{ width: 50, height: 60 }}>
                 <Stack sx={{ width: 42, height: 42 }} justifyContent={'center'} alignItems={'center'} flexShrink={0}>
                   <ItemIcon atom={isAtom}
                             src={`${prefix}${isAtom ? 'etc/Particle' : `data/${item}`}.png`} alt="required-icon"/>
@@ -57,6 +64,10 @@ const Printer = () => {
                     ? notateNumber(boostedValue, 'MultiplierInfo')
                     : notateNumber(boostedValue)}</Typography>
                 </Stack>
+                  {isAtom
+                    ? <Typography fontSize={10}>{notateNumber(state?.account?.atoms?.particles)}</Typography>
+                    : <Typography fontSize={10}>{notateNumber(storageAmount)}</Typography>
+                  }
               </Stack>
             </CardContent>
           </Tooltip>
@@ -129,7 +140,7 @@ const BoostedTooltip = ({ value, boostedValue, breakdown }) => {
   );
 }
 
-const TotalTooltip = ({ item, value, atoms, highestBrr, highestMaxLevelBrr }) => {
+const TotalTooltip = ({ item, value, atoms, highestBrr, highestMaxLevelBrr, storageAmount }) => {
   const isAtom = item === 'atom';
   const perDay = value * 24;
   const maxPrinterGoBrrr = growth(highestMaxLevelBrr?.funcX, highestMaxLevelBrr?.maxLevel, highestMaxLevelBrr?.x1, highestMaxLevelBrr?.x2, false);
@@ -158,6 +169,10 @@ const TotalTooltip = ({ item, value, atoms, highestBrr, highestMaxLevelBrr }) =>
         <img width={24} height={24} src={`${prefix}etc/Particle.png`} alt=""/>
         <Typography>{notateNumber(atoms * 24)} / day </Typography>
       </Stack> : null}
+    {item !== 'atom' ? <Stack direction={'row'} gap={1} alignItems={'center'}>
+      <img width={30} height={30} src={`${prefix}data/InvStorage42.png`} alt=""/>
+      <Typography>{notateNumber(storageAmount)} in storage</Typography>
+    </Stack> : null}
   </Stack>
 }
 
