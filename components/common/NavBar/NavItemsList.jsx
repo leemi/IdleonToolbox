@@ -11,105 +11,114 @@ import ExpandMore from '@mui/icons-material/ExpandMore';
 import Kofi from '@components/common/Kofi';
 import ToolsDrawer from '@components/common/NavBar/AppDrawer/ToolsDrawer';
 
+import QuickToolbar from './QuickToolbar'
 
 const NavItemsList = ({ drawer }) => {
+
   const { state } = useContext(AppContext);
   const router = useRouter();
   const { t, nt, dnt, ...updateQuery } = router?.query || {};
   const [openItems, setOpenItems] = useState({});
   const isXs = useMediaQuery((theme) => theme.breakpoints.down('lg'), { noSsr: true });
+
   const toggleOpen = (key) => {
     setOpenItems((prev) => ({
       ...prev,
       [key]: !prev[key],
     }));
   };
+
   return (
     <Stack
       direction={drawer ? 'column' : 'row'}
       justifyContent={drawer ? 'flex-start' : 'center'}
       sx={{ width: '100%', maxWidth: drawer ? drawerWidth : 'inherit' }}
     >
-      <ItemsWrapper drawer={drawer}>
-        {navItems.map((navItem, index) => {
-          if (
-            (!state?.signedIn && !state?.profile && !state?.demo && !state?.manualImport) &&
-            !offlinePages.includes(navItem)
-          )
-            return null;
+      <Stack direction={'column'}>
+        <ItemsWrapper drawer={drawer}>
+          {navItems.map((navItem, index) => {
+            if (
+              (!state?.signedIn && !state?.profile && !state?.demo && !state?.manualImport) &&
+              !offlinePages.includes(navItem)
+            )
+              return null;
 
-          if (isXs && (navItem === 'account' || navItem === 'tools')) {
-            const isAccount = navItem === 'account';
-            const isTools = navItem === 'tools';
+            if (isXs && (navItem === 'account' || navItem === 'tools')) {
+              const isAccount = navItem === 'account';
+              const isTools = navItem === 'tools';
+
+              return (
+                <CollapsibleNavItem
+                  key={`account-${index}`}
+                  navKey={navItem}
+                  label={navItem.capitalize()}
+                  isOpen={openItems[navItem]}
+                  setIsOpen={() => toggleOpen(navItem)}
+                  selected={router?.pathname.includes(navItem)}
+                  drawer={drawer}
+                  dataCy={`nav-item-${navItem}`}
+                >
+                  {isAccount && <AccountDrawer fromList />}
+                  {isTools && <ToolsDrawer fromList />}
+                </CollapsibleNavItem>
+              );
+            }
+
+            const pageName = navItem === 'account' ? 'account/misc/general' : navItem === 'tools'
+              ? 'tools/card-search'
+              : navItem;
 
             return (
-              <CollapsibleNavItem
-                key={`account-${index}`}
-                navKey={navItem}
-                label={navItem.capitalize()}
-                isOpen={openItems[navItem]}
-                setIsOpen={() => toggleOpen(navItem)}
+              <ListItemButton
+                component={NextLinkComposed}
                 selected={router?.pathname.includes(navItem)}
-                drawer={drawer}
-                dataCy={`nav-item-${navItem}`}
+                key={`${navItem}-${index}`}
+                to={{ pathname: `/${pageName}`, query: updateQuery }}
+                sx={{
+                  borderRadius: drawer ? 'inherit' : 2,
+                  p: drawer ? '8px 16px' : '0 8px'
+                }}
+                data-cy={`nav-item-${pageName}`}
+                dense={!drawer}
+                size="medium"
               >
-                {isAccount && <AccountDrawer fromList/>}
-                {isTools && <ToolsDrawer fromList/>}
-              </CollapsibleNavItem>
+                <ListItemText
+                  component={'span'}
+                  disableTypography
+                  sx={{ fontWeight: 'bold', fontSize: 16 }}
+                >
+                  {navItem.capitalize()}
+                </ListItemText>
+              </ListItemButton>
             );
-          }
-
-          const pageName = navItem === 'account' ? 'account/misc/general' : navItem === 'tools'
-            ? 'tools/card-search'
-            : navItem;
-
-          return (
-            <ListItemButton
-              component={NextLinkComposed}
-              selected={router?.pathname.includes(navItem)}
-              key={`${navItem}-${index}`}
-              to={{ pathname: `/${pageName}`, query: updateQuery }}
-              sx={{
-                borderRadius: drawer ? 'inherit' : 2,
-                p: drawer ? '8px 16px' : '0 8px'
-              }}
-              data-cy={`nav-item-${pageName}`}
-              dense={!drawer}
-              size="medium"
-            >
-              <ListItemText
-                component={'span'}
-                disableTypography
-                sx={{ fontWeight: 'bold', fontSize: 16 }}
-              >
-                {navItem.capitalize()}
+          })}
+          {/* <PinnedPages text={'Pinned pages'}/> */}
+          {isXs && <List style={{ marginTop: 'auto', paddingBottom: 0 }}>
+            <ListItem>
+              <ListItemText>
+                <Kofi display={'inline-block'} />
               </ListItemText>
-            </ListItemButton>
-          );
-        })}
-        <PinnedPages text={'Pinned pages'}/>
-        {isXs && <List style={{ marginTop: 'auto', paddingBottom: 0 }}>
-          <ListItem>
-            <ListItemText>
-              <Kofi display={'inline-block'}/>
-            </ListItemText>
-          </ListItem>
-        </List>}
-      </ItemsWrapper>
+            </ListItem>
+          </List>}
+        </ItemsWrapper>
+
+        <QuickToolbar />
+
+      </Stack>
     </Stack>
   );
 };
 
 const CollapsibleNavItem = ({
-                              navKey,
-                              label,
-                              isOpen,
-                              setIsOpen,
-                              selected,
-                              drawer,
-                              dataCy,
-                              children
-                            }) => (
+  navKey,
+  label,
+  isOpen,
+  setIsOpen,
+  selected,
+  drawer,
+  dataCy,
+  children
+}) => (
   <React.Fragment key={`collapsible-${navKey}`}>
     <ListItemButton
       onClick={() => setIsOpen(!isOpen)}
@@ -129,7 +138,7 @@ const CollapsibleNavItem = ({
       >
         {label}
       </ListItemText>
-      {isOpen ? <ExpandLess/> : <ExpandMore/>}
+      {isOpen ? <ExpandLess /> : <ExpandMore />}
     </ListItemButton>
     <Collapse in={isOpen} timeout="auto" unmountOnExit>
       {children}
@@ -143,7 +152,7 @@ const ItemsWrapper = ({ drawer, children }) => {
       {children}
     </List>
   ) : (
-    <Stack component={'nav'} direction={'row'} gap={1} sx={{ display: { xs: 'none', lg: 'flex' }, heigh: '100%' }}>
+    <Stack justifyContent={'center'} component={'nav'} direction={'row'} gap={1} padding={1} sx={{ display: { xs: 'none', lg: 'flex' }, height: '100%' }}>
       {children}
     </Stack>
   );

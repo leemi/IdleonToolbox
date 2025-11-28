@@ -57,7 +57,7 @@ const NavBar = ({ children }) => {
   return <>
     <Box sx={{ display: 'flex' }}>
       <AppBar compopnent={'nav'}>
-        <Toolbar sx={{ height: navBarHeight, minHeight: navBarHeight }}>
+        <Toolbar>
           <AppDrawer/>
           <NavItemsList/>
           <QuickSearch/>
