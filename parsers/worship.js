@@ -139,6 +139,13 @@ export const getClosestWorshiper = (characters) => {
   }, { character: null, timeLeft: Infinity })
 }
 
+export const getWorshipperWithMostCharge = (characters) => {
+  const charges = characters?.map((character) => {
+    return {name: character?.name, charge: character?.worship?.currentCharge};
+  }).sort((a, b) => b.charge - a.charge)
+  return charges[0].name
+}
+
 export const getChargeWithSyphon = (characters) => {
   const totalCharge = characters?.reduce((res, { worship }) => res + (worship?.currentCharge || 0), 0);
   const totalChargeRate = characters?.reduce((res, { worship }) => res + (worship?.chargeRate || 0), 0);

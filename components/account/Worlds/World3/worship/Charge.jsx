@@ -6,10 +6,12 @@ import { cleanUnderscore, prefix } from '@utility/helpers';
 import Tooltip from '../../../../Tooltip';
 import Box from '@mui/material/Box';
 import Timer from '../../../../common/Timer';
-import { getChargeWithSyphon, getClosestWorshiper } from '@parsers/worship';
+import { getChargeWithSyphon, getClosestWorshiper, getWorshipperWithMostCharge } from '@parsers/worship';
 
 const Charge = () => {
   const { state } = useContext(AppContext);
+
+  const worshipperWithMostCharge = getWorshipperWithMostCharge(state?.characters);
 
   const closestToFull = getClosestWorshiper(state?.characters);
   const {
@@ -51,7 +53,10 @@ const Charge = () => {
           const skull = tools?.find(({ name }) => name?.includes('Skull'));
           const timeLeft = (worship?.maxCharge - worship?.currentCharge) / worship?.chargeRate * 1000 * 3600;
           return (
-            <Card key={`${name}-${index}`} sx={{ width: 300 }}>
+            <Card key={`${name}-${index}`} sx={{ width: 300,
+              border: worshipperWithMostCharge === name ? '1px solid' : '',
+              borderColor: worshipperWithMostCharge === name ? 'success.main' : '',
+            }}>
               <CardContent>
                 <Stack direction={'row'}>
                   <img src={`${prefix}data/ClassIcons${classIndex}.png`} alt=""/>
