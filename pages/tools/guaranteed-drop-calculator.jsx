@@ -1,52 +1,42 @@
-import { Autocomplete, Button, Chip, createFilterOptions, Stack, TextField, Typography } from '@mui/material';
+import { Autocomplete, Button, Chip, createFilterOptions, Stack, TextField, Typography, Select, MenuItem, selectClasses } from '@mui/material';
 import { notateNumber, numberWithCommas, prefix } from '@utility/helpers';
-import React, { useMemo, useState } from 'react';
+import React, { useContext, useMemo, useState } from 'react';
 import { monsterDrops } from '../../data/website-data';
 import { cleanUnderscore } from '../../utility/helpers';
+import { AppContext } from '@components/common/context/AppProvider';
+import { getDropRate } from '../../parsers/character';
+import { getMaxDamage, notateDamage } from '../../parsers/damage';
 
 const filterOptions = createFilterOptions({
   trim: true,
   limit: 250
 });
 const GuaranteedDropCalculator = () => {
+  const { state } = useContext(AppContext);
+
+  const [selectedChar, setSelectedChar] = useState('0');
+
+  const [dropRate, setDropRate] = useState(0);
+  const [killsPerHour, setKillsPerHour] = useState(0);
+
   const [value, setValue] = useState(null);
   const items = useMemo(() => Object.values(monsterDrops).flat().filter((monster) => monster?.rawName !== 'COIN' && !monster?.rawName?.includes('DungCredits') && monster?.chance > 0), []);
-  const [values, setValues] = useState({
-    dropRate: '',
-    killsWithMultikill: '',
-    multiKillBonus: ''
-  });
+
   const [errors, setErrors] = useState({});
   const [results, setResults] = useState([]);
-  const handleChange = ({ target }) => {
-    const { name, value } = target;
-    const temp = value.replace(/,/g, '');
-    setErrors(prev => ({ ...prev, [name]: false }))
-    setValues(prev => ({ ...prev, [name]: numberWithCommas(temp) }))
-  }
+
   const handleCalc = () => {
     const tempErrors = {};
     if (!value) {
       tempErrors.material = true;
     }
-    const dr = parseFloat(values.dropRate?.replace(/,/g, ''));
-    const killsMK = parseFloat(values.killsWithMultikill?.replace(/,/g, ''));
-    const mkBonus = parseFloat(values.multiKillBonus?.replace(/,/g, ''));
-    if (isNaN(dr) || values.dropRate === '') {
-      tempErrors.dropRate = true;
-    }
-    if (isNaN(killsMK) || values.killsWithMultikill === '') {
-      tempErrors.killsWithMultikill = true;
-    }
-    if (isNaN(mkBonus) || values.multiKillBonus === '') {
-      tempErrors.multiKillBonus = true;
-    }
-    if (tempErrors?.material || tempErrors.dropRate || tempErrors.killsWithMultikill || tempErrors.multiKillBonus) {
+
+    if (tempErrors?.material) {
       setErrors(tempErrors);
       return;
     }
-    const kills = Math.round(killsMK / (1 + (mkBonus / 100)));
-    const variable = kills * parseFloat(value?.chance) * dr;
+
+    const variable = killsPerHour * parseFloat(value?.chance) * dropRate;
     if (!isNaN(variable)) {
       const breakpoints = [2, 3, 4, 5, 6, 7, 8, 9, 10];
       const chances = [2, 2.51, 3.51, 4.51, 5.51, 6.51, 7.51, 8.51, 9.51];
@@ -57,6 +47,17 @@ const GuaranteedDropCalculator = () => {
         }))
       )
     }
+  }
+
+  const handleCharChange = (e) => {
+    setSelectedChar(e.target.value);
+    const character = state?.characters[e.target.value];
+    const characters = state?.characters;
+    const account = state?.account;
+
+    const playerInfo = getMaxDamage(character, characters, account);
+    setDropRate(getDropRate(character, account, characters).dropRate)
+    setKillsPerHour(playerInfo?.finalKillsPerHour)
   }
 
   return (<>
@@ -112,14 +113,29 @@ const GuaranteedDropCalculator = () => {
                      label="Material name" variant="outlined"/>
         )}
       />
-      <TextField size={'small'} error={errors?.dropRate} onChange={handleChange} name={'dropRate'} value={values.dropRate}
-                 label={'Drop rate'}/>
-      <TextField size={'small'} error={errors?.killsWithMultikill} onChange={handleChange} name={'killsWithMultikill'}
-                 value={values.killsWithMultikill}
-                 label={'Kills with multi kill'}/>
-      <TextField size={'small'} error={errors?.multiKillBonus} onChange={handleChange} name={'multiKillBonus'}
-                 value={values.multiKillBonus}
-                 label={'Multikill bonus %'}/>
+      <Select
+        size={'small'}
+        sx={{
+          width: 230,
+          paddingRight: 2,
+          [`& .${selectClasses.select}`]: {
+            display: 'flex',
+            alignItems: 'center'
+          }
+        }} value={selectedChar} onChange={handleCharChange}>
+        {state?.characters?.map((character, index) => {
+          const classIcon = character?.classIndex !== undefined ? `data/ClassIcons${character?.classIndex}.png` : 'afk_targets/Nothing.png'
+          return <MenuItem key={character?.name + index} value={character?.playerId}
+                           selected={selectedChar === character?.playerId}>
+            <Stack direction={'row'} alignItems={'center'} gap={2}>
+              <img src={`${prefix}${classIcon}`} alt="" width={32} height={32}/>
+              <Typography>{character?.name}</Typography>
+            </Stack>
+          </MenuItem>
+        })}
+      </Select>
+      <TextField size={'small'} name={'dropRate'} value={dropRate} label={'Drop rate'} disabled='true' />
+      <TextField size={'small'} name={'killsPerHour'} value={killsPerHour} label={'Kills per hour'} disabled='true' />
       <Button variant={'contained'} onClick={handleCalc}>Run</Button>
     </Stack>
     <Typography variant={'caption'}>* This does not include values from the 2x kills lab bonus or the god bonus in W5
