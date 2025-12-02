@@ -431,7 +431,7 @@ export const getWorld2Alerts = (account, fields, options, characters) => {
   }
   return alerts;
 };
-export const getWorld3Alerts = (account, fields, options) => {
+export const getWorld3Alerts = (account, fields, options, characters) => {
   const alerts = {};
   if (!account?.finishedWorlds?.World2) return alerts;
   if (fields?.printer?.checked) {
@@ -572,6 +572,34 @@ export const getWorld3Alerts = (account, fields, options) => {
     }
     if (Object.keys(traps).length > 0) {
       alerts.traps = traps;
+    }
+  }
+  if (fields?.hatRack?.checked) {
+    const hatRack = {};
+    if (options?.hatRack?.hatsMissing?.checked) {
+      const equippedItems = addEquippedItems(characters, true);
+      const totalItems = getAllItems(characters, account)
+      const totalOwnedItems = mergeItemsByOwner([...(totalItems || []), ...(equippedItems || [])]);
+      const hatsUsed = account?.hatRack?.hatsUsed || [];
+      const hatsUsedRawNames = new Set(
+        hatsUsed
+          .filter(hat => hat?.rawName)
+          .map(hat => hat.rawName)
+      );
+      const ownedHats = totalOwnedItems?.filter(({ Type }) => Type === 'PREMIUM_HELMET');
+      const missingHats = ownedHats?.filter(({ rawName }) =>
+        rawName && !hatsUsedRawNames.has(rawName)
+      );
+      if (missingHats?.length > 0) {
+        hatRack.missingHats = missingHats.map(({ displayName, name, owner, rawName }) => ({
+          itemName: displayName || name,
+          owner: owner,
+          rawName: rawName
+        }));
+      }
+    }
+    if (Object.keys(hatRack).length > 0) {
+      alerts.hatRack = hatRack;
     }
   }
   return alerts;
@@ -945,7 +973,7 @@ export const getWorld6Alerts = (account, fields, options) => {
         farming.beanTrade = account?.farming?.beanTrade;
       }
     }
-    if (exoticPurchases?.checked) {
+    if (exoticPurchases?.checked && account?.spelunking?.loreBosses?.[3]?.defeated) {
       const exoticMarketUpgradesPurchased = account?.farming?.exoticMarketUpgradesPurchased ?? 0;
       const exoticMarkeMaxPurchases = account?.farming?.exoticMarkeMaxPurchases ?? 4;
       if (exoticMarketUpgradesPurchased < exoticMarkeMaxPurchases) {
