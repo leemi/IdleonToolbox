@@ -2,7 +2,7 @@ import { useContext } from 'react';
 import { NextLinkComposed } from '../NextLinkComposed';
 import { useRouter } from 'next/router';
 import { prefix } from '@utility/helpers';
-import { Stack, ListItemIcon, ButtonGroup, IconButton } from '@mui/material';
+import { Stack, ListItemIcon, ButtonGroup, IconButton, Button } from '@mui/material';
 import { AppContext } from '../context/AppProvider';
 import { PAGES } from '@components/constants';
 import Tooltip from '../../Tooltip';
@@ -23,7 +23,18 @@ const QuickToolbar = ({ drawer }) => {
       {Object.entries(PAGES.ACCOUNT).map(([key, value], index) => {
         const { icon, categories, style } = value;
         return (
-          <ButtonGroup variant="contained" key={key + ' ' + index} sx={{border: '1px solid grey', borderRadius: 2}}>
+          <ButtonGroup variant="contained" key={key + ' ' + index} sx={{ border: '1px solid grey', borderRadius: 2 }} >
+
+            {key.includes("world") &&
+              <Button
+                disabled='true'
+                key={key}
+                sx={{ minWidth: 28, padding: 0 }}
+              >
+                {key.replace("world ", "W")}
+              </Button>
+            }
+
             {categories?.map((category, categoryIndex) => {
               const label = category?.label.split(/(?=[A-Z])/).map((str) => str.toLowerCase()).join('-');
               const selectedSubSection = isSelected(label);
@@ -51,18 +62,18 @@ const QuickToolbar = ({ drawer }) => {
                   }}
                 >
 
-                <Tooltip title={category?.label
+                  <Tooltip title={category?.label
                     .split(/(?=[A-Z])/)
                     .join(' ')
                     .capitalize()}>
-                  <ListItemIcon sx={{ minWidth: 28 }}>
-                    <img width={28} height={28}
-                      style={{ objectFit: 'contain', ...category?.style }}
-                      src={`${prefix}${category.icon}.png`}
-                      alt="" />
-                  </ListItemIcon></Tooltip>
+                    <ListItemIcon sx={{ minWidth: 28 }}>
+                      <img width={28} height={28}
+                        style={{ objectFit: 'contain', ...category?.style }}
+                        src={`${prefix}${category.icon}.png`}
+                        alt="" />
+                    </ListItemIcon></Tooltip>
                 </IconButton>
-                
+
               );
             })}
           </ButtonGroup>
@@ -71,7 +82,7 @@ const QuickToolbar = ({ drawer }) => {
 
     </Stack>
   )
-  
+
 };
 
 export default QuickToolbar;
