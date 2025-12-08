@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { Chip, Checkbox, FormControlLabel, InputAdornment, Stack, TextField, Typography } from '@mui/material';
+import ProgressBar from 'components/common/ProgressBar';
 import { cleanUnderscore, prefix } from 'utility/helpers';
 import { cards, cardSets, stats } from 'data/website-data';
 import ClearIcon from '@mui/icons-material/Clear';
@@ -192,6 +193,7 @@ export default function CardSearch() {
                               ...card, stars
                             }}
                           />
+                          <Stack sx={{textAlign: 'center'}} marginTop={'7px'}><Typography>{nextLevelReq-amount}</Typography></Stack>
                         </div>
                       );
                     })}
