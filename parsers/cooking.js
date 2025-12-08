@@ -1,4 +1,4 @@
-import { atomsInfo, cookingMenu, monsters, randomList, bonuses } from '../data/website-data';
+import { atomsInfo, cookingMenu, monsters, randomList, bonuses } from '@website-data';
 import { getStampsBonusByEffect } from './stamps';
 import { getStatsFromGear } from './items';
 import { tryToParse } from '@utility/helpers';
@@ -478,7 +478,7 @@ export const getMealMaxLevel = (account) => {
   const firstJadeUnlocked = isJadeBonusUnlocked(account, 'Papa_Blob\'s_Quality_Guarantee');
   const secondJadeUnlocked = isJadeBonusUnlocked(account, 'Chef_Geustloaf\'s_Cutting_Edge_Philosophy');
   const grimoireBonus = getGrimoireBonus(account?.grimoire?.upgrades, 26);
-  const loreBoss = account?.spelunking?.loreBosses?.[6]?.defeated ? 1 : 0;
+  const loreBoss = account?.spelunking?.loreBosses?.[5]?.defeated ? 1 : 0;
   return DEFAULT_MEAL_MAX_LEVEL
     + (Math.min(20, grimoireBonus))
     + (causticolumnArtifact?.bonus ?? 0)

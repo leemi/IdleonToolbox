@@ -1,4 +1,4 @@
-import { ninjaExtraInfo, tomeData } from '../../data/website-data';
+import { ninjaExtraInfo, tomeData } from '@website-data';
 import { calcStampLevels } from '@parsers/stamps';
 import { calcStatueLevels, calcTotalOnyx } from '@parsers/statues';
 import { calcCardsLevels } from '@parsers/cards';
@@ -121,6 +121,22 @@ const getRequiredQuantitiesEfficient = (bonus) => {
       if (denom !== 0) {
         const numerator = 1.2 * 6 * x1 - base * 7 * x1;
         quantity = numerator / denom;
+        if (quantity > 5 * x1) {
+          quantity = null;
+        }
+      }
+    }
+
+    else if (x2 === 4) {
+      const base = Math.pow(targetPercent, 1 / 0.7);
+      const denom = 2 - base;
+      if (denom !== 0 && targetPercent < 1) {
+        quantity = (base * x1) / denom;
+        if (quantity > x1) {
+          quantity = null;
+        }
+      } else if (targetPercent >= 1) {
+        quantity = x1;
       }
     }
 

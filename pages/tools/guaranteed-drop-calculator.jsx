@@ -1,11 +1,8 @@
 import { Autocomplete, Button, Chip, createFilterOptions, Stack, TextField, Typography, Select, MenuItem, selectClasses } from '@mui/material';
 import { notateNumber, numberWithCommas, prefix } from '@utility/helpers';
-import React, { useContext, useMemo, useState } from 'react';
-import { monsterDrops } from '../../data/website-data';
-import { cleanUnderscore } from '../../utility/helpers';
-import { AppContext } from '@components/common/context/AppProvider';
-import { getDropRate } from '../../parsers/character';
-import { getMaxDamage, notateDamage } from '../../parsers/damage';
+import React, { useMemo, useState } from 'react';
+import { monsterDrops } from '@website-data';
+import { cleanUnderscore } from '@utility/helpers';
 
 const filterOptions = createFilterOptions({
   trim: true,

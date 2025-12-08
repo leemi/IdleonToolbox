@@ -1,7 +1,7 @@
 // Nivo theme for statistics visualizations
 import { cleanUnderscore, notateNumber, number2letter, worldColor } from '@utility/helpers';
 import { cauldronColors, cauldronsIndexMapping } from '@parsers/alchemy';
-import { cauldrons, deathNote, monsters, prayers, stamps } from '../../data/website-data';
+import { cauldrons, deathNote, monsters, prayers, stamps } from '@website-data';
 import { altStampsMapping, stampsMapping } from '@parsers/stamps';
 import { CLASSES, getBaseClass } from '@parsers/talents';
 
@@ -85,6 +85,11 @@ export const getVisualizationMap = (classes) => ({
   },
   worldDistribution: {
     type: 'bar',
+    props: {
+      margin: {
+        right: 45
+      }
+    },
     getData: (raw) => raw.filter(({ _id }) => _id !== '0').toSorted((a, b) => a._id - b._id).map((item) => ({
       ...item,
       color: worldColor?.[item._id - 1]
@@ -260,6 +265,9 @@ export const getVisualizationMap = (classes) => ({
       enableTotals: true,
       enableLabel: false,
       valueFormat: value => notateNumber(value, 'Big'),
+      scale: {
+        type: 'band'
+      },
       margin: {
         left: 130,
         right: 150
@@ -269,8 +277,9 @@ export const getVisualizationMap = (classes) => ({
         legend: ''
       },
       axisBottom: {
+        tickRotation: -35,
         legend: 'Kills',
-        format: (value) => notateNumber(value)
+        format: (value) => notateNumber(value, 'Big')
       },
       legends: [{
         data: worldColor.map((color, index) => ({ label: `World ${index + 1}`, color })),
@@ -282,7 +291,6 @@ export const getVisualizationMap = (classes) => ({
         itemsSpacing: 2,
         symbolSize: 20
       }]
-
     },
     getData: (raw) => raw.filter(({ enemy }) => enemy !== '_').map(({ enemy, kills }) => {
       const world = deathNote.find(({ name }) => name === enemy)?.world;

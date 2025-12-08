@@ -1,5 +1,5 @@
 import { tryToParse, notateNumber } from '@utility/helpers';
-import { items, itemsArray } from '../../data/website-data';
+import { items, itemsArray } from '@website-data';
 
 export const getHatRack = (idleonData, account) => {
   const rawSpelunk = tryToParse(idleonData?.Spelunk);
@@ -82,6 +82,10 @@ export const getHatBonuses = (rawSpelunk, account) => {
     bonuses: Object.entries(hatBonusesObj).map(([name, value]) => ({ name, value })),
     items: hatsUsedList
   };
+}
+
+export const getHatRackBonus = (account, bonusName) => {
+  return account?.hatRack?.hatBonuses?.find((bonus) => bonus.name === bonusName)?.value ?? 0;
 }
 
 const getAllPremiumHelmets = (rawSpelunk) => {

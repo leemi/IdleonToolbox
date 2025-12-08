@@ -1,4 +1,4 @@
-import { poppyBonuses, poppyTarBonuses } from '../../data/website-data';
+import { poppyBonuses, poppyTarBonuses } from '@website-data';
 import { commaNotation, notateNumber } from '@utility/helpers';
 import { getUpgradeVaultBonus } from '@parsers/misc/upgradeVault';
 import { getGambitBonus } from '@parsers/world-5/caverns/gambit';
@@ -123,37 +123,37 @@ const parseKangaroo = (account) => {
     { name: 'Fish/minute', bonus: fishRate },
     {
       name: 'Fishing Eff',
-      bonus: 3 * (1 + totalFishRate / 100) * Math.max(0, Math.ceil(account?.accountOptions?.[271] / 7)) * (1 + legendTalentBonus / 100),
+      bonus: 3 * (1 + legendTalentBonus / 100) * (1 + totalFishRate / 100) * Math.max(0, Math.ceil(account?.accountOptions?.[271] / 7)),
       percentage: true
     },
     {
       name: 'Defence',
-      bonus: 3 * (1 + totalFishRate / 100) * Math.max(0, Math.ceil((account?.accountOptions?.[271] - 1) / 7)) * (1 + legendTalentBonus / 100),
+      bonus: 3 * (1 + legendTalentBonus / 100) * (1 + totalFishRate / 100) * Math.max(0, Math.ceil((account?.accountOptions?.[271] - 1) / 7)),
       percentage: false
     },
     {
       name: 'Fishing XP',
-      bonus: 5 * (1 + totalFishRate / 100) * Math.max(0, Math.ceil((account?.accountOptions?.[271] - 2) / 7)) * (1 + legendTalentBonus / 100),
+      bonus: 5 * (1 + legendTalentBonus / 100) * (1 + totalFishRate / 100) * Math.max(0, Math.ceil((account?.accountOptions?.[271] - 2) / 7)),
       percentage: true
     },
     {
       name: 'Accuracy',
-      bonus: 2 * (1 + totalFishRate / 100) * Math.max(0, Math.ceil((account?.accountOptions?.[271] - 3) / 7)) * (1 + legendTalentBonus / 100),
+      bonus: 2 * (1 + legendTalentBonus / 100) * (1 + totalFishRate / 100) * Math.max(0, Math.ceil((account?.accountOptions?.[271] - 3) / 7)),
       percentage: true
     },
     {
       name: 'Total DMG',
-      bonus: 2 * (1 + totalFishRate / 100) * Math.max(0, Math.ceil((account?.accountOptions?.[271] - 4) / 7)) * (1 + legendTalentBonus / 100),
+      bonus: 2 * (1 + legendTalentBonus / 100) * (1 + totalFishRate / 100) * Math.max(0, Math.ceil((account?.accountOptions?.[271] - 4) / 7)),
       percentage: true
     },
     {
       name: 'AFK Gains',
-      bonus: 0.5 * (1 + totalFishRate / 100) * Math.max(0, Math.ceil((account?.accountOptions?.[271] - 5) / 7)) * (1 + legendTalentBonus / 100),
+      bonus: 0.5 * (1 + legendTalentBonus / 100) * (1 + totalFishRate / 100) * Math.max(0, Math.ceil((account?.accountOptions?.[271] - 5) / 7)),
       percentage: true
     },
     {
       name: 'Cash',
-      bonus: 3 * (1 + totalFishRate / 100) * Math.max(0, Math.ceil((account?.accountOptions?.[271] - 6) / 7)) * (1 + legendTalentBonus / 100),
+      bonus: 3 * (1 + legendTalentBonus / 100) * (1 + totalFishRate / 100) * Math.max(0, Math.ceil((account?.accountOptions?.[271] - 6) / 7)),
       percentage: true
     }
   ];

@@ -1,5 +1,5 @@
-import { tryToParse, commaNotation, notateNumber } from '../../utility/helpers';
-import { legendTalents, generalSpelunky } from '../../data/website-data';
+import { tryToParse, commaNotation, notateNumber } from '@utility/helpers';
+import { legendTalents, generalSpelunky } from '@website-data';
 import { getGildedBoostioBonus } from '@parsers/construction';
 import { getGuaranteedCrystalMobs } from '@parsers/misc';
 import { getClamWorkBonus } from '@parsers/world-7/clamWork';
@@ -116,7 +116,7 @@ export const getLegendPointsOwned = (accountData = {}, charactersData = []) => {
   const clamWorkBonus4 = getClamWorkBonus(accountData, 4) || 0;
   totalOwned += clamWorkBonus4;
 
-  const companionBonus = isCompanionBonusActive(accountData, 39) ? accountData?.companions?.list?.at(39)?.bonus : 0;
+  const companionBonus = isCompanionBonusActive(accountData, 37) ? accountData?.companions?.list?.at(37)?.bonus : 0;
   totalOwned += 10 * companionBonus;
 
   const gemItem42 = accountData?.gemShopPurchases?.find((value, index) => index === 42) || 0;
