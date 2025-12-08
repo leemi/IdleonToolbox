@@ -72,7 +72,7 @@ const Beanstalk = () => {
           value: totalEntry
         });
 
-        return <Card key={rawName} sx={{ width: 270 }}>
+        return <Card key={rawName} sx={{ width: 270, border: breakpoints?.[rank] === 100000 ? '1px solid green' : ''}}>
           <CardContent>
             <Typography variant={'body1'}>{cleanUnderscore(displayName)}</Typography>
             <Stack direction={'row'} justifyContent={'space-between'} alignItems={'center'}>
