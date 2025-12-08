@@ -17,6 +17,7 @@ import styled from '@emotion/styled';
 import { NextSeo } from 'next-seo';
 import Tooltip from '@components/Tooltip';
 import FormatAlignCenterIcon from '@mui/icons-material/FormatAlignCenter';
+import ProgressBar from '@components/common/ProgressBar';
 
 const Apocalypses = () => {
   const { state } = useContext(AppContext);
@@ -110,6 +111,7 @@ const ApocDisplay = ({ apocName, charName, monsters }) => {
   const [onlySuperChows, setOnlySuperChows] = useState(false);
 
   const allDone = monsters?.list?.every(({ done }) => done.every((done) => done));
+
   return <Stack gap={2}>
     <Typography variant={'h4'}>{charName} {apocName}ed {apocName === 'zow' || apocName === 'wow'
       ? monsters.finished.at(0)
@@ -137,14 +139,18 @@ const ApocDisplay = ({ apocName, charName, monsters }) => {
                                   thresholds
                                 }, index) => {
             if (onlySuperChows && kills > 1e6) return;
+
+            const isNextSuperChow = !(kills < 1000000)
+
             return !done.every((done) => done) ?
               <Tooltip title={`${cleanUnderscore(mapName)} - ${numberWithCommas(Math.floor(kills))}`}
                        key={`${charName}-${name}-${index}`}>
-                <Card sx={{ width: 75, height: 75 }} variant={'outlined'}>
+                <Card sx={{ minWidth: 75, minHeight: 75 }} variant={'outlined'}>
                   <CardContent sx={{ '&:last-child': { padding: 0 } }}>
                     <Stack alignItems={'center'} gap={1}>
                       <MonsterIcon src={`${prefix}data/Mface${monsterFace}.png`} alt=""/>
                       <Typography>{notateNumber(kills, 'Big')}</Typography>
+                      <ProgressBar bgColor={isNextSuperChow ? '#f3dd4c' : ''} percent={kills/(kills < 1000000 ? 1000000 : 100000000)*100} label={false} sx={{width: '75px'}} />
                     </Stack>
                   </CardContent>
                 </Card>
