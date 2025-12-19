@@ -1,4 +1,4 @@
-import { createRange, lavaLog, number2letter, tryToParse } from '@utility/helpers';
+import { createRange, lavaLog, notateNumber, number2letter, tryToParse } from '@utility/helpers';
 import { filteredGemShopItems, filteredLootyItems, keysMap } from './parseMaps';
 import {
   bonuses,
@@ -41,6 +41,98 @@ import { getArmorSetBonus } from '@parsers/misc/armorSmithy';
 import { getObolsBonus } from '@parsers/obols';
 import { getLegendTalentBonus } from '@parsers/world-7/legendTalents';
 import { getCardBonusByEffect } from '@parsers/cards';
+
+export const getFriendBonusStats = (account = {}) => {
+  const FRIEND_BONUS_NAMES = [
+    '% Total Damage',
+    '% Class EXP gain',
+    '% Skill Efficiency',
+    '% Drop Rate',
+    '% Skill EXP gain',
+    '% more Coins'
+  ];
+  const companionList = account?.companions?.list;
+  const hasMrPig = isCompanionBonusActive(account, 30);
+  const hasSpearfish = isCompanionBonusActive(account, 44);
+
+  const slots = Math.round(
+    Math.min(
+      20,
+      2
+      + (hasSpearfish ? companionList?.[44]?.bonus ?? 0 : 0)
+      + 2 * (hasMrPig ? companionList?.[30]?.bonus ?? 0 : 0)
+      + (getEventShopBonus(account, 22) ? 1 : 0)
+    )
+  );
+
+  const extraMultiplier = 1 + (100 * (hasMrPig ? companionList?.[30]?.bonus ?? 0 : 0)) / 100;
+  const rawFriendBonuses = account?.accountOptions?.[476];
+  const bonuses = FRIEND_BONUS_NAMES.map((name, statIndex) => ({
+    statIndex,
+    name,
+    level: 0,
+    friendName: '',
+    value: 0
+  }));
+
+  if (rawFriendBonuses && `${rawFriendBonuses}` !== '0') {
+    const entries = `${rawFriendBonuses}`.split(';').filter(Boolean);
+    const entriesToRead = Math.min(slots, entries.length);
+
+    for (let i = 0; i < entriesToRead; i++) {
+      const [statIndexRaw, levelRaw, friendName] = `${entries[i]}`.split(',');
+      const statIndex = Number(statIndexRaw);
+      const level = Number(levelRaw);
+      const baseValue = Number.isFinite(statIndex) && statIndex < FRIEND_BONUS_NAMES.length
+        ? getFriendBonusQuantity(statIndex, level)
+        : 0;
+      const totalValue = baseValue * extraMultiplier;
+
+      if (Number.isFinite(statIndex) && statIndex < bonuses.length) {
+        bonuses[statIndex] = {
+          statIndex,
+          name: FRIEND_BONUS_NAMES[statIndex] || '',
+          level,
+          friendName,
+          value: totalValue
+        };
+      }
+    }
+  }
+
+  return {
+    slots,
+    multiplier: extraMultiplier,
+    bonuses
+  };
+}
+
+
+const getFriendBonusQuantity = (statIndex, level = 0) => {
+  const cappedLevel = Math.min(12000, Math.max(0, level));
+  const scaling = Math.min(1, 0.2 + cappedLevel / (cappedLevel + 3000));
+
+  switch (statIndex) {
+    case 0:
+      return 100 * scaling;
+    case 1:
+      return 30 * scaling;
+    case 2:
+      return 50 * scaling;
+    case 3:
+      return 25 * scaling;
+    case 4:
+      return 30 * scaling;
+    case 5:
+      return 40 * scaling;
+    default:
+      return 0;
+  }
+}
+
+export const getFriendBonus = (account, index) => {
+  return account?.friendBonusStats?.bonuses?.[index]?.value ?? 0;
+}
 
 export const getAdviceFish = (idleonData) => {
   const rawSpelunking = tryToParse(idleonData?.Spelunk) || [];
@@ -315,14 +407,15 @@ const getAmountPerDay = ({ name, dialogThreshold } = {}, characters) => {
 export const getBundles = (idleonData) => {
   const bundlesRaw = tryToParse(idleonData?.BundlesReceived) || idleonData?.BundlesReceived;
   const ownedBundles = bundlesRaw || {};
-  
+
   if (!bundlesData) return [];
-  
+
   // Get all bundles from website-data and check ownership status
   return Object.keys(bundlesData)
     .map((bundleName) => ({
       name: bundleName,
-      owned: !!ownedBundles[bundleName]
+      owned: !!ownedBundles[bundleName],
+      price: bundlesData[bundleName].price
     }))
     .sort((a, b) => {
       // Sort by bundle type (bun_ vs bon_) then by letter
@@ -606,6 +699,35 @@ export const getGoldenFoodMulti = (character, account, characters) => {
   const apocalypses = deathBringer?.wow?.finished?.at(0) || 0;
   const armorSetBonus = getArmorSetBonus(account, 'SECRET_SET');
 
+  const breakdown = [
+    { title: 'Multiplicative' },
+    { name: '' },
+    { name: 'Armor Set', value: armorSetBonus },
+    { name: '' },
+    { title: 'Additive' },
+    { name: '' },
+    { name: 'Family Bonus', value: isShaman ? amplifiedFamilyBonus : familyBonus },
+    { name: 'The Family Guy', value: theFamilyGuy },
+    { name: 'Equipment', value: equipmentGoldFoodBonus },
+    { name: 'Tools', value: toolGoldFoodBonus },
+    { name: 'Obols', value: obolsBonus },
+    { name: 'Talent', value: hungryForGoldTalentBonus },
+    { name: 'Stamp', value: goldenAppleStamp },
+    { name: 'Achievement', value: goldenFoodAchievement },
+    { name: 'Bubble', value: goldenFoodBubbleBonus },
+    { name: 'Sigil', value: goldenFoodSigilBonus },
+    { name: 'Meal', value: mealBonus },
+    { name: 'Star Sign', value: starSignBonus },
+    { name: 'Bribe', value: bribeBonus },
+    { name: 'Charm', value: charmBonus },
+    { name: 'Achievements', value: 2 * achievementBonus + 3 * secondAchievementBonus },
+    { name: 'Vote', value: voteBonus },
+    { name: 'Apocalypse Wow', value: apocalypseWow * apocalypses },
+    { name: 'Companion', value: companionBonus },
+    { name: 'Legend Talent', value: legendTalentBonus },
+    { name: 'Card', value: cardBonus }
+  ];
+
   return {
     value: (1 + armorSetBonus / 100)
       * (Math.max(isShaman ? amplifiedFamilyBonus : familyBonus, 1)
@@ -616,6 +738,7 @@ export const getGoldenFoodMulti = (character, account, characters) => {
                 + (goldenFoodBubbleBonus
                   + goldenFoodSigilBonus) + mealBonus + starSignBonus + bribeBonus + charmBonus
                 + (2 * achievementBonus + 3 * secondAchievementBonus + voteBonus + apocalypseWow * apocalypses + companionBonus + legendTalentBonus + cardBonus))))) / 100),
+    breakdown,
     expression: `(1 + armorSetBonus / 100)
 * (Math.max(isShaman ? amplifiedFamilyBonus : familyBonus, 1)
 + (equipmentGoldFoodBonus
@@ -652,7 +775,6 @@ export const getGoldenFoodBonus = (foodName, character, account, characters) => 
   }
   return baseBonus;
 };
-
 
 export const getRandomEvents = (account) => {
   if (!account) return [];
@@ -770,6 +892,7 @@ export const getItemCapacity = (type = '', character, account, forceMaxCapacity)
   const talentBonus = getTalentBonus(character?.flatTalents, 'EXTRA_BAGS', false, false, character?.addedLevels, true, forceMaxCapacity);
   const upgradeVaultBonus = getUpgradeVaultBonus(account?.upgradeVault?.upgrades, 11);
   const allCap = getAllCap(character, account, forceMaxCapacity);
+  const hardCap = 205e7;
   // return Math.floor((v._customBlock_MaxCapacity("AllCapBASE")
   //     + c.asNumber(a.engine.getGameAttribute("MaxCarryCap").h.bCraft))
   //   * (1 + k._customBlock_StampBonusOfTypeX("MatCap") / 100)
@@ -892,6 +1015,10 @@ export const getItemCapacity = (type = '', character, account, forceMaxCapacity)
     value = 999999;
   } else {
     value = 2;
+  }
+
+  if (Number.isFinite(value)) {
+    value = Math.floor(Math.min(hardCap, value));
   }
 
   return {
@@ -1091,24 +1218,55 @@ export const getKillRoy = (idleonData, charactersData, accountData, serverVars) 
       upgrade: 'Pearl Drops'
     }
   ];
+
+  // Mapping for permanent upgrade indices to account options (for levels)
+  // Shop items 10-19 correspond to indices 0-9 in the slice
+  const permanentUpgradeLevelMap = {
+    0: 227,  // Shop 10: Unlock 3rd Killroy fight
+    1: 228,  // Shop 11: Artifact Find Chance
+    2: null, // Shop 12: Gaming nugget (fixed reward, no level)
+    3: 229,  // Shop 13: Crop Evolution Chance
+    4: 230,  // Shop 14: Jade Gain
+    5: 467,  // Shop 15: Gallery Grade (requires 2+ levels for special effect)
+    6: 468,  // Shop 16: Masterclass drops
+    7: 469,  // Shop 17: World 7 skill EXP
+    8: 470,  // Shop 18: Daily coral gain
+    9: 471   // Shop 19: Mystery bonus
+  };
+
+  // Mapping for permanent upgrade indices to bonus calculation indices
+  // Only items that show a calculated bonus need a mapping
+  const permanentUpgradeBonusMap = {
+    1: 0,  // Shop 11: Artifact Find Chance
+    3: 1,  // Shop 13: Crop Evolution Chance
+    4: 2,  // Shop 14: Jade Gain
+    5: 3,  // Shop 15: Gallery multiplier
+    6: 4,  // Shop 16: Masterclass drops
+    7: 5,  // Shop 17: World 7 skill EXP
+    8: 6,  // Shop 18: Daily coral gain
+    9: 7   // Shop 19: Mystery bonus
+  };
+
   const permanentUpgrades = killRoySkullShop?.slice(10)?.map((upgrade, i) => {
-    const bonus = getKillRoyShopBonus(accountData, (i === 0 || i === 1)
-      ? 0
-      : (i === 2 || i === 3) ? 1 : (i === 4) ? 2 : 3);
+    const levelOption = permanentUpgradeLevelMap[i];
+    const bonusIndex = permanentUpgradeBonusMap[i];
+    
+    const level = levelOption !== null ? (accountData?.accountOptions?.[levelOption] ?? 0) : 0;
+    const bonus = bonusIndex !== undefined ? getKillRoyShopBonus(accountData, bonusIndex) : 1;
+    
+    // Special case: Shop 15 (Gallery) changes description when level >= 2
+    let description = upgrade?.description;
+    let replacementChar = '{';
+    
+    if (i === 5 && level >= 2) {
+      description = `Permanently_boosts_your_Gallery_Multiplier_by_+${(bonus / 100).toFixed(2)}x`;
+    }
+    
     return {
       ...upgrade,
-      level: i === 0 ? accountData?.accountOptions?.[227]
-        : (i === 1)
-          ? accountData?.accountOptions?.[228]
-          : (i === 2)
-            ? 0
-            : (i === 3)
-              ? accountData?.accountOptions?.[229]
-              : (i === 4)
-                ? accountData?.accountOptions?.[230]
-                : 1,
+      level,
       bonus,
-      description: upgrade?.description?.replace('{', Math.floor(bonus * 100) / 100)
+      description: description?.replace(replacementChar, Math.floor(bonus * 100) / 100)
     }
   });
   return {

@@ -5,7 +5,7 @@ import { getChipsAndJewels, maxNumberOfSpiceClicks } from '@parsers/cooking';
 import { cleanUnderscore, getDuration, notateNumber, totalHoursBetweenDates, tryToParse } from '../helpers';
 import { isRiftBonusUnlocked } from '@parsers/world-4/rift';
 import { items, liquidsShop } from '@website-data';
-import { hasMissingMats } from '@parsers/refinery';
+import { hasMissingMats, getPowerPerCycle } from '@parsers/refinery';
 import { calcTotals } from '@parsers/printer';
 import { findItemInInventory, findQuantityOwned, getAllItems } from '@parsers/items';
 import { isJadeBonusUnlocked } from '@parsers/world-6/sneaking';
@@ -353,9 +353,9 @@ export const getWorld2Alerts = (account, fields, options, characters) => {
       }
     }
     if (dailyShipments?.checked) {
-      const uncompletedDailyShipments = account?.postOfficeShipments?.filter(({ shields, completedAnOrder }, index) => {
+      const uncompletedDailyShipments = account?.postOfficeShipments?.filter(({ shield, completedAnOrder }, index) => {
         return (showAlertOnlyWhen0Shields?.checked
-          ? shields === 0
+          ? shield === 0
           : true) && dailyShipments?.props?.value?.[index + 1] && !completedAnOrder
       });
       if (uncompletedDailyShipments?.length > 0) {
@@ -501,7 +501,7 @@ export const getWorld3Alerts = (account, fields, options, characters) => {
     }
     if (rankUp?.checked) {
       const rankUp = account?.refinery?.salts?.filter(({ refined, powerCap, rank }) => {
-        const powerPerCycle = Math.floor(Math.pow(rank, 1.3)) - 1;
+        const powerPerCycle = getPowerPerCycle(rank, account) - 1;
         return refined >= powerCap - powerPerCycle;
       });
       if (rankUp.length > 0) {

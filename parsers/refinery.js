@@ -12,6 +12,7 @@ import { checkCharClass, CLASSES, getHighestTalentByClass } from '@parsers/talen
 import { getFamilyBonusBonus } from '@parsers/family';
 import { getVoteBonus } from '@parsers/world-2/voteBallot';
 import { getLegendTalentBonus } from '@parsers/world-7/legendTalents';
+import { isCompanionBonusActive } from '@parsers/misc';
 
 export const getRefinery = (idleonData, storage, tasks) => {
   const refineryRaw = tryToParse(idleonData?.Refinery) || idleonData?.Refinery;
@@ -71,6 +72,11 @@ export const getPowerCap = (rank) => {
   return parseFloat(Math.max(powerCap?.[Math.min(rank, powerCap?.length - 2)], 25))
 }
 
+export const getPowerPerCycle = (rank, account = null) => {
+  const companionBonus = isCompanionBonusActive(account, 35) ? account?.companions?.list?.at(35)?.bonus : 0;
+  return Math.floor(Math.min(25e4, Math.pow(rank, 1.3) * (1 + companionBonus)));
+}
+
 export const hasMissingMats = (saltIndex, rank, cost, account) => {
   return cost?.filter(({
     rawName,
@@ -103,6 +109,8 @@ export const getRefineryCycleBonuses = (account, characters) => {
   const familyRefinerySpeed = getFamilyBonusBonus(classFamilyBonuses, 'Refinery_Speed', highestLevelDivineKnight);
   const amplifiedFamilyBonus = (familyRefinerySpeed * (theFamilyGuy > 0 ? (1 + theFamilyGuy / 100) : 1) || 0)
   const voteBonus = getVoteBonus(account, 33);
+  const companionBonus = isCompanionBonusActive(account, 35);
+
 
   const bonusBreakdown = [
     { name: 'Vials', value: redMaltVial / 100 },
@@ -113,7 +121,8 @@ export const getRefineryCycleBonuses = (account, characters) => {
     { name: 'Shinies', value: shinyRefineryBonus / 100 },
     { name: 'Const mastery', value: constructionMastery / 100 },
     { name: 'Arcade', value: arcadeBonus / 100 },
-    { name: 'Vote', value: voteBonus / 100 }
+    { name: 'Vote', value: voteBonus / 100 },
+    { name: 'Companion', value: companionBonus ? 2 : 0 }
   ]
   return {
     bonusBreakdown,
@@ -184,7 +193,7 @@ export const calcTimeToRankUp = (account, characters, lastUpdated, refineryData,
   const labCycleBonus = account?.lab?.labBonuses?.find((bonus) => bonus.name === 'Gilded_Cyclical_Tubing')?.active
     ? 3
     : 1;
-  const powerPerCycle = Math.floor(Math.pow(rank, 1.3));
+  const powerPerCycle = getPowerPerCycle(rank, account);
   const cycleByType = index <= 2 ? 900 : 3600;
   const combustionCyclesPerDay = (24 * 60 * 60 / (cycleByType / ((1 + (bonus) / 100) * labCycleBonus * (1 + legendBonus / 100)))) + (includeSquireCycles
     ? (refineryData?.squiresCycles ?? 0)
@@ -202,8 +211,8 @@ export const calcCost = (refinery, rank, quantity, item, index) => {
   return Math.floor(Math.pow(rank, (isSalt && index <= refinery?.refinerySaltTaskLevel) ? 1.3 : 1.5)) * quantity;
 };
 
-export const calcResourceToRankUp = (rank, refined, powerCap, itemCost) => {
-  const powerPerCycle = Math.floor(Math.pow(rank, 1.3));
+export const calcResourceToRankUp = (rank, refined, powerCap, itemCost, account = null) => {
+  const powerPerCycle = getPowerPerCycle(rank, account);
   const remainingProgress = powerCap - refined;
   return (remainingProgress / powerPerCycle) * itemCost;
 }

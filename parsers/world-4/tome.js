@@ -22,6 +22,13 @@ import { getGrimoireBonus } from '@parsers/grimoire';
 import { getUpgradeVaultBonus } from '@parsers/misc/upgradeVault';
 import { getArmorSetBonus } from '@parsers/misc/armorSmithy';
 
+export const segmentColors = {
+  bronze: '#ffc277',
+  silver: '#d6dbe0',
+  gold: 'gold',
+  blue: '#56ccff'
+};
+
 // _event_Tome2
 export const getTome = (idleonData, account, characters, serverVars) => {
   const indexes = ninjaExtraInfo[32].split(' ');
@@ -33,10 +40,11 @@ export const getTome = (idleonData, account, characters, serverVars) => {
     const tomeLvReq = 40 * realIndex + (5 * Math.max(0, realIndex - 35) + (10 * Math.max(0, realIndex - 60) + (10 * Math.max(0, realIndex - 80) + 15 * Math.max(0, realIndex - 100)))) + 350;
     const quantity = tomeQuantities?.[index] || 0;
     const pointsPercent = calcPointsPercent(bonus, quantity);
-    const color = .4 > pointsPercent ? '#ffc277' : .75 > pointsPercent ? '#d6dbe0' : .999 > pointsPercent
-      ? 'gold'
-      : '#56ccff';
+    const color = .4 > pointsPercent ? segmentColors.bronze : .75 > pointsPercent ? segmentColors.silver : .999 > pointsPercent
+      ? segmentColors.gold
+      : segmentColors.blue;
     const points = Math.ceil(pointsPercent * bonus?.x3);
+    const maxPoints = getMaxPointsForBonus(bonus);
     totalPoints += account?.accountLevel > tomeLvReq ? points : 0;
     const requiredQuantities = getRequiredQuantitiesEfficient(bonus);
     return {
@@ -45,16 +53,18 @@ export const getTome = (idleonData, account, characters, serverVars) => {
       index: realIndex,
       quantity: tomeQuantities?.[index] || 0,
       points,
+      maxPoints,
       color,
       requiredQuantities
     }
   });
 
-  const bonuses = bonusNames.map((name, index) => ({
-      name: name.replace('+{%', ''),
-      bonus: getTomeBonus(account, totalPoints, index)
-    }
-  ));
+  const bonuses = [...bonusNames, "DMG_Multi", "Drop_Multi"].map((name, index) => ({
+    name: name.replace('+{%', ''),
+    bonus: getTomeBonus(account, totalPoints, index),
+    isMulti: name === "Drop_Multi" || name === "DMG_Multi",
+    ...(name === "Drop_Multi" ? { icon: "etc/Tome_2.png" } : name === "DMG_Multi" ? { icon: "etc/Tome_0.png" } : {})
+  }));
 
   tome = tome.toSorted((a, b) => a.index - b.index);
   let tops = serverVars?.TomePct || []; // Use tops for consistency
@@ -148,6 +158,23 @@ const getRequiredQuantitiesEfficient = (bonus) => {
   return results;
 }
 
+const getMaxPointsForBonus = (bonus) => {
+  // pointsPercent caps per x2 curve; see calcPointsPercent
+  const maxPercent = bonus?.x2 === 0
+    ? Math.pow(1.7, 0.7) // asymptote of type-0 curve
+    : bonus?.x2 === 1
+      ? 1.2 // log curve approaches 1.2
+      : bonus?.x2 === 2
+        ? 1 // linear, capped at 1
+        : bonus?.x2 === 3
+          ? 1.1512569953 // peak of type-3 curve at q -> 0
+          : bonus?.x2 === 4
+            ? 1 // capped at 1
+            : 0;
+
+  return Math.ceil(maxPercent * (bonus?.x3 ?? 0));
+}
+
 const getTomeBonus = (account, totalPoints, index) => {
   const strTomeBonus = getBubbleBonus(account, 'TOME_STRENGTH');
   const agiTomeBonus = getBubbleBonus(account, 'TOME_AGILITY');
@@ -156,17 +183,21 @@ const getTomeBonus = (account, totalPoints, index) => {
   const armorSetBonus = getArmorSetBonus(account, 'TROLL_SET');
   const extraBonus = 1 + (grimoireBonus + armorSetBonus) / 100;
   const bubbleMulti = (totalPoints - 5000) / 2000 * extraBonus;
+  const dmgMulti = getEventShopBonus(account, 0);
+  const dropMulti = getEventShopBonus(account, 27);
 
   return 0 === index ? 10 *
     Math.pow(Math.floor(totalPoints / 100), 0.7) * extraBonus
     : 1 === index ? (1 === account?.accountOptions?.[196] ?
-        4 * Math.pow(Math.floor(Math.max(0, totalPoints - 4e3) / 100), 0.7) * extraBonus : 0)
+      4 * Math.pow(Math.floor(Math.max(0, totalPoints - 4e3) / 100), 0.7) * extraBonus : 0)
       : 2 === index ? (1 === account?.accountOptions?.[197] ?
-          2 * Math.pow(Math.floor(Math.max(0, totalPoints - 8e3) / 100), 0.7) * extraBonus : 0)
+        2 * Math.pow(Math.floor(Math.max(0, totalPoints - 8e3) / 100), 0.7) * extraBonus : 0)
         : 3 === index ? strTomeBonus * bubbleMulti : 4 === index ? agiTomeBonus * bubbleMulti :
-          5 === index ? wisTomeBonus * bubbleMulti : 6 === index && 1 === getEventShopBonus(account, 0)
+          5 === index ? wisTomeBonus * bubbleMulti : 6 === index && dmgMulti
             ? 4 * Math.pow(Math.floor(totalPoints / 1e3), 0.4) * extraBonus
-            : 0
+            : 7 === index && dropMulti
+              ? 3 * Math.pow(Math.floor(totalPoints / 1e3), 0.3) * extraBonus
+              : 0
 }
 
 const calcPointsPercent = (bonus, quantity) => {
@@ -314,6 +345,8 @@ export const calcTomeQuantity = (account, characters) => {
   quantities.push(account?.spelunking?.highestSpelunkingLevelCharacter); // 105
   quantities.push(account?.accountOptions?.[443]); // 106
   quantities.push(calcNametagsFound(account?.looty)); // 107
+  quantities.push(account?.bubba?.megafleshOwned); // 108
+  quantities.push(account?.hatRack?.totalHats); // 109
 
   return quantities;
 }

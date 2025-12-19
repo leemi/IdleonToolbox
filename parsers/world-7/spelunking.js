@@ -1,4 +1,4 @@
-import { commaNotation, growth, lavaLog, notateNumber, tryToParse } from '@utility/helpers';
+import { cleanUnderscore, commaNotation, growth, lavaLog, notateNumber, tryToParse } from '@utility/helpers';
 import { generalSpelunky, spelunkingChapters, spelunkingRocks, spelunkingUpgrades } from '@website-data';
 import { getWinnerBonus } from '@parsers/world-6/summoning';
 import { getSlabBonus, isArtifactAcquired } from '@parsers/sailing';
@@ -157,7 +157,7 @@ const parseSpelunking = (account, characters, rawSpelunking, rawTowerInfo) => {
       defeated: index < cavesUnlocked,
       biggestHaul: biggestHauls?.[index] ?? 0,
       bestCaveLevel: bestCaveLevels?.[index] ?? 0,
-      foundAt: generalSpelunky?.[7]?.split(' ')?.[index] ?? 0
+      foundAt: (parseFloat(generalSpelunky?.[7]?.split(' ')?.[index]) + 1) ?? 0
     }
   }).filter((boss) => boss?.description && isNaN(Number(boss.description)));
 
@@ -386,7 +386,9 @@ export const getLoreBonuses = (account) => {
     }
 
     return {
-      name,
+      name: cleanUnderscore(name.replace('|', '_').replace(/^[^a-zA-Z0-9]+(?:x)?[|_]/, "")),
+      description: name.replace('|', '_').replace('{', Math.floor(bonus)).replace('}', notateNumber(1 + bonus / 100, 'MultiplierInfo')),
+      isMulti: name.includes('}'),
       bonus,
       index: index
     }
