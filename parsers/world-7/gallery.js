@@ -12,6 +12,7 @@ import { getLegendTalentBonus } from '@parsers/world-7/legendTalents';
 import { getBubbleBonus } from '@parsers/alchemy';
 import { getCardBonusByEffect } from '@parsers/cards';
 import { getClamWorkBonus } from '@parsers/world-7/clamWork';
+import { getPlayerLabChipBonus } from '@parsers/lab';
 
 export const getGallery = (idleonData, account) => {
   const rawSpelunk = tryToParse(idleonData?.Spelunk);
@@ -276,14 +277,16 @@ export const getNametagBonuses = (rawSpelunk, account) => {
   };
 }
 
-export const getGalleryBonusMulti = (rawSpelunk, account) => {
+export const getGalleryBonusMulti = (rawSpelunk, account, character) => {
   const baseValue = rawSpelunk?.[13]?.[4];
+  const chipBonus = character ? getPlayerLabChipBonus(character, account, 16) ? 10 : 0 : 0;
   const clamWorkBonus = 3 * getClamWorkBonus(account, 7);
   const killroyBonus = getKillRoyShopBonus(account, 3);
   const bubbleBonus = Math.min(20, getBubbleBonus(account, 'CODFREY_RULZ_OK', false));
-  const cardBonus = getCardBonusByEffect(account?.cards, 'Gallery_Bonus_(Passive)');
+  const cardBonus = Math.min(getCardBonusByEffect(account?.cards, 'Gallery_Bonus_(Passive)'), 10);
+  const companionBonus = isCompanionBonusActive(account, 49) ? account?.companions?.list?.at(49)?.bonus : 0;
 
-  return 1 + (3 * baseValue + clamWorkBonus + killroyBonus + bubbleBonus + cardBonus) / 100;
+  return 1 + (3 * baseValue + chipBonus + clamWorkBonus + killroyBonus + bubbleBonus + cardBonus + companionBonus) / 100;
 }
 
 export const getPodiumsOwned = (rawSpelunk, account) => {
@@ -331,7 +334,7 @@ export const getLv3PodiumsOwned = (account) => {
 export const getLv4PodiumsOwned = (account) => {
   const eventShopBonus = getEventShopBonus(account, 29);
   const companionBonus = isCompanionBonusActive(account, 28) ? account?.companions?.list?.at(28)?.bonus : 0;
-  return Math.min(1, companionBonus + eventShopBonus);
+  return Math.min(1, companionBonus) + eventShopBonus;
 }
 
 const getAllTrophies = (rawSpelunk, account) => {

@@ -20,8 +20,8 @@ export const parseUpgradeVault = (upgradeVaultRaw, accountData, charactersData) 
     const description = upgrade?.description?.replace('{', commaNotation(bonus)).replace('}', notateNumber(1 + bonus / 100, 'MultiplierInfo'));
     return {
       ...upgrade,
-      cost: getUpgradeCost(upgrades, index),
-      costToMax: getCostToMax(upgrades, index),
+      cost: getUpgradeCost(upgrades, index, accountData),
+      costToMax: getCostToMax(upgrades, index, accountData),
       bonus,
       description
     }
@@ -38,23 +38,25 @@ export const parseUpgradeVault = (upgradeVaultRaw, accountData, charactersData) 
 }
 
 
-const getCostToMax = (upgrades, index) => {
+const getCostToMax = (upgrades, index, accountData) => {
   const localUpgrades = structuredClone(upgrades);
   const { level, maxLevel } = localUpgrades?.[index];
   let costToMax = 0;
   for (let i = level; i < maxLevel; i++) {
     localUpgrades[index].level = i;
-    costToMax += getUpgradeCost(localUpgrades, index)
+    costToMax += getUpgradeCost(localUpgrades, index, accountData)
   }
   return costToMax ?? 0;
 }
 
-const getUpgradeCost = (upgrades, index) => {
+const getUpgradeCost = (upgrades, index, accountData) => {
   const { level, x1, x2 } = upgrades?.[index];
+  const baseCost = level + (x1 + level) * Math.pow(x2, level);
+  const dartsBonusReduction = 1 / (1 + (accountData?.accountOptions?.[437] || 0) / 100);
+  
   return 33 > index
-    ? Math.max(0.1, 1 - calcUpgradeVaultBonus(upgrades, 13) / 100)
-    * (level + (x1 + level) * Math.pow(x2, level))
-    : 1 * (level + (x1 + level) * Math.pow(x2, level))
+    ? Math.max(0.01, (1 - calcUpgradeVaultBonus(upgrades, 13) / 100) * dartsBonusReduction) * baseCost
+    : Math.max(0.01, dartsBonusReduction) * baseCost;
 }
 
 export const getUpgradeVaultBonus = (upgrades, index) => {
@@ -66,7 +68,7 @@ const calcUpgradeVaultBonus = (upgrades, index) => {
   const higherBonuses = upgrades?.[60];
   return 32 === index || 1 === index || 6 === index
     || 7 === index || 8 === index || 9 === index
-    || 13 === index || 999 === index || 999 === index
+    || 13 === index || 999 === index
     || 33 === index || 36 === index || 40 === index
     || 42 === index || 43 === index || 44 === index
     || 49 === index || 51 === index || 52 === index
@@ -79,7 +81,7 @@ const calcUpgradeVaultBonus = (upgrades, index) => {
         + (Math.max(0, level - 25)
           + (Math.max(0, level - 50)
             + Math.max(0, level - 100))))
-      * (1 + calcUpgradeVaultBonus(upgrades, 32, 0) / 100)
+      * (1 + calcUpgradeVaultBonus(upgrades, 32) / 100)
       : 60 === index
         ? (higherBonuses?.level
           * higherBonuses?.x5
@@ -91,7 +93,7 @@ const calcUpgradeVaultBonus = (upgrades, index) => {
                     + (7 * Math.max(0, higherBonuses?.level - 400)
                       + 10 * Math.max(0, higherBonuses?.level - 450))))))))
         * (1 + Math.floor(higherBonuses?.level / 25) / 5)
-        * (1 + calcUpgradeVaultBonus(upgrades, 61, 0) / 100)
+        * (1 + calcUpgradeVaultBonus(upgrades, 61) / 100)
         : 32 > index
           ? level
           * x5

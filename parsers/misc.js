@@ -41,6 +41,44 @@ import { getArmorSetBonus } from '@parsers/misc/armorSmithy';
 import { getObolsBonus } from '@parsers/obols';
 import { getLegendTalentBonus } from '@parsers/world-7/legendTalents';
 import { getCardBonusByEffect } from '@parsers/cards';
+import { getTesseractBonus } from '@parsers/tesseract';
+import { getPaletteBonus } from '@parsers/gaming';
+import { getMinorDivinityBonus } from '@parsers/divinity';
+
+export const getDoubleStatueDrop = (account, character, characters) => {
+  const tesseractBonus = getTesseractBonus(account, 18);
+  const paletteBonus = getPaletteBonus(account, 19);
+  const kattelkrukPlayer = characters?.find(({ linkedDeity }) => linkedDeity === 8); // kattelkruk is limited to only 1 player linked.
+  const divinityMinorBonus = getMinorDivinityBonus(kattelkrukPlayer, account, 8, characters);
+  const talentBonus = getTalentBonus(character?.flatStarTalents, 'STATUE_METALLURGY');
+
+  return {
+    value: tesseractBonus + talentBonus + paletteBonus + Math.min(10, divinityMinorBonus),
+    breakdown: [
+      { name: 'Tesseract', value: tesseractBonus },
+      { name: 'Talent', value: talentBonus },
+      { name: 'Palette', value: paletteBonus },
+      { name: 'Divinity', value: Math.min(10, divinityMinorBonus) }
+    ],
+    expression: `tesseractBonus + talentBonus + paletteBonus + Math.min(10, divinityMinorBonus)`
+  };
+}
+
+export const getDoubleGoldenFoodDrop = (account, character, characters) => {
+  const tesseractBonus = getTesseractBonus(account, 30);
+  const paletteBonus = getPaletteBonus(account, 24);
+  const bigFishBonus = getAdviceFishBonus(account, 5);
+
+  return {
+    value: tesseractBonus + paletteBonus + bigFishBonus,
+    breakdown: [
+      { name: 'Tesseract', value: tesseractBonus },
+      { name: 'Palette', value: paletteBonus },
+      { name: 'Big Fish', value: bigFishBonus }
+    ],
+    expression: `tesseractBonus + paletteBonus + bigFishBonus`
+  };
+}
 
 export const getFriendBonusStats = (account = {}) => {
   const FRIEND_BONUS_NAMES = [
@@ -173,7 +211,10 @@ export const getGuaranteedCrystalMobs = (account) => {
 }
 
 export const getMasterclassCostReduction = (account) => {
-  return account?.accountOptions?.[480] < getLegendTalentBonus(account, 23) ? .2 : 1;
+  const hasBonusBundle = isBundlePurchased(account?.bundles, 'bon_p');
+  return account?.accountOptions?.[480] < getLegendTalentBonus(account, 23)
+    ? (hasBonusBundle ? 0.05 : 0.2)
+    : (hasBonusBundle ? 0.25 : 1);
 }
 
 export const getLibraryBookTimes = (idleonData, characters, account) => {
@@ -242,21 +283,28 @@ export const getTimeToNextBooks = (bookCount, account, characters, idleonData) =
           + superbitBonus))) / 100)))
     * (1 + 10 * Math.pow(bookCount, 1.4) / 100))
 
-  const breakdown = [
-    { title: 'Multiplicative' },
-    { name: '' },
-    { name: 'Meal Bonus', value: mealBonus },
-    { name: 'Atom Bonus', value: libraryBooker },
-    { name: 'Tower Bonus', value: 5 * libraryTowerLevel },
-    { name: 'Bubble Bonus', value: bubbleBonus },
-    { name: 'Vial Bonus', value: vialBonus },
-    { name: 'Stamp Bonus', value: stampBonus },
-    { name: 'Superbit Bonus', value: superbitBonus },
-    {
-      name: 'Achievement Bonus',
-      value: Math.min(30, Math.max(0, 30 * getAchievementStatus(account?.achievements, 145)))
-    }
-  ]
+  const breakdown = {
+    statName: "Library Checkout Time",
+    totalValue: math,
+    categories: [
+      {
+        name: "Multiplicative",
+        sources: [
+          { name: "Meal Bonus", value: mealBonus },
+          { name: "Atom Bonus", value: libraryBooker },
+          { name: "Tower Bonus", value: 5 * libraryTowerLevel },
+          { name: "Bubble Bonus", value: bubbleBonus },
+          { name: "Vial Bonus", value: vialBonus },
+          { name: "Stamp Bonus", value: stampBonus },
+          { name: "Superbit Bonus", value: superbitBonus },
+          {
+            name: "Achievement Bonus",
+            value: Math.min(30, Math.max(0, 30 * getAchievementStatus(account?.achievements, 145))),
+          },
+        ],
+      },
+    ],
+  }
   return {
     value: math,
     breakdown
@@ -427,7 +475,7 @@ export const getBundles = (idleonData) => {
 };
 
 export const isBundlePurchased = (bundles, name) => {
-  return bundles?.find(({ name: n }) => n === name);
+  return bundles?.find(({ name: n, owned }) => n === name && owned);
 }
 
 export const isArenaBonusActive = (arenaWave, waveReq, bonusNumber) => {
@@ -674,9 +722,8 @@ export const getGoldenFoodMulti = (character, account, characters) => {
   const familyBonus = getFamilyBonusBonus(classFamilyBonuses, 'GOLDEN_FOODS', highestLevelShaman);
   const isShaman = checkCharClass(character?.class, CLASSES.Shaman);
   const amplifiedFamilyBonus = familyBonus * (theFamilyGuy > 0 ? (1 + theFamilyGuy / 100) : 1) || 0;
-  const equipmentGoldFoodBonus = getStatsFromGear(character, 8, account);
-  const toolGoldFoodBonus = getStatsFromGear(character, 8, account, true);
-  const obolsBonus = getObolsBonus(character?.obols, bonuses?.etcBonuses?.[47]);
+  const obolsBonus = getObolsBonus(character?.obols, bonuses?.etcBonuses?.[8]);
+  const { value: gearGoldFoodBonus, newBreakdown: equipmentBonusBreakdown } = getStatsFromGear(character, 8, account);
   const hungryForGoldTalentBonus = getTalentBonus(character?.flatTalents, 'HAUNGRY_FOR_GOLD');
   const goldenAppleStamp = getStampsBonusByEffect(account, 'Effect_from_Golden_Food._Sparkle_sparkle!');
   const goldenFoodAchievement = getAchievementStatus(account?.achievements, 37);
@@ -691,57 +738,81 @@ export const getGoldenFoodMulti = (character, account, characters) => {
   const voteBonus = getVoteBonus(account, 26);
   const companionBonus = isCompanionBonusActive(account, 48) ? account?.companions?.list?.at(48)?.bonus : 0;
   const legendTalentBonus = getLegendTalentBonus(account, 25);
-  const cardBonus = getCardBonusByEffect(account?.cards, 'Gold_Food_Effect_(Passive)');
+  const cardBonus = Math.min(getCardBonusByEffect(account?.cards, 'Gold_Food_Effect_(Passive)'), 50);
 
   // select first death bringer
   const deathBringer = characters?.find((character) => checkCharClass(character?.class, CLASSES.Death_Bringer));
   const apocalypseWow = getTalentBonus(deathBringer?.flatTalents, 'APOCALYPSE_WOW');
   const apocalypses = deathBringer?.wow?.finished?.at(0) || 0;
   const armorSetBonus = getArmorSetBonus(account, 'SECRET_SET');
+  const value = (1 + armorSetBonus / 100)
+    * (Math.max(isShaman ? amplifiedFamilyBonus : familyBonus, 1)
+      + ((gearGoldFoodBonus + obolsBonus)
+        + (hungryForGoldTalentBonus
+          + (goldenAppleStamp
+            + (goldenFoodAchievement
+              + (goldenFoodBubbleBonus
+                + goldenFoodSigilBonus) + mealBonus + starSignBonus + bribeBonus + charmBonus
+              + (2 * achievementBonus + 3 * secondAchievementBonus + voteBonus + apocalypseWow * apocalypses + companionBonus + legendTalentBonus + cardBonus))))) / 100);
 
-  const breakdown = [
-    { title: 'Multiplicative' },
-    { name: '' },
-    { name: 'Armor Set', value: armorSetBonus },
-    { name: '' },
-    { title: 'Additive' },
-    { name: '' },
-    { name: 'Family Bonus', value: isShaman ? amplifiedFamilyBonus : familyBonus },
-    { name: 'The Family Guy', value: theFamilyGuy },
-    { name: 'Equipment', value: equipmentGoldFoodBonus },
-    { name: 'Tools', value: toolGoldFoodBonus },
-    { name: 'Obols', value: obolsBonus },
-    { name: 'Talent', value: hungryForGoldTalentBonus },
-    { name: 'Stamp', value: goldenAppleStamp },
-    { name: 'Achievement', value: goldenFoodAchievement },
-    { name: 'Bubble', value: goldenFoodBubbleBonus },
-    { name: 'Sigil', value: goldenFoodSigilBonus },
-    { name: 'Meal', value: mealBonus },
-    { name: 'Star Sign', value: starSignBonus },
-    { name: 'Bribe', value: bribeBonus },
-    { name: 'Charm', value: charmBonus },
-    { name: 'Achievements', value: 2 * achievementBonus + 3 * secondAchievementBonus },
-    { name: 'Vote', value: voteBonus },
-    { name: 'Apocalypse Wow', value: apocalypseWow * apocalypses },
-    { name: 'Companion', value: companionBonus },
-    { name: 'Legend Talent', value: legendTalentBonus },
-    { name: 'Card', value: cardBonus }
-  ];
+  const breakdown = {
+    statName: 'Golden food multi', // adjust if needed
+    totalValue: notateNumber(Math.max(0, 100 * (value - 1)), 'MultiplierInfo'), // your final computed value
+    categories: [
+      {
+        name: 'Multiplicative',
+        sources: [
+          {
+            name: 'Armor Set',
+            value: armorSetBonus,
+          },
+        ],
+      },
+      {
+        name: 'Additive',
+        sources: [
+          {
+            name: 'Family Bonus',
+            value: isShaman ? amplifiedFamilyBonus : familyBonus,
+          },
+          { name: 'The Family Guy', value: theFamilyGuy },
+
+          { name: 'Obols', value: obolsBonus },
+          { name: 'Talent', value: hungryForGoldTalentBonus },
+          { name: 'Stamp', value: goldenAppleStamp },
+          { name: 'Achievement', value: goldenFoodAchievement },
+          { name: 'Bubble', value: goldenFoodBubbleBonus },
+          { name: 'Sigil', value: goldenFoodSigilBonus },
+          { name: 'Meal', value: mealBonus },
+          { name: 'Star Sign', value: starSignBonus },
+          { name: 'Bribe', value: bribeBonus },
+          { name: 'Charm', value: charmBonus },
+          {
+            name: 'Achievements',
+            value: 2 * achievementBonus + 3 * secondAchievementBonus,
+          },
+          { name: 'Vote', value: voteBonus },
+          {
+            name: 'Apocalypse Wow',
+            value: apocalypseWow * apocalypses,
+          },
+          { name: 'Companion', value: companionBonus },
+          { name: 'Legend Talent', value: legendTalentBonus },
+          { name: 'Card', value: cardBonus },
+        ],
+        subSections: [
+          equipmentBonusBreakdown,
+        ]
+      },
+    ],
+  };
 
   return {
-    value: (1 + armorSetBonus / 100)
-      * (Math.max(isShaman ? amplifiedFamilyBonus : familyBonus, 1)
-        + ((equipmentGoldFoodBonus + toolGoldFoodBonus + obolsBonus)
-          + (hungryForGoldTalentBonus
-            + (goldenAppleStamp
-              + (goldenFoodAchievement
-                + (goldenFoodBubbleBonus
-                  + goldenFoodSigilBonus) + mealBonus + starSignBonus + bribeBonus + charmBonus
-                + (2 * achievementBonus + 3 * secondAchievementBonus + voteBonus + apocalypseWow * apocalypses + companionBonus + legendTalentBonus + cardBonus))))) / 100),
+    value,
     breakdown,
     expression: `(1 + armorSetBonus / 100)
 * (Math.max(isShaman ? amplifiedFamilyBonus : familyBonus, 1)
-+ (equipmentGoldFoodBonus
++ (gearGoldFoodBonus
 + (hungryForGoldTalentBonus
 + (goldenAppleStamp
 + (goldenFoodAchievement
@@ -768,7 +839,7 @@ export const getGoldenFoodBonus = (foodName, character, account, characters) => 
     const beanstalkData = account?.sneaking?.beanstalkData;
     const beanstalkGoldenFoods = ninjaExtraInfo[29].split(' ').filter((str) => isNaN(str))
       .map((gFood, index) => ({ ...(items?.[gFood] || {}), active: beanstalkData?.[index] > 0, index }));
-    const beanstalkFood = beanstalkGoldenFoods?.find(({ displayName, active }) => displayName === foodName & active);
+    const beanstalkFood = beanstalkGoldenFoods?.find(({ displayName, active }) => displayName === foodName && active);
     if (!beanstalkFood) return baseBonus;
     return baseBonus + beanstalkFood?.Amount * goldenFoodMulti?.value * .05 * lavaLog(1 + 1e3 * Math.pow(10, beanstalkData?.[beanstalkFood?.index]))
       * (1 + lavaLog(1 + 1e3 * Math.pow(10, beanstalkData?.[beanstalkFood?.index])) / 2.14);
@@ -1250,18 +1321,18 @@ export const getKillRoy = (idleonData, charactersData, accountData, serverVars) 
   const permanentUpgrades = killRoySkullShop?.slice(10)?.map((upgrade, i) => {
     const levelOption = permanentUpgradeLevelMap[i];
     const bonusIndex = permanentUpgradeBonusMap[i];
-    
+
     const level = levelOption !== null ? (accountData?.accountOptions?.[levelOption] ?? 0) : 0;
     const bonus = bonusIndex !== undefined ? getKillRoyShopBonus(accountData, bonusIndex) : 1;
-    
+
     // Special case: Shop 15 (Gallery) changes description when level >= 2
     let description = upgrade?.description;
     let replacementChar = '{';
-    
+
     if (i === 5 && level >= 2) {
       description = `Permanently_boosts_your_Gallery_Multiplier_by_+${(bonus / 100).toFixed(2)}x`;
     }
-    
+
     return {
       ...upgrade,
       level,

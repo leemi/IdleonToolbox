@@ -26,6 +26,8 @@ import { getCompassBonus } from '@parsers/compass';
 import { getCharmBonus } from '@parsers/world-6/sneaking';
 import { getTesseractBonus } from '@parsers/tesseract';
 import { getLegendTalentBonus } from '@parsers/world-7/legendTalents';
+import { getLoreBossBonus } from '@parsers/world-7/spelunking';
+import { getExoticMarketBonus } from '@parsers/world-6/farming';
 
 const VILLAGERS = {
   EXPLORE: 0,
@@ -278,7 +280,7 @@ const parseHole = (holeRaw, jarsRaw, accountData) => {
 export const getEngineerTotalBonus = (upgrade, holesObject, index, accountData) => {
   let formattedDescription = upgrade?.description;
   let value = 0;
-  
+
   switch (index) {
     case 14:
       value = getSchematicBonus({ holesObject, t: index, i: 0 });
@@ -533,6 +535,9 @@ const getVillagerExpPerHour = (holesObject, accountData, t, leastOpalInvestedVil
   const compassBonus = getCompassBonus(accountData, 59);
   const charmBonus = getCharmBonus(accountData, 'Candy_Cache');
   const firstVillagerExp = t === 0 && unlockedCaverns < 13 ? Math.pow(1.5, accountData?.accountOptions?.[355]) : 1;
+  const tomeBonus = getLoreBossBonus(accountData, 1);
+  const exoticMarketBonus = getExoticMarketBonus(accountData, 51);
+
   const value = firstVillagerExp
     * (100 + getSchematicBonus({ holesObject, t: 0, i: 25 }))
     * Math.max(1, (1 + compassBonus / 100)
@@ -542,9 +547,11 @@ const getVillagerExpPerHour = (holesObject, accountData, t, leastOpalInvestedVil
       * (1 + statueBonus / 100)
       * (1 + jarBonuses / 100)
       * (1 + (25 * eventBonus) / 100)
+      * (1 + tomeBonus / 100)
       * (1 + (50 * hasBundle) / 100))
     * holesObject?.opalsInvested[t]
     * (1 + holesObject?.parallelVillagersGemShop[t] ?? 0)
+    * (1 + exoticMarketBonus / 100)
     * (1 + arcadeBonus / 100)
     * (1 + grimoireBonus / 100)
     * (1 + tesseractBonus / 100)
@@ -565,48 +572,103 @@ const getVillagerExpPerHour = (holesObject, accountData, t, leastOpalInvestedVil
                       + (getMeasurementBonus({ holesObject, accountData, t: 0 })
                         + getWinnerBonus(accountData, '+{% Villager EXP'))))))))))) / 100);
 
-  const breakdown = [
-    { title: 'Base Value' },
-    { name: 'Opal Dividends', value: 100 + getSchematicBonus({ holesObject, t: 0, i: 25 }) },
-    { title: 'Multiplicative' },
-    { name: 'Opal Invested', value: holesObject?.opalsInvested[t] },
-    { name: 'Companion', value: companionBonus ? 3 : 0 },
-    { name: 'Statue', value: 1 + statueBonus / 100 },
-    { name: 'Jar', value: 1 + jarBonuses / 100 },
-    { name: 'Event shop', value: 1 + (25 * eventBonus) / 100 },
-    { name: 'Bundle', value: 1 + (50 * hasBundle) / 100 },
-    { name: 'Arcade', value: 1 + arcadeBonus / 100 },
-    { name: 'Grimoire', value: 1 + grimoireBonus / 100 },
-    { name: 'Tesseract', value: 1 + tesseractBonus / 100 },
-    { name: 'Gem shop', value: holesObject?.parallelVillagersGemShop[t] ? 2 : 0 },
-    { name: 'Compass', value: 1 + compassBonus / 100 },
-    { name: 'Charm', value: 1 + charmBonus / 100 },
-    { title: 'Additive' },
-    { name: 'Gloomie Opie', value: getSchematicBonus({ holesObject, t: 48, i: 0 }) },
-    { name: 'Num. of Schematics', value: getCosSchematic(holesObject) },
-    {
-      name: 'Village Majik', value: (
-          getCosmoBonus({ majik: holesObject?.villageMajiks, t: 1, i: 5 }) * Math.floor(leastOpalInvestedVillager / 5)) +
-        (Math.floor(holesObject?.opalsInvested[t] / 10) * getCosmoBonus({
-          majik: holesObject?.villageMajiks,
-          t: 1,
-          i: 0
-        })) + (getCosmoBonus({ majik: holesObject?.villageMajiks, t: 1, i: 1 }) * getCosSchematic(holesObject)) +
-        getCosmoBonus({ majik: holesObject?.villageMajiks, t: 1, i: 2 })
-    },
-    {
-      name: 'Monument', value: getMonumentBonus({ holesObject, t: 0, i: 3 }) +
-        getMonumentBonus({ holesObject, t: 1, i: 3 }) + getMonumentBonus({ holesObject, t: 2, i: 3 })
-    },
-    {
-      name: 'Measurements', value: getMeasurementBonus({ holesObject, accountData, t: 7 }) +
-        getMeasurementBonus({ holesObject, accountData, t: 0 })
-    },
-    { name: 'Cards', value: cardBonus },
-    { name: 'Bell', value: getBellBonus({ holesObject, t: 1 }) },
-    { name: 'Summoning', value: getWinnerBonus(accountData, '+{% Villager EXP') },
-    { name: 'Legend Talent', value: getLegendTalentBonus(accountData, 12) },
-  ];
+  const breakdown = {
+    statName: "Villager EXP / hr",
+    totalValue: notateNumber(value),
+    categories: [
+      {
+        name: "Multiplicative",
+        sources: [
+          {
+            name: "Opal Dividends",
+            value: 100 + getSchematicBonus({ holesObject, t: 0, i: 25 }),
+          },
+          { name: "Opal Invested", value: holesObject?.opalsInvested[t] },
+          { name: "Companion", value: companionBonus ? 3 : 0 },
+          { name: "Statue", value: 1 + statueBonus / 100 },
+          { name: "Jar", value: 1 + jarBonuses / 100 },
+          { name: "Event shop", value: 1 + (25 * eventBonus) / 100 },
+          { name: "Bundle", value: 1 + (50 * hasBundle) / 100 },
+          { name: "Arcade", value: 1 + arcadeBonus / 100 },
+          { name: "Grimoire", value: 1 + grimoireBonus / 100 },
+          { name: "Tesseract", value: 1 + tesseractBonus / 100 },
+          {
+            name: "Gem shop",
+            value: holesObject?.parallelVillagersGemShop[t] ? 2 : 0,
+          },
+          { name: "Compass", value: 1 + compassBonus / 100 },
+          { name: "Charm", value: 1 + charmBonus / 100 },
+          {
+            name: "Legend Talent",
+            value: getLegendTalentBonus(accountData, 12),
+          },
+          { name: "Tome", value: 1 + tomeBonus / 100 },
+          {
+            name: "Exotic Market",
+            value: 1 + exoticMarketBonus / 100,
+          },
+        ],
+      },
+      {
+        name: "Additive",
+        sources: [
+          {
+            name: "Gloomie Opie",
+            value: getSchematicBonus({ holesObject, t: 48, i: 0 }),
+          },
+          {
+            name: "Num. of Schematics",
+            value: getCosSchematic(holesObject),
+          },
+          {
+            name: "Village Majik",
+            value:
+              getCosmoBonus({ majik: holesObject?.villageMajiks, t: 1, i: 5 }) *
+              Math.floor(leastOpalInvestedVillager / 5) +
+              Math.floor(holesObject?.opalsInvested[t] / 10) *
+              getCosmoBonus({
+                majik: holesObject?.villageMajiks,
+                t: 1,
+                i: 0,
+              }) +
+              getCosmoBonus({
+                majik: holesObject?.villageMajiks,
+                t: 1,
+                i: 1,
+              }) *
+              getCosSchematic(holesObject) +
+              getCosmoBonus({
+                majik: holesObject?.villageMajiks,
+                t: 1,
+                i: 2,
+              }),
+          },
+          {
+            name: "Monument",
+            value:
+              getMonumentBonus({ holesObject, t: 0, i: 3 }) +
+              getMonumentBonus({ holesObject, t: 1, i: 3 }) +
+              getMonumentBonus({ holesObject, t: 2, i: 3 }),
+          },
+          {
+            name: "Measurements",
+            value:
+              getMeasurementBonus({ holesObject, accountData, t: 7 }) +
+              getMeasurementBonus({ holesObject, accountData, t: 0 }),
+          },
+          { name: "Cards", value: cardBonus },
+          {
+            name: "Bell",
+            value: getBellBonus({ holesObject, t: 1 }),
+          },
+          {
+            name: "Summoning",
+            value: getWinnerBonus(accountData, "+{% Villager EXP"),
+          },
+        ],
+      },
+    ],
+  };
 
   return {
     value,
@@ -622,12 +684,12 @@ const getVillagerExpReq = (level, index) => {
       * Math.max(0, level - 12))) :
     1 === index ? 30 * (10 + 6 * Math.pow(level, 1.8))
       * Math.pow(1.57, level) : 2 === index ? 50
-      * (10 + 5 * Math.pow(level, 1.7))
-      * Math.pow(1.4, level) : 3 === index ? 120
-      * (30 + 10 * Math.pow(level, 2))
-      * Math.pow(2, level) : 4 === index ? 500
-      * (10 + 5 * Math.pow(level, 1.3))
-      * Math.pow(1.13, level) : 10 * Math.pow(10, 20);
+        * (10 + 5 * Math.pow(level, 1.7))
+        * Math.pow(1.4, level) : 3 === index ? 120
+          * (30 + 10 * Math.pow(level, 2))
+          * Math.pow(2, level) : 4 === index ? 500
+            * (10 + 5 * Math.pow(level, 1.3))
+            * Math.pow(1.13, level) : 10 * Math.pow(10, 20);
 }
 const getStudyReq = (holesObject, t) => {
   return 4e3 *
@@ -641,8 +703,8 @@ export const getStudyBonus = (holesObject, t, i) => {
     : 9 === t
       ? (1 <= holesObject?.studyStuff?.[t] ? 50 + holesObject?.studyStuff?.[t] * Number(multiList[t]) : 0)
       : 3 === t ? (1 <= holesObject?.studyStuff?.[t]
-          ? Math.min(32, 12 + holesObject?.studyStuff?.[t] * Number(multiList[t]))
-          : 0)
+        ? Math.min(32, 12 + holesObject?.studyStuff?.[t] * Number(multiList[t]))
+        : 0)
         : holesObject?.studyStuff?.[t] * Number(multiList[t]);
 
 }
@@ -670,9 +732,9 @@ const getStudies = (holesObject, villagerLevel, account) => {
 
   const stampBonus = getStampsBonusByEffect(account, 'Study_rate_for_Bolaia');
   const studyPerHour = 100 * (1 + ((5 +
-      (getSchematicBonus({ holesObject, t: 85, i: 2 })
-        + (getSchematicBonus({ holesObject, t: 87, i: 3 })
-          + getSchematicBonus({ holesObject, t: 88, i: 5 })))) * villagerLevel) / 100)
+    (getSchematicBonus({ holesObject, t: 85, i: 2 })
+      + (getSchematicBonus({ holesObject, t: 87, i: 3 })
+        + getSchematicBonus({ holesObject, t: 88, i: 5 })))) * villagerLevel) / 100)
     * (1 + (getJarBonus({ holesObject, i: 16, account })
       + (stampBonus
         + getCosmoBonus({ majik: holesObject?.villageMajiks, t: 1, i: 4 }))) / 100);

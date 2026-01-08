@@ -115,6 +115,7 @@ export const createIndexedArray = (object) => {
   return result;
 };
 
+// _customBlock_ArbitraryCode5Inputs
 export const growth = (func, level, x1, x2, shouldRound = true) => {
   let result;
   switch (func) {
@@ -122,20 +123,51 @@ export const growth = (func, level, x1, x2, shouldRound = true) => {
       if (x2 !== 0) {
         result = (((x1 + x2) / x2 + 0.5 * (level - 1)) / (x1 / x2)) * level * x1;
       } else {
-        result = level * x1;
+        result = x1 * level;
+      }
+      break;
+    case 'addLower':
+      result = x1 + x2 * (level + 1);
+      break;
+    case 'addDECAY':
+      if (level < 50001) {
+        result = x1 * level;
+      } else {
+        result = x1 * Math.min(50000, level) + ((level - 50000) / (level - 50000 + 150000)) * x1 * 50000;
       }
       break;
     case 'decay':
-      result = (level * x1) / (level + x2);
+      result = (x1 * level) / (level + x2);
+      break;
+    case 'decayLower':
+      result = (x1 * (level + 1)) / (level + 1 + x2) - (x1 * level) / (level + x2);
+      break;
+    case 'decayMulti':
+      result = 1 + (x1 * level) / (level + x2);
+      break;
+    case 'decayMultiLower':
+      result = (x1 * (level + 1)) / (level + 1 + x2) - (x1 * level) / (level + x2);
+      break;
+    case 'bigBase':
+      result = x1 + x2 * level;
+      break;
+    case 'bigBaseLower':
+      result = x2;
       break;
     case 'intervalAdd':
       result = x1 + Math.floor(level / x2);
       break;
-    case 'decayMulti':
-      result = 1 + (level * x1) / (level + x2);
+    case 'intervalAddLower':
+      result = Math.max(Math.floor((level + 1) / x2), 0) - Math.max(Math.floor(level / x2), 0);
       break;
-    case 'bigBase':
-      result = x1 + x2 * level;
+    case 'reduce':
+      result = x1 - x2 * level;
+      break;
+    case 'reduceLower':
+      result = x1 - x2 * (level + 1);
+      break;
+    case 'PtsSpentOnGuildBonus':
+      result = (((x1 + x2) / x2 + 0.5 * (level - 1)) / (x1 / x2)) * level * x1 - x2 * level;
       break;
     case 'special1':
       result = 100 - (level * x1) / (level + x2);
@@ -361,6 +393,7 @@ export const notateNumber = (e, s) => {
     : 'MultiplierInfo' === s ? (0 === (10 * e) % 10 ? Math.round(e) + '.00'
         : 0 === (100 * e) % 10 ? Math.round(10 * e) / 10 + '0'
           : Math.round(100 * e) / 100 + '')
+      : 'ThreeDecimals' === s ? '' + parseFloat((Math.round(1000 * e) / 1000).toFixed(3))
       : 'Micro' === s ? (10 < e ? '' + Math.round(e)
           : 0.1 < e ? '' + Math.round(10 * e) / 10
             : 0.01 < e ? '' + Math.round(100 * e) / 100
@@ -794,13 +827,25 @@ export function parseShorthandNumber(input) {
       const digitsAfterComma = numberPart.length - commaIndex - 1;
       const digitsBeforeComma = commaIndex;
       
-      // If exactly 3 digits after comma and more than 3 digits before, likely thousands separator
-      // Otherwise, likely decimal separator
-      if (digitsAfterComma === 3 && digitsBeforeComma > 3) {
-        // Thousands separator (e.g., '1234,567')
+      // Heuristic for determining separator type:
+      // 1. Exactly 3 digits after + 1-3 digits before = proper thousands separator
+      // 2. 1-2 digits after = decimal separator
+      // 3. 4+ digits after = likely misplaced thousands separator from editing (e.g., '131,3133' when typing '1313133')
+      //    Remove separator and treat as whole number
+      // 4. 3 digits after + 4+ digits before = decimal separator
+      
+      const isProperThousandsSeparator = digitsAfterComma === 3 && digitsBeforeComma >= 1 && digitsBeforeComma <= 3;
+      const isClearlyDecimal = digitsAfterComma >= 1 && digitsAfterComma <= 2;
+      const isMisplacedSeparator = digitsAfterComma >= 4;
+      
+      if (isProperThousandsSeparator) {
+        // Thousands separator (e.g., '1,234', '12,345', '123,456')
+        normalizedNumber = numberPart.replace(',', '');
+      } else if (isMisplacedSeparator) {
+        // Misplaced thousands separator from editing (e.g., '131,3133' → '1313133')
         normalizedNumber = numberPart.replace(',', '');
       } else {
-        // Decimal separator (e.g., '12,5' or '123,4567')
+        // Decimal separator (e.g., '12,5' or '123,45' or '1234,567')
         normalizedNumber = numberPart.replace(',', '.');
       }
     } else {
@@ -815,13 +860,19 @@ export function parseShorthandNumber(input) {
       const digitsAfterPeriod = numberPart.length - periodIndex - 1;
       const digitsBeforePeriod = periodIndex;
       
-      // If exactly 3 digits after period and more than 3 digits before, likely thousands separator
-      // Otherwise, likely decimal separator
-      if (digitsAfterPeriod === 3 && digitsBeforePeriod > 3) {
-        // Thousands separator (e.g., '1234.567')
+      // Same heuristic as comma
+      const isProperThousandsSeparator = digitsAfterPeriod === 3 && digitsBeforePeriod >= 1 && digitsBeforePeriod <= 3;
+      const isClearlyDecimal = digitsAfterPeriod >= 1 && digitsAfterPeriod <= 2;
+      const isMisplacedSeparator = digitsAfterPeriod >= 4;
+      
+      if (isProperThousandsSeparator) {
+        // Thousands separator (e.g., '1.234', '12.345', '123.456')
+        normalizedNumber = numberPart.replace('.', '');
+      } else if (isMisplacedSeparator) {
+        // Misplaced thousands separator from editing (e.g., '131.3133' → '1313133')
         normalizedNumber = numberPart.replace('.', '');
       } else {
-        // Decimal separator (e.g., '12.5' or '123.4567')
+        // Decimal separator (e.g., '12.5' or '123.45' or '1234.567')
         normalizedNumber = numberPart; // Already correct
       }
     } else {

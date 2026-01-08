@@ -1,6 +1,6 @@
 import { commaNotation, getFilteredPortals, lavaLog, lavaLog2, notateNumber, tryToParse } from '@utility/helpers';
 import { mapEnemiesArray, mapPortals, monsterDrops, monsters, tesseract } from '@website-data';
-import { CLASSES, getCharacterByHighestTalent, getTalentBonus } from '@parsers/talents';
+import { CLASSES, getCharacterByHighestTalent, getTalentBonus, getHighestTalentByClass } from '@parsers/talents';
 import { getStatsFromGear } from '@parsers/items';
 import { getArcadeBonus } from '@parsers/arcade';
 import { getJewelBonus, getLabBonus } from '@parsers/lab';
@@ -199,17 +199,17 @@ export const getRingBaseStats = (itemQuality) => {
   ]
 }
 
-export const getTesseractMapBonus = (account, character, bonusIndex) => {
-  const tesseractMapBonuses = getMaps(account, character);
+export const getTesseractMapBonus = (account, characters, character, bonusIndex) => {
+  const tesseractMapBonuses = getMaps(account, characters, character);
   const charMap = tesseractMapBonuses?.find(({ mapIndex }) => parseFloat(mapIndex) === parseFloat(character?.mapIndex));
   const bonus = charMap?.mapBonuses?.[bonusIndex]?.value;
   return bonus > 0 ? bonus : 0;
 }
-export const getMaps = (account, character) => {
+export const getMaps = (account, characters, character) => {
   const { unlockedPortals, upgrades, mapBonusRaw } = account?.tesseract;
-  const overwhelmingEnergy = getTalentBonus(character?.flatTalents, 'OVERWHELMING_ENERGY');
+  const highestOverwhelmingEnergy = getHighestTalentByClass(characters, CLASSES.Arcane_Cultist, 'OVERWHELMING_ENERGY');
 
-  const maxMapBonus = 100 * (overwhelmingEnergy - 1) + Math.min(10, calcTesseractBonus(upgrades, 58, 0))
+  const maxMapBonus = 100 * (highestOverwhelmingEnergy - 1) + Math.min(10, calcTesseractBonus(upgrades, 58, 0))
   return getFilteredPortals()?.map(({ mapIndex, mapName }) => {
     const availablePortals = mapPortals?.[mapIndex];
     const portals = availablePortals.map((_, portalIndex) => {
@@ -342,7 +342,7 @@ export const getTachyonType = (index) => {
 export const getExtraTachyon = (character, account) => {
   const upgrades = account?.tesseract?.upgrades;
   const tesseract = getTalentBonus(character?.flatTalents, 'TESSERACT');
-  const equipBonus = getStatsFromGear(character, 95, account);
+  const { value: equipBonus } = getStatsFromGear(character, 95, account);
   const arcadeBonus = getArcadeBonus(account?.arcade?.shop, 'Arcane_Tachyons')?.bonus ?? 0;
   const spelunkerObolMulti = getLabBonus(account?.lab.labBonuses, 8); // gem multi
   const jewelBonus = getJewelBonus(account?.lab.jewels, 23, spelunkerObolMulti);
@@ -378,8 +378,8 @@ export const getArcanistStats = (upgrades, totalUpgradeLevels, character, accoun
   const ghastlyPowerY = getTalentBonus(character?.flatTalents, 'GHASTLY_POWER', true);
   const goulishPower = getTalentBonus(character?.flatTalents, 'GHOULISH_POWER');
   const arcanistForm = getTalentBonus(character?.flatTalents, 'ARCANIST_FORM');
-  const equipBonus = getStatsFromGear(character, 94, account);
-  const equipBonus2 = getStatsFromGear(character, 93, account);
+  const { value: equipBonus } = getStatsFromGear(character, 94, account);
+  const { value: equipBonus2 } = getStatsFromGear(character, 93, account);
   let equipmentWeaponPower = 0;
   const bowWeaponPower = character?.equipment?.[1];
 
@@ -478,15 +478,38 @@ export const getPrismaFragChance = (character, account, upgrades) => {
 }
 
 export const getPrismaMulti = (account) => {
-  const arcadeBonus = getArcadeBonus(account?.arcade?.shop, 'Prisma_Bonuses')?.bonus;
-  const tesseractBonus = getTesseractBonus(account, 45);
-  const paletteBonus = getPaletteBonus(account, 28);
-  const exoticMarketBonus = getExoticMarketBonus(account, 48);
-  const legendBonus = getLegendTalentBonus(account, 36);
+  const arcadeBonus = getArcadeBonus(account?.arcade?.shop, 'Prisma_Bonuses')?.bonus ?? 0;
+  const tesseractBonus = getTesseractBonus(account, 45) ?? 0;
+  const paletteBonus = getPaletteBonus(account, 28) ?? 0;
+  const exoticMarketBonus = getExoticMarketBonus(account, 48) ?? 0;
+  const legendBonus = getLegendTalentBonus(account, 36) ?? 0;
   const trophyBonus = hasItemDropped(account, 'Trophy23') ? 10 : 0;
   const totalEtherealSigils = account?.alchemy?.p2w?.totalEtherealSigils || 0;
+  const sigilsBonus = 0.2 * totalEtherealSigils;
 
-  return Math.min(3, 2 + (tesseractBonus + (arcadeBonus + (trophyBonus + (paletteBonus + (0.2 * totalEtherealSigils + exoticMarketBonus)))) + legendBonus) / 100)
+  const value = Math.min(3, 2 + (tesseractBonus + (arcadeBonus + (trophyBonus + (paletteBonus + (sigilsBonus + exoticMarketBonus)))) + legendBonus) / 100);
+
+  return {
+    value,
+    breakdown: {
+      statName: "Prisma multi",
+      totalValue: notateNumber(value, "MultiplierInfo"),
+      categories: [
+        {
+          name: "Additive",
+          sources: [
+            { name: "Tesseract", value: tesseractBonus },
+            { name: "Arcade", value: arcadeBonus },
+            { name: "Trophy", value: trophyBonus },
+            { name: "Palette", value: paletteBonus },
+            { name: "Ethereal Sigils", value: sigilsBonus },
+            { name: "Exotic Market", value: exoticMarketBonus },
+            { name: "Legend Talent", value: legendBonus },
+          ],
+        },
+      ],
+    }
+  };
 }
 
 const getUpgradeCost = ({ index, x1, x2, level, account, upgrades }) => {

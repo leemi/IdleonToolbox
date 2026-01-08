@@ -85,23 +85,52 @@ export const getMonumentAfkBonus = (holesObject, accountData) => {
 
   return {
     value: afkPercent,
-    breakdown: [
-      {
-        name: 'Monument', value: getMonumentBonus({ holesObject, t: 0, i: 8 })
-          + getMonumentBonus({ holesObject, t: 1, i: 8 })
-          + getMonumentBonus({ holesObject, t: 2, i: 8 })
-      },
-      { name: 'Summoning', value: winBonus },
-      { name: 'Jar', value: getJarBonus({ holesObject, i: 19, account: accountData }) },
-      { name: 'Schematic', value: getSchematicBonus({ holesObject, t: 81, i: 20 }) },
-      { name: 'Measurement', value: getMeasurementBonus({ holesObject, accountData, t: 11 }) },
-      { name: 'Arcade', value: arcadeBonus || 0 },
-      {
-        name: 'Achievement',
-        value: 10 * getAchievementStatus(accountData?.achievements, 311)
-      },
-      { name: 'Compass', value: getCompassBonus(accountData, 55) },
-    ],
+    breakdown: {
+      statName: "Monument Afk bonus",
+      totalValue: notateNumber(afkPercent, 'MultiplierInfo'),
+      categories: [
+        {
+          name: "Additive",
+          sources: [
+            {
+              name: "Monument",
+              value:
+                getMonumentBonus({ holesObject, t: 0, i: 8 }) +
+                getMonumentBonus({ holesObject, t: 1, i: 8 }) +
+                getMonumentBonus({ holesObject, t: 2, i: 8 })
+            },
+            {
+              name: "Summoning",
+              value: winBonus
+            },
+            {
+              name: "Jar",
+              value: getJarBonus({ holesObject, i: 19, account: accountData })
+            },
+            {
+              name: "Schematic",
+              value: getSchematicBonus({ holesObject, t: 81, i: 20 })
+            },
+            {
+              name: "Measurement",
+              value: getMeasurementBonus({ holesObject, accountData, t: 11 })
+            },
+            {
+              name: "Arcade",
+              value: arcadeBonus || 0
+            },
+            {
+              name: "Achievement",
+              value: 10 * getAchievementStatus(accountData?.achievements, 311)
+            },
+            {
+              name: "Compass",
+              value: getCompassBonus(accountData, 55)
+            }
+          ]
+        }
+      ]
+    },
     expression: `braveryAfkBonus
 + justiceAfkBonus
 + wisdomAfkBonus
@@ -121,11 +150,24 @@ export const getMonumentAfkReq = (afkPercent, requiredHours, ownedAfkHours = 0) 
   if (!requiredHours) return null;
   const remainingHours = Math.max(0, requiredHours - ownedAfkHours);
   const realHoursNeeded = Math.ceil(remainingHours / (1 + afkPercent / 100));
-  return Array.from({ length: 10 }, (_, index) => {
-    const characters = index + 1;  // 1 to 10 characters
-    const hoursPerCharacter = Math.ceil(realHoursNeeded / characters);  // Divide time between characters, round up
-    return { name: `${characters} characters`, value: `${hoursPerCharacter} hrs` };  // Return object with character count and hours
-  });
+  return {
+    statName: "Monument AFK Hours Req",
+    totalValue: realHoursNeeded,
+    categories: [
+      {
+        name: "Characters",
+        sources: Array.from({ length: 10 }, (_, index) => {
+          const characters = index + 1
+          const hoursPerCharacter = Math.ceil(realHoursNeeded / characters)
+  
+          return {
+            name: `${characters} character${characters > 1 ? "s" : ""}`,
+            value: hoursPerCharacter,
+          }
+        }),
+      },
+    ],
+  };
 }
 
 export const getMonumentMaxLinearTime = (holesObject, t, accountData) => {
@@ -140,7 +182,7 @@ export const getMonumentMaxLinearTime = (holesObject, t, accountData) => {
 
 export const getMonumentMultiReward = (holesObject, t, accountData) => {
   const maxLinearTime = getMonumentMaxLinearTime(holesObject, t, accountData)
-  
+
   return (Math.min(holesObject?.extraCalculations?.[Math.round(11 + t)], maxLinearTime) / 72e3
     + (Math.pow(1 + Math.max(0, holesObject?.extraCalculations?.[Math.round(11 + t)] - maxLinearTime) / 72e3, 0.3) - 1))
     * (1 + getMeritocracyBonus(accountData, 7) / 100)

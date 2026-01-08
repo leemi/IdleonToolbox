@@ -335,7 +335,7 @@ export const getBubbleBonus = (account, bubbleName, round, shouldMultiply) => {
 
   // Apply prisma multiplier to base bubble
   const basePrismaMultiplier = isPrismaBubble(account, targetBubble?.bubbleIndex)
-    ? getPrismaMulti(account)
+    ? getPrismaMulti(account)?.value
     : 1;
 
   // Calculate primary multiplier from bubble at index 1 (if shouldMultiply is true)
@@ -351,7 +351,7 @@ export const getBubbleBonus = (account, bubbleName, round, shouldMultiply) => {
         round
       );
       const primaryPrismaMultiplier = isPrismaBubble(account, primaryMultiBubble?.bubbleIndex)
-        ? getPrismaMulti(account)
+        ? getPrismaMulti(account)?.value
         : 1;
       primaryMultiplier = primaryBubbleValue * primaryPrismaMultiplier;
     }
@@ -378,7 +378,7 @@ export const getBubbleBonus = (account, bubbleName, round, shouldMultiply) => {
         round
       );
       const secondaryPrismaMultiplier = isPrismaBubble(account, secondaryBubble?.bubbleIndex)
-        ? getPrismaMulti(account)
+        ? getPrismaMulti(account)?.value
         : 1;
       secondaryMultiplier = secondaryBubbleValue * secondaryPrismaMultiplier;
     }
@@ -629,12 +629,21 @@ export const getUpgradeableBubbles = (acc, characters) => {
     maxBubblesToUpgrade: 10,
     minLevel: 0,
     maxLevel: 0,
-    breakdown: [
-      { name: 'Base', value: 0 },
-      { name: 'Artifact', value: 0 },
-      { name: 'Merit', value: 0 },
-      { name: 'Jewel', value: 0 }
-    ]
+    breakdown: {
+      statName: "Upgradeable Bubbles",
+      totalValue: 0,
+      categories: [
+        {
+          name: "Additive",
+          sources: [
+            { name: "Base", value: 0 },
+            { name: "Artifact", value: 0 },
+            { name: "Merit", value: 0 },
+            { name: "Jewel", value: 0 },
+          ],
+        },
+      ],
+    }
   };
   const allBubbles = Object.values(acc?.alchemy?.bubbles).flatMap((bubbles, index) => {
     return bubbles.map((bubble, bubbleIndex) => {
@@ -672,12 +681,21 @@ export const getUpgradeableBubbles = (acc, characters) => {
     maxBubblesToUpgrade: 10,
     minLevel,
     maxLevel,
-    breakdown: [
-      { name: 'Base', value: 3 },
-      { name: 'Artifact', value: (amberiteArtifact?.baseBonus || 0) * multi },
-      { name: 'Merit', value: moreBubblesFromMerit },
-      { name: 'Jewel', value: jewel?.acquired ? 1 : 0 }
-    ]
+    breakdown: {
+      statName: "Upgradeable Bubbles",
+      totalValue: upgradeableBubblesAmount,
+      categories: [
+        {
+          name: "Additive",
+          sources: [
+            { name: "Base", value: 3 },
+            { name: "Artifact", value: (amberiteArtifact?.baseBonus || 0) * multi },
+            { name: "Merit", value: moreBubblesFromMerit },
+            { name: "Jewel", value: jewel?.acquired ? 1 : 0 },
+          ],
+        },
+      ],
+    }
   };
 }
 
@@ -713,7 +731,7 @@ export const getPossibleZenithMarketBubbles = (account, characters) => {
     || character.secondLinkedDeityIndex === 8
     || isCompanionBonusActive(account, 0));
   if (!hasKrukLinked) return [];
-  return account?.alchemy?.bubblesFlat.filter((bubble) => bubblesIndexes.includes(bubble.bubbleIndex)).map((bubble) => ({ ...bubble, isZenithMarket: true, dailyLevels: krukLevelsDaily }));
+  return account?.alchemy?.bubblesFlat.filter((bubble) => bubblesIndexes.includes(bubble.bubbleIndex)).map((bubble) => ({ ...bubble, isZenithMarket: true, dailyLevels: krukLevelsDaily.value, dailyLevelsBreakdown: krukLevelsDaily.breakdown }));
 }
 
 export const getKrukBubblesDaily = (account) => {
@@ -726,9 +744,36 @@ export const getKrukBubblesDaily = (account) => {
   const spelunkBonus = getSpelunkingBonus(account, 47);
   const eventShopBonus = getEventShopBonus(account, 31);
 
-  return Math.floor((20 +
-    (stampBonus + (legendBonus + zenithBonus)))
-    * (1 + meritocracyBonus / 100)
-    * (1 + 0.5 * eventShopBonus)
-    * (1 + (bubbleBonus + (arcadeBonus + spelunkBonus)) / 100))
+  const baseAmount = 20;
+  const additiveBonus = stampBonus + legendBonus + zenithBonus;
+  const meritocracyMulti = 1 + meritocracyBonus / 100;
+  const eventShopMulti = 1 + 0.5 * eventShopBonus;
+  const percentBonus = bubbleBonus + arcadeBonus + spelunkBonus;
+  const percentMulti = 1 + percentBonus / 100;
+
+  const total = Math.floor((baseAmount + additiveBonus) * meritocracyMulti * eventShopMulti * percentMulti);
+
+  return {
+    value: total,
+    breakdown: {
+      statName: "Kruk Bubbles Daily",
+      totalValue: total,
+      categories: [
+        {
+          name: "Multiplicative",
+          sources: [
+            { name: "Base", value: baseAmount },
+            { name: "Stamp", value: stampBonus },
+            { name: "Legend Talent", value: legendBonus },
+            { name: "Zenith", value: zenithBonus },
+            { name: "Meritocracy", value: meritocracyBonus },
+            { name: "Event Shop", value: eventShopBonus > 0 ? 50 * eventShopBonus : 0 },
+            { name: "Bubble", value: bubbleBonus },
+            { name: "Arcade", value: arcadeBonus },
+            { name: "Spelunk", value: spelunkBonus },
+          ],
+        },
+      ],
+    }
+  };
 }
