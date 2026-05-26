@@ -144,16 +144,16 @@ export const getClosestWorshiper = (characters: any) => {
   }, { character: null, timeLeft: Infinity })
 }
 
-export const getWorshipperWithMostCharge = (characters) => {
-  const charges = characters?.map((character) => {
+export const getWorshipperWithMostCharge = (characters: any) => {
+  const charges = characters?.map((character: any) => {
     return {name: character?.name, charge: character?.worship?.currentCharge};
-  }).sort((a, b) => b.charge - a.charge)
+  }).sort((a: any, b: any) => b.charge - a.charge)
   return charges[0].name
 }
 
-export const getChargeWithSyphon = (characters) => {
-  const totalCharge = characters?.reduce((res, { worship }) => res + (worship?.currentCharge || 0), 0);
-  const totalChargeRate = characters?.reduce((res, { worship }) => res + (worship?.chargeRate || 0), 0);
+export const getChargeWithSyphon = (characters: any) => {
+  const totalCharge = characters?.reduce((res: any, { worship }: any) => res + (worship?.currentCharge || 0), 0);
+  const totalChargeRate = characters?.reduce((res: any, { worship }: any) => res + (worship?.chargeRate || 0), 0);
   const bestChargeSyphon = getHighestTalentByClass(characters, CLASSES.Wizard, 'CHARGE_SYPHON', 'y') || 0;
   const bestWizard = getCharacterByHighestTalent(characters, CLASSES.Wizard, 'CHARGE_SYPHON', 'y');
 

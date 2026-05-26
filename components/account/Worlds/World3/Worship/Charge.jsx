@@ -6,7 +6,7 @@ import { cleanUnderscore, prefix } from '@utility/helpers';
 import Tooltip from '../../../../Tooltip';
 import Box from '@mui/material/Box';
 import Timer from '../../../../common/Timer';
-import { getChargeWithSyphon, getClosestWorshiper, getWorshipperWithMostCharge } from '@parsers/worship';
+import { getChargeWithSyphon, getClosestWorshiper, getWorshipperWithMostCharge } from '@parsers/world-3/worship';
 
 const Charge = () => {
   const { state } = useContext(AppContext);
