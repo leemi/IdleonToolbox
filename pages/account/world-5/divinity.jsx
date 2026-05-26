@@ -4,16 +4,21 @@ import { Card, CardContent, Checkbox, Divider, FormControlLabel, Stack, Typograp
 import { cleanUnderscore, getBitIndex, getCoinsArray, notateNumber, prefix } from '@utility/helpers';
 import Tooltip from 'components/Tooltip';
 import { CardTitleAndValue, MissingData } from '@components/common/styles';
-import { isGodEnabledBySorcerer } from '../../../parsers/lab';
+import { isGodEnabledBySorcerer } from '@parsers/world-4/lab';
 import { NextSeo } from 'next-seo';
 import { isCompanionBonusActive } from '../../../parsers/misc';
-import { getMinorDivinityBonus } from '../../../parsers/divinity';
+import { getMinorDivinityBonus } from '@parsers/world-5/divinity';
 import CoinDisplay from '../../../components/common/CoinDisplay';
-import { getKrukBubblesDaily } from '@parsers/alchemy';
+import { getKrukBubblesDaily } from '@parsers/world-2/alchemy';
+import Tabber from '@components/common/Tabber';
+import { getTabs } from '@utility/helpers';
+import { PAGES } from '@components/constants';
+import CoralKidUpgrades from '@components/account/Worlds/World7/CoralReef/CoralKidUpgrades';
 
 const Divinity = () => {
   const { state } = useContext(AppContext);
   const { deities, linkedDeities, godRank } = state?.account?.divinity || {};
+  const { coralKidUpgrades } = state?.account?.coralReef || {};
   const [showCost, setShowCost] = useState(false);
   if (!state?.account?.divinity) return <MissingData name={'divinity'}/>;
   return <>
@@ -21,6 +26,8 @@ const Divinity = () => {
       title="Divinity | Idleon Toolbox"
       description="Keep track of your characters' gods connections and upgrades"
     />
+    <Tabber tabs={getTabs(PAGES.ACCOUNT['world 5'].categories, 'divinity')}>
+    <div>
     <CardTitleAndValue title={'God Rank'} value={godRank || 1}/>
     <FormControlLabel
       control={<Checkbox name={'mini'} checked={showCost} size={'small'} onChange={() => setShowCost(!showCost)}/>}
@@ -36,7 +43,8 @@ const Divinity = () => {
                        blessingBonus,
                        cost,
                        level,
-                       unlocked
+                       unlocked,
+                       maxLevel
                      }, godIndex) => {
         const hasLinks = state?.characters?.some((character, index) => isCompanionBonusActive(state?.account, 0) || linkedDeities?.[index] === godIndex || isGodEnabledBySorcerer(character, godIndex));
         const highestDivinityCharacter = state?.characters?.reduce((prev, curr) => {
@@ -52,7 +60,7 @@ const Divinity = () => {
                   <img style={{ width: 42 }} src={`${prefix}data/${rawName}.png`} alt="god-icon"/>
                   <Stack>
                     <Typography>{name}</Typography>
-                    <Typography variant={'body2'}>Lv. {level} / 100</Typography>
+                    <Typography variant={'body2'}>Lv. {level} / {maxLevel}</Typography>
                   </Stack>
                 </Stack>
                 <Stack gap={1} justifyContent={'space-between'} sx={{ minHeight: 250 }}>
@@ -103,6 +111,9 @@ const Divinity = () => {
         );
       })}
     </Stack>
+    </div>
+    <CoralKidUpgrades coralKidUpgrades={coralKidUpgrades} />
+    </Tabber>
   </>;
 };
 

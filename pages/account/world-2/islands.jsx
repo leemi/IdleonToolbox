@@ -22,7 +22,6 @@ const Islands = () => {
   const { state } = useContext(AppContext);
   const { islands } = state?.account || {};
   const [dialog, setDialog] = useState({ open: false, data: null });
-  // const highestTotalStats = useMemo(() => getHighestCharacterByTotalStats(state?.characters), [state?.characters]);
   const handleLearnMoreClick = (island) => {
     setDialog({ data: island, open: true })
   }
@@ -30,11 +29,11 @@ const Islands = () => {
   return <>
     <NextSeo
       title="Islands | Idleon Toolbox"
-      description="Islands progressions and available upgrades"
+      description="Track your island exploration progress, available upgrades, and trash island bonuses in Legends of Idleon"
     />
     <Stack direction={'row'} flexWrap={'wrap'} gap={2}>
       <CardTitleAndValue title={'Bottles'} value={Math.round(islands?.bottles)}/>
-      <CardTitleAndValue title={'Bottles/day'} value={islands?.bottlesPerDay}/>
+      <CardTitleAndValue title={'Bottles/day'} value={islands?.bottlesPerDay || '0'}/>
       <CardTitleAndValue title={'Trash/day *'} value={islands?.trashPerDay}
                          tooltipTitle={trashDisclaimer}/>
       <CardTitleAndValue title={'Unclaimed days'} value={islands?.numberOfDaysAfk || '0'}/>

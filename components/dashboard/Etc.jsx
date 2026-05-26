@@ -1,50 +1,61 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import Library from '../account/Worlds/World3/Library';
 import { Card, CardContent, Divider, Stack, Typography } from '@mui/material';
 import styled from '@emotion/styled';
-import { cleanUnderscore, getDuration, getRealDateInMs, getTimeAsDays, notateNumber, prefix } from '@utility/helpers';
-import { getEventShopBonus, getMiniBossesData, getRandomEvents } from '@parsers/misc';
+import { cleanUnderscore, getDuration, getTimeAsDays, notateNumber, prefix } from '@utility/helpers';
+import useRealDate from '@hooks/useRealDate';
+import { getCharacterByHighestSkillLevel, getEventShopBonus, getMiniBossesData, getRandomEvents } from '@parsers/misc';
 import Tooltip from '../Tooltip';
 import Timer from '../common/Timer';
 import { calcHappyHours } from '@parsers/dungeons';
-import { getBuildCost, getGildedBoostioBonus } from '@parsers/construction';
-import { getChargeWithSyphon, getClosestWorshiper } from '@parsers/worship';
-import { getAtomBonus } from '@parsers/atomCollider';
+import { getBuildCost, getGildedBoostioBonus } from '@parsers/world-3/construction';
+import { getChargeWithSyphon, getClosestWorshiper } from '@parsers/world-3/worship';
+import { getAtomBonus } from '@parsers/world-3/atomCollider';
 import { isPast } from 'date-fns';
 import RandomEvent from '@components/account/Misc/RandomEvent';
 import Trade from '@components/account/Worlds/World5/Sailing/Trade';
 import { useRouter } from 'next/router';
-import { calcCost, calcTimeToRankUp, getRefineryCycles } from '@parsers/refinery';
+import { calcCost, calcTimeToRankUp, getRefineryCycles } from '@parsers/world-3/refinery';
 import { getGambitBonus } from '@parsers/world-5/caverns/gambit';
 import { getLegendTalentBonus } from '@parsers/world-7/legendTalents';
 import { getMonumentMaxLinearTime } from '@parsers/world-5/caverns/bravery';
 import { getMeritocracyBonus } from '@parsers/world-2/voteBallot';
 
 const maxTimeValue = 9.007199254740992e+15;
+const VILLAGER_TABS = ['Explore', 'Engineer', 'Bonuses', 'Measure', 'Study'];
 const Etc = ({ characters, account, lastUpdated, trackers }) => {
+  const getRealDateInMs = useRealDate();
+  // Anchor timer math to `lastUpdated` (the data-fetch timestamp) rather than `new Date().getTime()`.
+  // React Compiler hoists `new Date().getTime()` into a no-dep memo slot and never re-runs it, so timers
+  // drifted by an extra refresh interval each time data updated. <Timer> already compensates for the
+  // wall clock advancing between refreshes via its own `timePassed` calculation.
+  const now = lastUpdated ?? new Date().getTime();
   const emptyAlerts = Object.entries(trackers || {}).reduce((res, [alertName, data]) => {
     const allEmpty = Object.values(data || {}).every(({ checked }) => !checked);
     return { ...res, [alertName]: allEmpty };
   }, {});
   const router = useRouter();
-  const events = useMemo(() => getRandomEvents(account), [characters, account, lastUpdated]);
-  const nextHappyHours = useMemo(() => calcHappyHours(account?.serverVars?.HappyHours) || [], [account]);
-  const nextPrinterCycle = new Date().getTime() + (3600 - (account?.timeAway?.GlobalTime - account?.timeAway?.Printer)) * 1000;
-  const nextCompanionClaim = new Date().getTime() + Math.max(0, 594e6 - (1e3 * account?.timeAway?.GlobalTime - (account?.companions?.lastFreeClaim ?? 0)));
-  const nextFeatherRestart = new Date().getTime() + (account?.owl?.upgrades?.[4]?.cost - account?.owl?.feathers) / account?.owl?.featherRate * 1000;
-  const nextMegaFeatherRestart = new Date().getTime() + (account?.owl?.upgrades?.[8]?.cost - account?.owl?.feathers) / account?.owl?.featherRate * 1000;
-  const mfDuration = getDuration(new Date().getTime(), nextMegaFeatherRestart);
+  const events = getRandomEvents(account);
+  const nextHappyHours = calcHappyHours(account?.serverVars?.HappyHours) || [];
+  const nextPrinterCycle = now + (3600 - (account?.timeAway?.GlobalTime - account?.timeAway?.Printer)) * 1000;
+  const nextCompanionClaim = now + Math.max(0, 594e6 - (1e3 * account?.timeAway?.GlobalTime - (account?.companions?.lastFreeClaim ?? 0)));
+  const nextFeatherRestart = now + (account?.owl?.upgrades?.[4]?.cost - account?.owl?.feathers) / account?.owl?.featherRate * 1000;
+  const nextMegaFeatherRestart = now + (account?.owl?.upgrades?.[8]?.cost - account?.owl?.feathers) / account?.owl?.featherRate * 1000;
+  const nextMegaFleshRestart = now + (account?.bubba?.upgrades?.[8]?.cost - account?.bubba?.meatSlices) / account?.bubba?.meatsliceRate * 60 * 1000;
+  const mfDuration = getDuration(now, nextMegaFeatherRestart);
   const mfLongDuration = nextMegaFeatherRestart > maxTimeValue || mfDuration?.days > 365;
-  const nextFisherooReset = new Date().getTime() + (account?.kangaroo?.upgrades?.[6]?.cost - account?.kangaroo?.fish) / account?.kangaroo?.fishRate * 60 * 1000;
-  const nextGreatestCatch = new Date().getTime() + (account?.kangaroo?.upgrades?.[11]?.cost - account?.kangaroo?.fish) / account?.kangaroo?.fishRate * 60 * 1000;
-  const gcDuration = getDuration(new Date().getTime(), nextGreatestCatch);
+  const nextFisherooReset = now + (account?.kangaroo?.upgrades?.[6]?.cost - account?.kangaroo?.fish) / account?.kangaroo?.fishRate * 60 * 1000;
+  const nextGreatestCatch = now + (account?.kangaroo?.upgrades?.[11]?.cost - account?.kangaroo?.fish) / account?.kangaroo?.fishRate * 60 * 1000;
+  const gcDuration = getDuration(now, nextGreatestCatch);
   const gcLongDuration = nextGreatestCatch > maxTimeValue || gcDuration?.days > 365;
+  const cfDuration = getDuration(now, nextMegaFleshRestart);
+  const cfLongDuration = nextMegaFleshRestart > maxTimeValue || cfDuration?.days > 365; 
   const showEquinoxError = account?.equinox?.upgrades.filter(upgrade => upgrade.unlocked).some(upgrade => upgrade.lvl < upgrade.maxLvl);
   const allPetsAcquired = account?.companions?.list?.every(({ acquired }) => acquired);
   const atomBonus = getAtomBonus(account, 'Nitrogen_-_Construction_Trimmer');
   const minibosses = getMiniBossesData(account);
-  const dailyReset = new Date().getTime() + account?.timeAway?.ShopRestock * 1000;
-  const weeklyReset = new Date().getTime() + (account?.timeAway?.ShopRestock + 86400 * account?.accountOptions?.[39]) * 1000;
+  const dailyReset = now + account?.timeAway?.ShopRestock * 1000;
+  const weeklyReset = now + (account?.timeAway?.ShopRestock + 86400 * account?.accountOptions?.[39]) * 1000;
   const allBossesMax = minibosses.every(({ maxed }) => maxed);
   const closestBuilding = account?.towers?.data?.reduce((closestBuilding, building) => {
     const allBlueActive = account?.lab.jewels?.slice(3, 7)?.every(({ active }) => active) ? 1 : 0;
@@ -101,36 +112,62 @@ const Etc = ({ characters, account, lastUpdated, trackers }) => {
   }, 0);
 
   const closestWorshiper = getClosestWorshiper(characters);
+  const { timeAway, voteBallot } = account || {};
+  const bonusTimeLeft = timeAway ? (604800 - (timeAway?.GlobalTime + 197860 - 604800 * Math.floor((timeAway?.GlobalTime + 197860) / 604800))) * 1000 : 0;
+  const meritocracyTimeLeft = timeAway ? (604800 - (timeAway?.GlobalTime + 543460 - 604800 * Math.floor((timeAway?.GlobalTime + 543460) / 604800))) * 1000 : 0;
+  const nextVoteBonus = now + bonusTimeLeft;
+  const nextMeritocracyVote = now + meritocracyTimeLeft;
 
   const {
     bestWizard,
     bestChargeSyphon,
     timeToOverCharge
-  } = useMemo(() => getChargeWithSyphon(characters), [characters]);
+  } = getChargeWithSyphon(characters);
 
   // Helper function to calculate max linear multiplier and time until max
-  const getMonumentMultiInfo = useMemo(() => {
-    if (!account?.hole?.holesObject) return null;
+  const calcMonumentInfo = (t) => {
+    const holesObject = account?.hole?.holesObject;
+    if (!holesObject) return null;
+    const maxLinearTime = getMonumentMaxLinearTime(holesObject, t, account);
+    const currentTime = holesObject?.extraCalculations?.[Math.round(11 + t)] || 0;
+    const maxLinearMulti = (maxLinearTime / 72e3)
+      * (1 + getMeritocracyBonus(account, 7) / 100)
+      * (1 + getLegendTalentBonus(account, 27) / 100);
+    const timeUntilMax = Math.max(0, maxLinearTime - currentTime);
+    const timeUntilMaxDate = timeUntilMax > 0 ? now + timeUntilMax * 1000 : null;
 
-    const getMonument = (t) => {
-      const holesObject = account.hole.holesObject;
-      const maxLinearTime = getMonumentMaxLinearTime(holesObject, t, account);
-      const currentTime = holesObject?.extraCalculations?.[Math.round(11 + t)] || 0;
-      const maxLinearMulti = (maxLinearTime / 72e3)
-        * (1 + getMeritocracyBonus(account, 7) / 100)
-        * (1 + getLegendTalentBonus(account, 27) / 100);
-      const timeUntilMax = Math.max(0, maxLinearTime - currentTime);
-      const timeUntilMaxDate = timeUntilMax > 0 ? new Date().getTime() + timeUntilMax * 1000 : null;
+    return { maxLinearMulti, timeUntilMax, timeUntilMaxDate };
+  };
+  const getMonumentMultiInfo = account?.hole?.holesObject ? {
+    bravery: calcMonumentInfo(0),
+    justice: calcMonumentInfo(1),
+    wisdom: calcMonumentInfo(2)
+  } : null;
 
-      return { maxLinearMulti, timeUntilMax, timeUntilMaxDate };
-    };
+  const researchRate = account?.research?.researchEXPrateTOT ?? 0;
+  const bestResearchChar = researchRate > 0 ? getCharacterByHighestSkillLevel(characters, null, 'research') : null;
+  const researchExp = bestResearchChar?.skillsInfo?.research?.exp ?? 0;
+  const researchExpReq = bestResearchChar?.skillsInfo?.research?.expReq ?? 0;
+  const researchLevelUpTime = researchRate > 0 && researchExpReq > 0
+    ? {
+      time: now + ((researchExpReq - researchExp) / researchRate) * 3600 * 1000,
+      currentLevel: bestResearchChar?.skillsInfo?.research?.level ?? 0
+    }
+    : null;
 
-    return {
-      bravery: getMonument(0),
-      justice: getMonument(1),
-      wisdom: getMonument(2)
-    };
-  }, [account]);
+  const fountainBars = account?.hole?.caverns?.theFountain?.fountainBars ?? [];
+  const coinFillBar = fountainBars.find((b) => b.tier === 0);
+  const marbleFillBar = fountainBars.find((b) => b.tier === 1);
+  const coinFillIsFull = !!coinFillBar && coinFillBar.progress >= coinFillBar.req;
+  const coinFillTime = coinFillBar ? (coinFillIsFull ? now : now + coinFillBar.timeToFullMs) : null;
+  const marbleFillIsFull = !!marbleFillBar && marbleFillBar.progress >= marbleFillBar.req;
+  const marbleFillTime = marbleFillBar ? (marbleFillIsFull ? now : now + marbleFillBar.timeToFullMs) : null;
+
+  const sushiFuel = account?.sushiStation?.fuel;
+  const sushiFuelIsFull = sushiFuel && sushiFuel.cap > 0 && sushiFuel.current >= sushiFuel.cap;
+  const sushiFuelFullTime = sushiFuel && sushiFuel.generation > 0 && !sushiFuelIsFull
+    ? now + ((sushiFuel.cap - sushiFuel.current) / sushiFuel.generation) * 3600 * 1000
+    : null;
 
   return <>
     <Stack direction={'row'} flexWrap={'wrap'} gap={2}>
@@ -169,11 +206,11 @@ const Etc = ({ characters, account, lastUpdated, trackers }) => {
             {closestWorshiper?.timeLeft !== 0 ? <TimerCard
               page={'account/world-3/worship'}
               tooltipContent={closestWorshiper?.character
-                ? `Closest full worship - ${closestWorshiper?.character}: ` + getRealDateInMs(new Date().getTime() + closestWorshiper?.timeLeft)
+                ? `Closest full worship - ${closestWorshiper?.character}: ` + getRealDateInMs(now + closestWorshiper?.timeLeft)
                 : 'All characters charge is full'}
               timerPlaceholder={'Full!'}
               forcePlaceholder={!isFinite(closestWorshiper?.timeLeft)}
-              lastUpdated={lastUpdated} time={new Date().getTime() + closestWorshiper?.timeLeft}
+              lastUpdated={lastUpdated} time={now + closestWorshiper?.timeLeft}
               icon={'data/WorshipSkull3.png'} /> : null}
           </>
           : null}
@@ -196,7 +233,7 @@ const Etc = ({ characters, account, lastUpdated, trackers }) => {
                   onClick={() => router.push({ pathname: '/account/misc/random-events' })}
                   direction={'row'} gap={1}>
                   <IconImg src={`${prefix}etc/${events?.[0]?.eventName}.png`} alt="" />
-                  <Timer type={'countdown'} date={events?.[0]?.date} lastUpdated={lastUpdated} />
+                  <Timer type={'countdown'} date={events?.[0]?.date < now ? (events?.[1]?.date ?? events?.[0]?.date + 3600 * 1000) : events?.[0]?.date} lastUpdated={lastUpdated} />
                 </Stack>
                 <Divider sx={{ mt: 1 }} />
               </div>
@@ -216,79 +253,117 @@ const Etc = ({ characters, account, lastUpdated, trackers }) => {
           </Stack>
           : null}
       </Section>}
-      {(!emptyAlerts?.['World 1'] || !emptyAlerts?.['World 2']) && <Stack gap={1}>
-        {!emptyAlerts?.['World 1'] && <Section title={'World 1'}>
-          {trackers?.['World 1']?.featherRestart?.checked && account?.accountOptions?.[253] > 0 ? <>
-            {!isFinite(nextFeatherRestart) ? <Stack direction={'row'} gap={1} alignItems={'center'}>
-              <IconImg src={`${prefix}etc/Owl_4.png`} />
-              <Typography>A long time</Typography>
-            </Stack> : nextFeatherRestart < maxTimeValue ? <TimerCard
-              page={'account/clickers/owl'}
-              tooltipContent={'Next feather restart: ' + getRealDateInMs(nextFeatherRestart)}
-              lastUpdated={lastUpdated}
-              time={nextFeatherRestart}
-              icon={'etc/Owl_4.png'}
-              timerPlaceholder={'Restart available'}
-            /> : <Stack direction={'row'} gap={1} alignItems={'center'} sx={{ cursor: 'pointer' }}
-              onClick={() => router.push({ pathname: 'account/clickers/owl' })}>
-              <IconImg src={`${prefix}etc/Owl_4.png`} />
-              <Typography>{notateNumber(getTimeAsDays(nextFeatherRestart))} days</Typography>
-            </Stack>}
-          </> : null}
-          {trackers?.['World 1']?.megaFeatherRestart?.checked && account?.accountOptions?.[253] > 0 ? <>
-            {!isPast(nextMegaFeatherRestart) && mfLongDuration ? <Tooltip
-              sx={{ cursor: 'pointer' }}
-              onClick={() => router.push({ pathname: 'account/clickers/owl' })}
-              title={'Next mega feather: ' + getRealDateInMs(nextMegaFeatherRestart)}>
-              <Stack direction={'row'} gap={1} alignItems={'center'}>
-                <IconImg src={`${prefix}etc/Owl_8.png`} />
-                <Typography>A long time</Typography>
-              </Stack>
-            </Tooltip> : <TimerCard
-              page={'account/clickers/owl'}
-              tooltipContent={'Next mega feather: ' + getRealDateInMs(nextMegaFeatherRestart)}
-              lastUpdated={lastUpdated}
-              time={nextMegaFeatherRestart}
-              icon={'etc/Owl_8.png'}
-              timerPlaceholder={'Mega feather restart available'}
-            />}
-          </> : null}
-        </Section>}
-        {!emptyAlerts?.['World 2'] && account?.kangaroo?.fish > 0 ? <Section title={'World 2'}>
-          {trackers?.['World 2']?.fisherooReset?.checked ? nextFisherooReset < maxTimeValue ? <TimerCard
-            page={'account/clickers/kangaroo'}
-            tooltipContent={'Next fisheroo reset: ' + getRealDateInMs(nextFisherooReset)}
-            lastUpdated={lastUpdated}
-            time={nextFisherooReset}
-            icon={'etc/KUpga_6.png'}
-            timerPlaceholder={'Restart available'}
-          /> : account?.kangaroo?.fishRate <= 0 ? <Stack direction={'row'} gap={1} alignItems={'center'}
-            sx={{ cursor: 'pointer' }}
-            onClick={() => router.push({ pathname: 'account/clickers/kangaroo' })}>
-            <IconImg src={`${prefix}etc/KUpga_11.png`} />
+      {!emptyAlerts?.Clickers && <Section title={'Clickers'}>
+        {trackers?.Clickers?.featherRestart?.checked && account?.accountOptions?.[253] > 0 ? <>
+          {!isFinite(nextFeatherRestart) ? <Stack direction={'row'} gap={1} alignItems={'center'}>
+            <IconImg src={`${prefix}etc/Owl_4.png`} />
             <Typography>A long time</Typography>
-          </Stack> : <Stack direction={'row'} gap={1} alignItems={'center'} sx={{ cursor: 'pointer' }}
-            onClick={() => router.push({ pathname: 'account/clickers/kangaroo' })}>
-            <IconImg src={`${prefix}etc/KUpga_6.png`} />
-            <Typography>{notateNumber(getTimeAsDays(nextFisherooReset))} days</Typography>
-          </Stack> : null}
-          {trackers?.['World 2']?.greatestCatch?.checked ? !isPast(nextGreatestCatch) && gcLongDuration ? <Tooltip
-            title={'Next greatest catch: ' + getRealDateInMs(nextGreatestCatch)}>
-            <Stack direction={'row'} gap={1} alignItems={'center'} sx={{ cursor: 'pointer' }}
-              onClick={() => router.push({ pathname: 'account/clickers/kangaroo' })}>
-              <IconImg src={`${prefix}etc/KUpga_11.png`} />
+          </Stack> : nextFeatherRestart < maxTimeValue ? <TimerCard
+            page={'account/clickers/owl'}
+            tooltipContent={'Next feather restart: ' + getRealDateInMs(nextFeatherRestart)}
+            lastUpdated={lastUpdated}
+            time={nextFeatherRestart}
+            icon={'etc/Owl_4.png'}
+            timerPlaceholder={'Restart available'}
+          /> : <Stack direction={'row'} gap={1} alignItems={'center'} sx={{ cursor: 'pointer' }}
+            onClick={() => router.push({ pathname: 'account/clickers/owl' })}>
+            <IconImg src={`${prefix}etc/Owl_4.png`} />
+            <Typography>{notateNumber(getTimeAsDays(nextFeatherRestart))} days</Typography>
+          </Stack>}
+        </> : null}
+        {trackers?.Clickers?.megaFeatherRestart?.checked && account?.accountOptions?.[253] > 0 ? <>
+          {!isPast(nextMegaFeatherRestart) && mfLongDuration ? <Tooltip
+            sx={{ cursor: 'pointer' }}
+            onClick={() => router.push({ pathname: 'account/clickers/owl' })}
+            title={'Next mega feather: ' + getRealDateInMs(nextMegaFeatherRestart)}>
+            <Stack direction={'row'} gap={1} alignItems={'center'}>
+              <IconImg src={`${prefix}etc/Owl_8.png`} />
               <Typography>A long time</Typography>
             </Stack>
           </Tooltip> : <TimerCard
-            page={'account/clickers/kangaroo'}
-            tooltipContent={'Next greatest catch: ' + getRealDateInMs(nextGreatestCatch)}
+            page={'account/clickers/owl'}
+            tooltipContent={'Next mega feather: ' + getRealDateInMs(nextMegaFeatherRestart)}
             lastUpdated={lastUpdated}
-            time={nextGreatestCatch}
-            icon={'etc/KUpga_11.png'}
-            timerPlaceholder={'Restart available'}
-          /> : null}
-        </Section> : null}
-      </Stack>}
+            time={nextMegaFeatherRestart}
+            icon={'etc/Owl_8.png'}
+            timerPlaceholder={'Mega feather restart available'}
+          />}
+        </> : null}
+        {trackers?.Clickers?.fisherooReset?.checked && account?.kangaroo?.fish > 0 ? nextFisherooReset < maxTimeValue ? <TimerCard
+          page={'account/clickers/kangaroo'}
+          tooltipContent={'Next fisheroo reset: ' + getRealDateInMs(nextFisherooReset)}
+          lastUpdated={lastUpdated}
+          time={nextFisherooReset}
+          icon={'etc/KUpga_6.png'}
+          timerPlaceholder={'Restart available'}
+        /> : account?.kangaroo?.fishRate <= 0 ? <Stack direction={'row'} gap={1} alignItems={'center'}
+          sx={{ cursor: 'pointer' }}
+          onClick={() => router.push({ pathname: 'account/clickers/kangaroo' })}>
+          <IconImg src={`${prefix}etc/KUpga_11.png`} />
+          <Typography>A long time</Typography>
+        </Stack> : <Stack direction={'row'} gap={1} alignItems={'center'} sx={{ cursor: 'pointer' }}
+          onClick={() => router.push({ pathname: 'account/clickers/kangaroo' })}>
+          <IconImg src={`${prefix}etc/KUpga_6.png`} />
+          <Typography>{notateNumber(getTimeAsDays(nextFisherooReset))} days</Typography>
+        </Stack> : null}
+        {trackers?.Clickers?.greatestCatch?.checked && account?.kangaroo?.fish > 0 ? !isPast(nextGreatestCatch) && gcLongDuration ? <Tooltip
+          title={'Next greatest catch: ' + getRealDateInMs(nextGreatestCatch)}>
+          <Stack direction={'row'} gap={1} alignItems={'center'} sx={{ cursor: 'pointer' }}
+            onClick={() => router.push({ pathname: 'account/clickers/kangaroo' })}>
+            <IconImg src={`${prefix}etc/KUpga_11.png`} />
+            <Typography>A long time</Typography>
+          </Stack>
+        </Tooltip> : <TimerCard
+          page={'account/clickers/kangaroo'}
+          tooltipContent={'Next greatest catch: ' + getRealDateInMs(nextGreatestCatch)}
+          lastUpdated={lastUpdated}
+          time={nextGreatestCatch}
+          icon={'etc/KUpga_11.png'}
+          timerPlaceholder={'Restart available'}
+        /> : null}
+        {trackers?.Clickers?.megaFleshRestart?.checked && account?.bubba ? <>
+          {!isPast(nextMegaFleshRestart) && cfLongDuration ? <Tooltip
+            sx={{ cursor: 'pointer' }}
+            onClick={() => router.push({ pathname: 'account/clickers/bubba' })}
+            title={'Next megaflesh: ' + getRealDateInMs(nextMegaFleshRestart)}>
+            <Stack direction={'row'} gap={1} alignItems={'center'}>
+              <IconImg src={`${prefix}etc/Bubbo_Upgrade_8.png`} />
+              <Typography>A long time</Typography>
+            </Stack>
+          </Tooltip> : <TimerCard
+            page={'account/clickers/bubba'}
+            tooltipContent={'Next megaflesh: ' + getRealDateInMs(nextMegaFleshRestart)}
+            lastUpdated={lastUpdated}
+            time={nextMegaFleshRestart}
+            icon={'etc/Bubbo_Upgrade_8.png'}
+            timerPlaceholder={'Mega flesh restart available'}
+          />}
+        </> : null}
+      </Section>}
+      {(trackers?.Etc?.bonusTimeLeft?.checked || trackers?.Etc?.meritocracyTimeLeft?.checked) && timeAway && <Section title={'Vote'}>
+        {trackers?.Etc?.bonusTimeLeft?.checked && <TimerCard
+          page={'account/world-2/vote-ballot'}
+          tooltipContent={<Stack gap={0.5}>
+            {voteBallot?.selectedBonus?.[0] && <Typography variant="body2">{cleanUnderscore(voteBallot.selectedBonus[0].replace('{', voteBallot.selectedBonus?.bonus?.toFixed(3)).replace('}', (1 + voteBallot.selectedBonus?.bonus / 100).toFixed(3)))}</Typography>}
+            {voteBallot?.selectedBonus?.[0] && <Divider />}
+            <Typography variant="body2">Next vote bonus week: {getRealDateInMs(nextVoteBonus)}</Typography>
+          </Stack>}
+          lastUpdated={lastUpdated}
+          time={nextVoteBonus}
+          icon={voteBallot?.selectedBonus?.icon ? `data/${voteBallot.selectedBonus.icon}` : 'etc/Weekly.png'}
+        />}
+        {trackers?.Etc?.meritocracyTimeLeft?.checked && <TimerCard
+          page={'account/world-2/vote-ballot'}
+          tooltipContent={<Stack gap={0.5}>
+            {voteBallot?.selectedMeritocracyBonus?.description && <Typography variant="body2">{cleanUnderscore(voteBallot.selectedMeritocracyBonus.description.replace('{', voteBallot.selectedMeritocracyBonus?.bonus?.toFixed(3)).replace('}', (1 + voteBallot.selectedMeritocracyBonus?.bonus / 100).toFixed(3)))}</Typography>}
+            {voteBallot?.selectedMeritocracyBonus?.description && <Divider />}
+            <Typography variant="body2">Next meritocracy vote week: {getRealDateInMs(nextMeritocracyVote)}</Typography>
+          </Stack>}
+          lastUpdated={lastUpdated}
+          time={nextMeritocracyVote}
+          icon={voteBallot?.selectedMeritocracyBonus?.icon ? `data/${voteBallot.selectedMeritocracyBonus.icon}` : 'etc/Weekly.png'}
+        />}
+      </Section>}
       {!emptyAlerts?.['World 3'] && account?.finishedWorlds?.World2 && <Section title={'World 3'}>
         {trackers?.['World 3']?.printer?.checked && account?.finishedWorlds?.World2 ? <TimerCard
           page={'account/world-3/printer'}
@@ -304,8 +379,8 @@ const Etc = ({ characters, account, lastUpdated, trackers }) => {
           ?
           <TimerCard
             page={'account/world-3/buildings'}
-            tooltipContent={'Closest building: ' + getRealDateInMs(new Date().getTime() + closestBuilding?.timeLeft)}
-            lastUpdated={lastUpdated} time={new Date().getTime() + closestBuilding?.timeLeft}
+            tooltipContent={'Closest building: ' + getRealDateInMs(now + closestBuilding?.timeLeft)}
+            lastUpdated={lastUpdated} time={now + closestBuilding?.timeLeft}
             icon={`data/${closestBuilding?.icon}.png`} />
           : null}
         {trackers?.['World 3']?.closestSalt?.checked && account?.finishedWorlds?.World2 && closestSalt?.timeLeft !== 0 ?
@@ -325,6 +400,7 @@ const Etc = ({ characters, account, lastUpdated, trackers }) => {
         {trackers?.['World 5']?.monument?.checked && account?.finishedWorlds?.World4 ?
           <MonumentCard
             page={'account/world-5/hole'}
+            query={{ t: 'Explore', nt: 'Bravery' }}
             currentMulti={account?.hole?.caverns?.bravery?.rewardMulti || 0}
             maxMulti={getMonumentMultiInfo?.bravery?.maxLinearMulti || 0}
             timeUntilMax={getMonumentMultiInfo?.bravery?.timeUntilMaxDate}
@@ -332,6 +408,7 @@ const Etc = ({ characters, account, lastUpdated, trackers }) => {
         {trackers?.['World 5']?.justice?.checked && account?.finishedWorlds?.World4 ?
           <MonumentCard
             page={'account/world-5/hole'}
+            query={{ t: 'Explore', nt: 'Justice' }}
             currentMulti={account?.hole?.caverns?.justice?.rewardMulti || 0}
             maxMulti={getMonumentMultiInfo?.justice?.maxLinearMulti || 0}
             timeUntilMax={getMonumentMultiInfo?.justice?.timeUntilMaxDate}
@@ -339,6 +416,7 @@ const Etc = ({ characters, account, lastUpdated, trackers }) => {
         {trackers?.['World 5']?.wisdom?.checked && account?.finishedWorlds?.World4 ?
           <MonumentCard
             page={'account/world-5/hole'}
+            query={{ t: 'Explore', nt: 'Wisdom' }}
             currentMulti={account?.hole?.caverns?.wisdom?.rewardMulti || 0}
             maxMulti={getMonumentMultiInfo?.wisdom?.maxLinearMulti || 0}
             timeUntilMax={getMonumentMultiInfo?.wisdom?.timeUntilMaxDate}
@@ -346,18 +424,61 @@ const Etc = ({ characters, account, lastUpdated, trackers }) => {
         {trackers?.['World 5']?.villagers?.checked && account?.finishedWorlds?.World4 && account?.hole?.villagers?.length > 0 ?
           account?.hole?.villagers?.map((villager, index) => {
             if (!villager) return null;
+            const villagerTab = VILLAGER_TABS[index] ?? 'Explore';
             return <TimerCard
               key={`villager-timer-${index}`}
               page={'account/world-5/hole'}
-              tooltipContent={`${villager?.name} level up: ` + (villager?.readyToLevel ? 'Ready!' : getRealDateInMs(new Date().getTime() + villager?.timeLeft))}
+              query={{ t: villagerTab }}
+              tooltipContent={`${villager?.name} level up: ` + (villager?.readyToLevel ? 'Ready!' : getRealDateInMs(now + villager?.timeLeft))}
               lastUpdated={lastUpdated}
-              time={villager?.readyToLevel ? new Date().getTime() : new Date().getTime() + villager?.timeLeft}
+              time={villager?.readyToLevel ? now : now + villager?.timeLeft}
               icon={`etc/Villager_${index}.png`}
               timerPlaceholder={villager?.readyToLevel ? 'Ready to level!' : ''}
               forcePlaceholder={villager?.readyToLevel}
             />
           })
           : null}
+        {trackers?.['World 5']?.coinFill?.checked && coinFillBar ? <TimerCard
+          page={'account/world-5/hole'}
+          query={{ t: 'Explore', nt: 'The Fountain' }}
+          tooltipContent={`${cleanUnderscore(coinFillBar.name)}: ` + (coinFillIsFull ? 'Full!' : getRealDateInMs(coinFillTime))}
+          lastUpdated={lastUpdated}
+          time={coinFillTime}
+          icon={'data/HoleFountainBar0.png'}
+          timerPlaceholder={'Full!'}
+          forcePlaceholder={coinFillIsFull}
+        /> : null}
+        {trackers?.['World 5']?.marbleFill?.checked && marbleFillBar ? <TimerCard
+          page={'account/world-5/hole'}
+          query={{ t: 'Explore', nt: 'The Fountain' }}
+          tooltipContent={`${cleanUnderscore(marbleFillBar.name)}: ` + (marbleFillIsFull ? 'Full!' : getRealDateInMs(marbleFillTime))}
+          lastUpdated={lastUpdated}
+          time={marbleFillTime}
+          icon={'data/HoleFountainBar1.png'}
+          timerPlaceholder={'Full!'}
+          forcePlaceholder={marbleFillIsFull}
+        /> : null}
+      </Section>}
+
+      {!emptyAlerts?.['World 7'] && account?.finishedWorlds?.World6 && <Section title={'World 7'}>
+        {trackers?.['World 7']?.researchLevelUp?.checked && researchLevelUpTime ?
+          <TimerCard
+            page={'account/world-7/research'}
+            tooltipContent={`Research Lv. ${researchLevelUpTime.currentLevel + 1}`}
+            lastUpdated={lastUpdated}
+            time={researchLevelUpTime.time}
+            icon={'data/ClassIcons61.png'}
+          /> : null}
+        {trackers?.['World 7']?.sushiFuelFull?.checked && (sushiFuelFullTime || sushiFuelIsFull) ?
+          <TimerCard
+            page={'account/world-7/sushi-station'}
+            tooltipContent={sushiFuelIsFull ? 'Sushi fuel is full!' : 'Sushi fuel full: ' + getRealDateInMs(sushiFuelFullTime)}
+            lastUpdated={lastUpdated}
+            time={sushiFuelFullTime ?? now}
+            icon={'etc/Fuel.png'}
+            timerPlaceholder={'Full!'}
+            forcePlaceholder={sushiFuelIsFull}
+          /> : null}
       </Section>}
 
       {trackers?.Etc?.minibosses?.checked && <Section title={'Bosses'}>
@@ -425,17 +546,18 @@ const TimerCard = ({
   timerPlaceholder = '',
   forcePlaceholder,
   showAsError,
-  page
+  page,
+  query
 }) => {
   const router = useRouter();
 
   return <Tooltip title={tooltipContent}>
     <Stack sx={{ cursor: page ? 'pointer' : 'auto' }} direction={'row'} gap={1} alignItems={'center'}
-      onClick={() => page && router.push({ pathname: page })}>
+      onClick={() => page && router.push({ pathname: page, query })}>
       <IconImg src={`${prefix}${icon}`} />
       {forcePlaceholder ? <Typography color={'error.light'}>{timerPlaceholder}</Typography> : <Timer
         type={'countdown'} date={time}
-        sx={{ color: showAsError ? '#f91d1d' : ' ' }}
+        sx={{ color: showAsError ? 'error.light' : ' ' }}
         placeholder={timerPlaceholder}
         lastUpdated={lastUpdated} />}
     </Stack>
@@ -444,12 +566,14 @@ const TimerCard = ({
 
 const MonumentCard = ({
   page,
+  query,
   currentMulti,
   maxMulti,
   timeUntilMax,
   icon
 }) => {
   const router = useRouter();
+  const getRealDateInMs = useRealDate();
   const currentMultiRounded = Math.round(100 * currentMulti) / 100;
   const maxMultiRounded = Math.round(100 * maxMulti) / 100;
   const isOverMax = currentMultiRounded > maxMultiRounded;
@@ -461,7 +585,7 @@ const MonumentCard = ({
 
   return <Tooltip title={tooltipContent}>
     <Stack sx={{ cursor: page ? 'pointer' : 'auto' }} direction={'row'} gap={1} alignItems={'center'}
-      onClick={() => page && router.push({ pathname: page })}>
+      onClick={() => page && router.push({ pathname: page, query })}>
       <IconImg src={`${prefix}${icon}`} />
       <Typography color={isOverMax ? 'error.light' : 'inherit'}>{isOverMax ? 'Go fight!' : `${currentMultiRounded}x / ${maxMultiRounded}x`}</Typography>
     </Stack>

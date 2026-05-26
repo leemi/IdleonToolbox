@@ -44,6 +44,15 @@ export const downloadFile = (data, filename) => {
   link.remove()
 }
 
+export const sortKeys = (obj) => {
+  if (obj === null || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(sortKeys);
+  return Object.keys(obj).sort().reduce((sorted, key) => {
+    sorted[key] = sortKeys(obj[key]);
+    return sorted;
+  }, {});
+};
+
 // Calculating days manually because of JS limitation for dates https://262.ecma-international.org/5.1/#sec-15.9.1.1
 const msPerDay = 8.64e+7;
 export const getTimeAsDays = (time) => {
@@ -58,11 +67,167 @@ export const eventsColors = {
 }
 
 export const
-  number2letter = ['_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
-    's',
-    't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-    'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+  number2letter = [
+    "_",
+    "a",
+    "b",
+    "c",
+    "d",
+    "e",
+    "f",
+    "g",
+    "h",
+    "i",
+    "j",
+    "k",
+    "l",
+    "m",
+    "n",
+    "o",
+    "p",
+    "q",
+    "r",
+    "s",
+    "t",
+    "u",
+    "v",
+    "w",
+    "x",
+    "y",
+    "z",
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "I",
+    "J",
+    "K",
+    "L",
+    "M",
+    "N",
+    "O",
+    "P",
+    "Q",
+    "R",
+    "S",
+    "T",
+    "U",
+    "V",
+    "W",
+    "X",
+    "Y",
+    "Z",
+    "肥",
+    "肢",
+    "肖",
+    "肋",
+    "肉",
+    "職",
+    "耐",
+    "者",
+    "箱",
+    "管",
+    "算",
+    "箔",
+    "策",
+    "答",
+    "筒",
+    "筍",
+    "白",
+    "発",
+    "癒",
+    "痛",
+    "痕",
+    "病",
+    "疾",
+    "疲",
+    "潤",
+    "潜",
+    "漬",
+    "漠",
+    "演",
+    "漏",
+    "漁",
+    "滞",
+    "毎",
+    "殻",
+    "殺",
+    "段",
+    "殖",
+    "残",
+    "歳",
+    "歯",
+    "歩",
+    "武",
+    "歓",
+    "欲",
+    "次",
+    "欠",
+    "櫛",
+    "機",
+    "色",
+    "村",
+    "材",
+    "杉",
+    "本",
+    "末",
+    "未",
+    "木",
+    "授",
+    "掃",
+    "捧",
+    "彼",
+    "役",
+    "影",
+    "彫",
+    "彩",
+    "胃",
+    "堪",
+    "城",
+    "坑",
+    "努",
+    "助",
+    "加",
+    "功",
+    "力",
+    "創",
+    "割",
+    "借",
+    "候",
+    "倒",
+    "老",
+    "個",
+    "景",
+    "是",
+    "明",
+    "昇",
+    "早",
+    "既",
+    "掴",
+    "担",
+    "想",
+    "扉",
+    "戻",
+    "懸",
+    "懲",
+    "憩",
+    "態",
+    "感",
+    "蛮",
+    "蛍",
+    "虫",
+    "虚",
+    "蘇",
+    "薬",
+    "薄",
+    "蔵"
+];
 
+/** @returns {any} */
 export const tryToParse = (str) => {
   try {
     return JSON.parse(str);
@@ -103,12 +268,15 @@ export const createArrayOfArrays = (array) => {
 };
 
 export const createIndexedArray = (object) => {
-  const highest = Math.max(...Object.keys(object));
+  const keys = Object.keys(object).map(Number).filter(k => !isNaN(k));
+  if (!keys.length) return Object.values(object);
+  const highest = Math.max(...keys);
   let result = [];
   for (let i = 0; i <= highest; i++) {
-    if (object?.[i]) {
-      result[i] = object?.[i];
-    } else {
+    if (i in object) {
+      result[i] = object[i];
+    }
+    else {
       result[i] = {};
     }
   }
@@ -116,13 +284,14 @@ export const createIndexedArray = (object) => {
 };
 
 // _customBlock_ArbitraryCode5Inputs
-export const growth = (func, level, x1, x2, shouldRound = true) => {
+export const growth = (func, level, x1, x2, shouldRound = true, _unused5) => {
   let result;
   switch (func) {
     case 'add':
       if (x2 !== 0) {
         result = (((x1 + x2) / x2 + 0.5 * (level - 1)) / (x1 / x2)) * level * x1;
-      } else {
+      }
+      else {
         result = x1 * level;
       }
       break;
@@ -132,7 +301,8 @@ export const growth = (func, level, x1, x2, shouldRound = true) => {
     case 'addDECAY':
       if (level < 50001) {
         result = x1 * level;
-      } else {
+      }
+      else {
         result = x1 * Math.min(50000, level) + ((level - 50000) / (level - 50000 + 150000)) * x1 * 50000;
       }
       break;
@@ -214,6 +384,14 @@ export const cleanUnderscore = (str) => {
   }
 };
 
+export const getActivityIcon = (character) => {
+  const { afkTarget, targetMonster, monsterFace } = character || {};
+  if (!afkTarget || afkTarget === '_' || afkTarget === 'Nothing') return 'data/Afkz5';
+  if (monsterFace != null && monsterFace !== 0) return `data/Mface${monsterFace}`;
+  if (targetMonster) return `data/${targetMonster}_x1`;
+  return `afk_targets/${afkTarget}`;
+};
+
 export const getNumberWithOrdinal = (n) => {
   const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
@@ -241,17 +419,13 @@ export const kFormatter = (num, digits = 1) => {
 };
 
 export const cashFormatter = (value) => {
-  let result;
-  if (value > 1e16) {
-    result = (Math.floor(value / 1e14) / 10) + 'Q'
-  } else if (value > 1e13) {
-    result = (Math.floor(value / 1e11) / 10) + 'T'
-  } else if (value > 1e7) {
-    result = (Math.floor(value / 1e5) / 10) + 'M'
-  } else {
-    result = notateNumber(value, 'MultiplierInfo')
-  }
-  return result;
+  if (value >= 1e22) return Math.ceil(value / 1e21) + 'QQQ';
+  if (value >= 1e19) return Math.ceil(value / 1e18) + 'QQ';
+  if (value >= 1e16) return Math.ceil(value / 1e15) + 'Q';
+  if (value >= 1e13) return Math.ceil(value / 1e12) + 'T';
+  if (value >= 1e10) return Math.ceil(value / 1e6) + 'M';
+  if (value >= 1e7) return (Math.floor(value / 1e5) / 10) + 'M';
+  return notateNumber(value, 'MultiplierInfo');
 }
 
 function splitDecimal(numStr, allowNegative = true) {
@@ -287,7 +461,7 @@ function applyThousandSeparator(
 export const numberWithCommas = (numStr, isFloat = true) => {
   numStr = String(numStr);
   const hasDecimalSeparator = numStr.indexOf('.') !== -1;
-  let { beforeDecimal, afterDecimal, addNegation } = splitDecimal(numStr); // eslint-disable-line prefer-const
+  let { beforeDecimal, afterDecimal } = splitDecimal(numStr); // eslint-disable-line prefer-const
   beforeDecimal = applyThousandSeparator(beforeDecimal, ',');
   numStr = beforeDecimal + ((isFloat && hasDecimalSeparator && '.') || '') + (isFloat ? afterDecimal : '');
   return numStr;
@@ -302,7 +476,7 @@ export const pascalCase = (str) => {
 
 export const getCoinsArray = (coins) => {
   if (!Number.isFinite(coins)) return [];
-  const highestCoinIndex = 20;
+  const highestCoinIndex = 25;
   let n = BigInt(Math.floor(coins)).toString();
 
   let ret = new Map();
@@ -333,7 +507,7 @@ export const getCoinsArray = (coins) => {
 
 export const getBitIndex = (e) => {
   let bits = e, num = 0;
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 5; i++) {
     if (bits > 1e18) {
       bits /= 1e18;
       num++;
@@ -344,7 +518,7 @@ export const getBitIndex = (e) => {
 export const notateNumber = (e, s) => {
   if (s === 'bits') {
     let bits = e, t = 0;
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 5; i++) {
       if (bits > 1e18) {
         bits /= 1e18;
         t++;
@@ -385,42 +559,42 @@ export const notateNumber = (e, s) => {
                                   / 100 + 'E' + Math.floor(lavaLog(bits))
   }
   return 'Whole' === s ? (1e4 > e ? '' + Math.floor(e)
-      : 1e6 > e ? Math.floor(e / 1e3) + 'K'
-        : 1e7 > e ? Math.floor(e / 1e5) / 10 + 'M'
-          : 1e9 > e ? Math.floor(e / 1e6) + 'M'
-            : 1e10 > e ? Math.floor(e / 1e8) / 10 + 'B'
-              : Math.floor(e / 1e9) + 'B')
+    : 1e6 > e ? Math.floor(e / 1e3) + 'K'
+      : 1e7 > e ? Math.floor(e / 1e5) / 10 + 'M'
+        : 1e9 > e ? Math.floor(e / 1e6) + 'M'
+          : 1e10 > e ? Math.floor(e / 1e8) / 10 + 'B'
+            : Math.floor(e / 1e9) + 'B')
     : 'MultiplierInfo' === s ? (0 === (10 * e) % 10 ? Math.round(e) + '.00'
-        : 0 === (100 * e) % 10 ? Math.round(10 * e) / 10 + '0'
-          : Math.round(100 * e) / 100 + '')
+      : 0 === (100 * e) % 10 ? Math.round(10 * e) / 10 + '0'
+        : Math.round(100 * e) / 100 + '')
       : 'ThreeDecimals' === s ? '' + parseFloat((Math.round(1000 * e) / 1000).toFixed(3))
-      : 'Micro' === s ? (10 < e ? '' + Math.round(e)
+        : 'Micro' === s ? (10 < e ? '' + Math.round(e)
           : 0.1 < e ? '' + Math.round(10 * e) / 10
             : 0.01 < e ? '' + Math.round(100 * e) / 100
               : '' + Math.round(1e3 * e) / 1e3)
-        : 100 > e ? ('Small' === s ? (1 > e ? '' + Math.round(100 * e) / 100
-              : '' + Math.round(10 * e) / 10)
+          : 100 > e ? ('Small' === s ? (1 > e ? '' + Math.round(100 * e) / 100
+            : '' + Math.round(10 * e) / 10)
             : 'Smallish' === s ? (10 > e ? '' + Math.round(10 * e) / 10
-                : '' + Math.round(e))
+              : '' + Math.round(e))
               : 'Smaller' === s ? (10 > e ? '' + Math.round(100 * e) / 100
-                  : '' + Math.round(10 * e) / 10)
+                : '' + Math.round(10 * e) / 10)
                 : '' + Math.floor(e))
-          : 1e3 > e ? '' + Math.floor(e)
-            : 1e4 > e ? ('Bigish' === s ? '' + Math.floor(e)
+            : 1e3 > e ? '' + Math.floor(e)
+              : 1e4 > e ? ('Bigish' === s ? '' + Math.floor(e)
                 : Math.ceil(e / 10) / 100 + 'K')
-              : 1e5 > e ? Math.ceil(e / 100) / 10 + 'K'
-                : 1e6 > e ? Math.ceil(e / 1e3) + 'K'
-                  : 1e7 > e ? Math.ceil(e / 1e4) / 100 + 'M'
-                    : 1e8 > e ? Math.ceil(e / 1e5) / 10 + 'M'
-                      : 1e10 > e ? Math.ceil(e / 1e6) + 'M'
-                        : 1e13 > e ? Math.ceil(e / 1e9) + 'B'
-                          : 1e16 > e ? Math.ceil(e / 1e12) + 'T'
-                            : 1e19 > e ? Math.ceil(e / 1e15) + 'Q'
-                              : 1e22 > e ? Math.ceil(e / 1e18) + 'QQ'
-                                : 1e24 > e ? Math.ceil(e / 1e21) + 'QQQ'
-                                  : 'TinyE' === s
-                                    ? '' + Math.floor(e / Math.pow(10, Math.floor(lavaLog(e))) * 10) / 10 + ('e' + Math.floor(lavaLog(e)))
-                                    : '' + Math.floor(e / Math.pow(10, Math.floor(lavaLog(e))) * 100) / 100 + ('E' + Math.floor(lavaLog(e)))
+                : 1e5 > e ? Math.ceil(e / 100) / 10 + 'K'
+                  : 1e6 > e ? Math.ceil(e / 1e3) + 'K'
+                    : 1e7 > e ? Math.ceil(e / 1e4) / 100 + 'M'
+                      : 1e8 > e ? Math.ceil(e / 1e5) / 10 + 'M'
+                        : 1e10 > e ? Math.ceil(e / 1e6) + 'M'
+                          : 1e13 > e ? Math.ceil(e / 1e9) + 'B'
+                            : 1e16 > e ? Math.ceil(e / 1e12) + 'T'
+                              : 1e19 > e ? Math.ceil(e / 1e15) + 'Q'
+                                : 1e22 > e ? Math.ceil(e / 1e18) + 'QQ'
+                                  : 1e24 > e ? Math.ceil(e / 1e21) + 'QQQ'
+                                    : 'TinyE' === s
+                                      ? '' + Math.floor(e / Math.pow(10, Math.floor(lavaLog(e))) * 10) / 10 + ('e' + Math.floor(lavaLog(e)))
+                                      : '' + Math.floor(e / Math.pow(10, Math.floor(lavaLog(e))) * 100) / 100 + ('E' + Math.floor(lavaLog(e)))
 }
 export const commaNotation = (number) => {
   // Initialize variables
@@ -439,7 +613,8 @@ export const commaNotation = (number) => {
   for (let i = 0; i < numberOfCommas; i++) {
     if (i === 0) {
       formattedNumber = roundedNumberAsString.substring(0, digitsAfterLastComma);
-    } else {
+    }
+    else {
       formattedNumber += ',' + roundedNumberAsString.substring(digitsAfterLastComma + 3 * (i - 1), digitsAfterLastComma + 3 * i);
     }
   }
@@ -537,19 +712,31 @@ export const flatten = (obj, out) => {
   Object.keys(obj).forEach(key => {
     if (typeof obj[key] == 'object') {
       out = flatten(obj[key], out) //recursively call for nested
-    } else {
+    }
+    else {
       out[key] = obj[key] //direct assign for values
     }
   });
   return out;
 }
 
-export const sections = [{ name: 'Activity' }, { name: 'Stats' }, { name: 'Bags' }, { name: 'Obols' },
-  { name: 'Obols Stats' }, { name: 'Cards' }, { name: 'Skills' }, { name: 'Prayers' }, { name: 'Talents' },
-  { name: 'Equipment' }, { name: 'Star Signs' }, { name: 'Post Office' }, { name: 'Anvil Details' },
+export const sections = [
+  { name: 'Stats' },
+  { name: 'Talents' },
+  { name: 'Cards' },
+  { name: 'Prayers' },
+  { name: 'Equipment' },
   { name: 'Inventory' },
+  { name: 'Bags' },
+  { name: 'Obols' },
+  { name: 'Obols Stats' },
+  { name: 'Skills' },
+  { name: 'Star Signs' },
+  { name: 'Post Office' },
+  { name: 'Anvil Details' },
   { name: 'Chips' },
-  { name: 'Equipped Bubbles' }, { name: 'Active Skills CD' }];
+  { name: 'Equipped Bubbles' }
+];
 
 export const isProd = process.env.NODE_ENV === 'production';
 
@@ -565,11 +752,11 @@ export const shouldDisplayDrawer = (pathname = '') => {
   return drawerPages.includes(pathname?.split('/').at(1))
 }
 
-export const getRealDateInMs = (ms, shouldFormat = true) => {
+export const getRealDateInMs = (ms, shouldFormat = true, formatString = 'dd/MM/yyyy HH:mm:ss') => {
   const dateInMs = ms;
   if (shouldFormat) {
     return isValid(new Date(dateInMs))
-      ? format(dateInMs, 'dd/MM/yyyy HH:mm:ss')
+      ? format(dateInMs, formatString)
       : `${notateNumber(getTimeAsDays(dateInMs))} days`;
   }
   return dateInMs;
@@ -592,7 +779,8 @@ export const msToDate = (ms) => {
   if (ms < 60000) {
     // Include milliseconds if the time is under one minute
     return `${formattedSeconds}s:${formattedMilliseconds}ms`;
-  } else {
+  }
+  else {
     // Regular format for time above one minute
     return `${formattedHours}h:${formattedMinutes}m:${formattedSeconds}s`;
   }
@@ -639,7 +827,8 @@ export const migrateConfig = (type, baseConfig, userConfig, baseVersion, userVer
   if (baseVersion !== userVersion) {
     if (type === 'account') {
       return merge(baseConfig, renameSettingInPostOffice(userConfig));
-    } else {
+    }
+    else {
       return merge(baseConfig, userConfig);
     }
   }
@@ -680,24 +869,56 @@ export const handleDownload = (jsonData, fileName) => {
   URL.revokeObjectURL(url);
 };
 
+const sanitizeRawData = (data) => {
+  if (!data?.MapBon) return data;
+  const mapBon = typeof data.MapBon === 'string' ? tryToParse(data.MapBon) : data.MapBon;
+  if (!Array.isArray(mapBon)) return data;
+  return {
+    ...data,
+    MapBon: mapBon.map((entry) => Array.isArray(entry) ? entry.slice(0, 3) : entry)
+  };
+};
+
+export const copyForSupport = async (account, characters) => {
+  const { expandLeaderboardInfo } = await import('../services/profiles');
+  const data = JSON.parse(sessionStorage.getItem('rawJson'));
+  const extraData = expandLeaderboardInfo(account, characters);
+  const sanitized = { ...data, data: sanitizeRawData(data?.data) };
+  await navigator.clipboard.writeText(JSON.stringify(sortKeys({ ...sanitized, extraData }), null, 2));
+};
+
+export const copyRawData = async () => {
+  const data = JSON.parse(sessionStorage.getItem('rawJson'));
+  await navigator.clipboard.writeText(JSON.stringify(sortKeys(sanitizeRawData(data?.data)), null, 2));
+};
+
 export const handleLoadJson = async (dispatch) => {
   try {
     const content = JSON.parse(await navigator.clipboard.readText());
-    let { data, charNames, companion, guildData, serverVars = {} } = content;
+    let { data = content, charNames, companion, guildData, serverVars = {}, accountCreateTime, tournament } = content;
     const { parseData } = await import('@parsers/index');
-    const parsedData = parseData(data, charNames, companion, guildData, serverVars);
+    const parsedData = parseData(data, charNames, companion, guildData, serverVars, accountCreateTime, tournament);
     const lastUpdated = new Date().getTime();
     localStorage.setItem('lastUpdated', JSON.stringify(lastUpdated));
     // console.log('Manual Import', { ...parsedData, lastUpdated, manualImport: true });
-    localStorage.setItem('rawJson', JSON.stringify({
+    sessionStorage.setItem('rawJson', JSON.stringify({
       data,
       charNames,
       companion,
       guildData,
       serverVars,
+      tournament,
       lastUpdated
     }))
     dispatch({ type: 'data', data: { ...parsedData, lastUpdated, manualImport: true } });
+
+    if (typeof window.gtag !== 'undefined') {
+      window.gtag('event', 'save_imported', {
+        event_category: 'engagement',
+        event_label: 'manual',
+        value: parsedData?.characters?.length ?? 0
+      });
+    }
   } catch (e) {
     console.error('Error while trying to manual import', e);
   }
@@ -754,11 +975,11 @@ export const getFilteredPortals = () => {
       afkType: AFKtype
     }
   }).filter(({
-               mapName,
-               afkType
-             }) => afkType === 'FIGHTING' &&
-    !excludedMaps[mapName]
-    && !afkType.includes('Fish') && !afkType.includes('Bug') && !mapName.includes('Colosseum'));
+    mapName,
+    afkType
+  }) => afkType === 'FIGHTING' &&
+  !excludedMaps[mapName]
+  && !afkType.includes('Fish') && !afkType.includes('Bug') && !mapName.includes('Colosseum'));
 }
 
 // Parses shorthand notations like '12B', '2QQ', '3.2QQQ' into numbers
@@ -778,17 +999,17 @@ export function parseShorthandNumber(input) {
     m: 1e6,
     b: 1e9,
     t: 1e12,
-    q: 1e15,
+    q: 1e15
   };
 
   // First, extract any suffix and convert to lowercase
   const lowerInput = input.trim().toLowerCase();
-  
+
   // Extract suffix (k, m, b, t, q, etc.) before cleaning
   const suffixMatch = lowerInput.match(/([kmbtq]+)$/);
   const suffix = suffixMatch ? suffixMatch[1] : '';
   const withoutSuffix = suffixMatch ? lowerInput.slice(0, -suffix.length) : lowerInput;
-  
+
   // Now remove everything except digits, commas, and periods
   // This is more robust than trying to list all possible separator characters
   const cleaned = withoutSuffix.replace(/[^\d.,]/g, '');
@@ -811,71 +1032,78 @@ export function parseShorthandNumber(input) {
     // Both present: the last one is typically the decimal separator
     const lastCommaIndex = numberPart.lastIndexOf(',');
     const lastPeriodIndex = numberPart.lastIndexOf('.');
-    
+
     if (lastCommaIndex > lastPeriodIndex) {
       // Comma is decimal separator (e.g., '12.000,5')
       normalizedNumber = numberPart.replace(/\./g, '').replace(',', '.');
-    } else {
+    }
+    else {
       // Period is decimal separator (e.g., '12,000.5')
       normalizedNumber = numberPart.replace(/,/g, '');
     }
-  } else if (hasComma && !hasPeriod) {
+  }
+  else if (hasComma && !hasPeriod) {
     // Only comma: determine if it's decimal or thousands separator
     if (commaCount === 1) {
       // Single comma: check context
       const commaIndex = numberPart.indexOf(',');
       const digitsAfterComma = numberPart.length - commaIndex - 1;
       const digitsBeforeComma = commaIndex;
-      
+
       // Heuristic for determining separator type:
       // 1. Exactly 3 digits after + 1-3 digits before = proper thousands separator
       // 2. 1-2 digits after = decimal separator
       // 3. 4+ digits after = likely misplaced thousands separator from editing (e.g., '131,3133' when typing '1313133')
       //    Remove separator and treat as whole number
       // 4. 3 digits after + 4+ digits before = decimal separator
-      
+
       const isProperThousandsSeparator = digitsAfterComma === 3 && digitsBeforeComma >= 1 && digitsBeforeComma <= 3;
-      const isClearlyDecimal = digitsAfterComma >= 1 && digitsAfterComma <= 2;
       const isMisplacedSeparator = digitsAfterComma >= 4;
-      
+
       if (isProperThousandsSeparator) {
         // Thousands separator (e.g., '1,234', '12,345', '123,456')
         normalizedNumber = numberPart.replace(',', '');
-      } else if (isMisplacedSeparator) {
+      }
+      else if (isMisplacedSeparator) {
         // Misplaced thousands separator from editing (e.g., '131,3133' → '1313133')
         normalizedNumber = numberPart.replace(',', '');
-      } else {
+      }
+      else {
         // Decimal separator (e.g., '12,5' or '123,45' or '1234,567')
         normalizedNumber = numberPart.replace(',', '.');
       }
-    } else {
+    }
+    else {
       // Multiple commas: all are thousands separators (e.g., '1,234,567')
       normalizedNumber = numberPart.replace(/,/g, '');
     }
-  } else if (hasPeriod && !hasComma) {
+  }
+  else if (hasPeriod && !hasComma) {
     // Only period: determine if it's decimal or thousands separator
     if (periodCount === 1) {
       // Single period: check context
       const periodIndex = numberPart.indexOf('.');
       const digitsAfterPeriod = numberPart.length - periodIndex - 1;
       const digitsBeforePeriod = periodIndex;
-      
+
       // Same heuristic as comma
       const isProperThousandsSeparator = digitsAfterPeriod === 3 && digitsBeforePeriod >= 1 && digitsBeforePeriod <= 3;
-      const isClearlyDecimal = digitsAfterPeriod >= 1 && digitsAfterPeriod <= 2;
       const isMisplacedSeparator = digitsAfterPeriod >= 4;
-      
+
       if (isProperThousandsSeparator) {
         // Thousands separator (e.g., '1.234', '12.345', '123.456')
         normalizedNumber = numberPart.replace('.', '');
-      } else if (isMisplacedSeparator) {
+      }
+      else if (isMisplacedSeparator) {
         // Misplaced thousands separator from editing (e.g., '131.3133' → '1313133')
         normalizedNumber = numberPart.replace('.', '');
-      } else {
+      }
+      else {
         // Decimal separator (e.g., '12.5' or '123.45' or '1234.567')
         normalizedNumber = numberPart; // Already correct
       }
-    } else {
+    }
+    else {
       // Multiple periods: all are thousands separators (e.g., '1.234.567')
       normalizedNumber = numberPart.replace(/\./g, '');
     }

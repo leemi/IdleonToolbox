@@ -8,23 +8,23 @@ import {
   MenuItem
 } from '@mui/material';
 import { cleanUnderscore, numberWithCommas, prefix } from '@utility/helpers';
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import useCheckbox from '@components/common/useCheckbox';
 import { CardTitleAndValue, TitleAndValue } from '@components/common/styles';
 import Tooltip from '@components/Tooltip';
-import { tachyonNames } from '@parsers/tesseract';
+import { tachyonNames } from '@parsers/class-specific/tesseract';
 import {
   getMaps,
   getRingBaseStats,
   getWeaponBaseStats
-} from '@parsers/tesseract';
+} from '@parsers/class-specific/tesseract';
 import { IconInfoCircleFilled } from '@tabler/icons-react';
 
 const Portals = ({ character, account, characters }) => {
   const [CheckboxEl, hideUnlockedMaps] = useCheckbox('Hide unlocked maps');
   const [selectedTachyon, setSelectedTachyon] = useState('all');
 
-  const maps = useMemo(() => getMaps(account, characters, character), [account, character]);
+  const maps = getMaps(account, characters, character);
 
   const {
     weaponDropChance,

@@ -1,6 +1,6 @@
 import { Divider, Select, Stack, Typography } from '@mui/material';
 import { CardTitleAndValue } from '@components/common/styles';
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '@components/common/context/AppProvider';
 import { cleanUnderscore, commaNotation, getTabs, notateNumber, numberWithCommas, prefix } from '@utility/helpers';
 import { NextSeo } from 'next-seo';
@@ -11,7 +11,7 @@ import Abominations from '@components/account/Misc/class-specific/Compass/Abomin
 import Medallions from '@components/account/Misc/class-specific/Compass/Medallions';
 import Portals from '@components/account/Misc/class-specific/Compass/Portals';
 import UpgradeOptimizer from '@components/account/Misc/class-specific/Compass/UpgradeOptimizer';
-import { getCompassStats, getExtraDust } from '@parsers/compass';
+import { getCompassStats, getExtraDust } from '@parsers/class-specific/compass';
 import { checkCharClass, CLASSES } from '@parsers/talents';
 import MenuItem from '@mui/material/MenuItem';
 
@@ -32,7 +32,7 @@ const Compass = () => {
   } = state?.account?.compass || {};
   const [selectedChar, setSelectedChar] = useState(0);
   const windWalkers = state?.characters?.filter((character) => checkCharClass(character?.class, CLASSES.Wind_Walker));
-  const tempestStats = useMemo(() => getCompassStats(state?.characters?.[selectedChar], state?.account), [selectedChar]);
+  const tempestStats = getCompassStats(state?.characters?.[selectedChar], state?.account);
 
   useEffect(() => {
     if (windWalkers.length === 1) {

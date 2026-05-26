@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Card, CardContent, Divider, Stack, Typography } from '@mui/material';
 import { cleanUnderscore, notateNumber, prefix } from '@utility/helpers';
 import styled from '@emotion/styled';
@@ -6,7 +6,7 @@ import Timer from '../../../../common/Timer';
 import Captain from './Captain';
 import InfoIcon from '@mui/icons-material/Info';
 import Tooltip from '@components/Tooltip';
-import { Breakdown } from '@components/common/styles';
+import { Breakdown } from '@components/common/Breakdown/Breakdown';
 
 const BoatsAndCaptains = ({
                             boats,
@@ -30,7 +30,7 @@ const BoatsAndCaptains = ({
       };
     }, {})
   };
-  const shipOverview = useMemo(() => getShipsOverview(), [boats]);
+  const shipOverview = getShipsOverview();
 
   return <>
     <Typography my={3} variant={'h3'}>Overview</Typography>
@@ -117,7 +117,12 @@ const BoatsAndCaptains = ({
           </Stack>
           <Resources inline resources={resources}/>
           <Divider sx={{ my: 1 }}/>
-          <Typography>Artifact Odds: {artifactChance}x</Typography>
+          <Stack direction={'row'} alignItems={'center'} gap={0.5}>
+            <Typography>Artifact Odds: {artifactChance?.value}x</Typography>
+            <Breakdown data={artifactChance?.breakdown}>
+              <InfoIcon sx={{ fontSize: 16, cursor: 'pointer', color: 'text.secondary' }}/>
+            </Breakdown>
+          </Stack>
         </CardContent>
       </Card>)}
     </Stack>

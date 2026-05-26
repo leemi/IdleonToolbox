@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useState } from 'react';
-import useInterval from 'components/hooks/useInterval';
+import useInterval from '@hooks/useInterval';
 import { isPast } from 'date-fns';
 import { getDuration } from 'utility/helpers';
 import { Typography } from '@mui/material';
@@ -94,7 +94,7 @@ const Timer = forwardRef(({
   }
 
   return time ? (time?.overtime || pause) && placeholder ? <Typography {...rest} ref={ref}>{placeholder}</Typography> :
-    <Typography {...rest} ref={ref} variant={variant} sx={{ color: `${time?.overtime && !loop ? '#f91d1d' : ''}` }}
+    <Typography {...rest} ref={ref} variant={variant} sx={{ color: `${time?.overtime && !loop ? 'error.light' : ''}` }}
                 component={'span'}>
       {time?.days ? wrapNumber(time?.days) + 'd:' : ''}
       {wrapNumber(time?.hours) + 'h:'}

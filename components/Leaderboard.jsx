@@ -1,16 +1,20 @@
 import React, { Fragment } from 'react';
-import { Divider, Link, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography } from '@mui/material';
+import { Divider, Link, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Stack, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
-import { notateNumber, prefix } from '@utility/helpers';
+import { notateNumber, numberWithCommas, prefix } from '@utility/helpers';
 import Box from '@mui/material/Box';
 import styled from '@emotion/styled'; // Grid version 2
+import HtmlTooltip from './Tooltip';
+import { IconInfoCircle } from '@tabler/icons-react';
 
 const HIGHLIGHTED_OUTLINED_COLOR = '#007E85';
 const SECONDARY_HIGHLIGHTED_OUTLINED_COLOR = '#cd861b';
 const HIGHLIGHTED_BG_COLOR = '#12141c'
 
 const specialNotation = (sectionName, value) => {
-  if (sectionName === 'bits') {
+  if (sectionName === 'globalRanking') {
+    return numberWithCommas(Math.round(value)) + ' pts';
+  } else if (sectionName === 'bits') {
     return notateNumber(value, 'bits');
   } else if (sectionName === 'dropRate') {
     return notateNumber(value, 'MultiplierInfo');
@@ -27,12 +31,14 @@ const LeaderboardSection = ({ leaderboards, loggedMainChar, searchedChar }) => {
     >
       {Object.entries(leaderboards || {}).map(([sectionName, list], sectionIndex) => {
         const positions = {}
+        const displayCount = sectionName === 'globalRanking' ? 25 : 10;
+        if (!Array.isArray(list)) return null;
         const players = list.map((entry, index) => {
           const char = entry.mainChar;
           const isLoggedMainChar = char === loggedMainChar;
           const isSearchedChar = char === searchedChar;
 
-          if ((isSearchedChar) && index >= 10) {
+          if (index >= displayCount) {
             positions[char] = entry?.rank;
           }
 
@@ -45,14 +51,17 @@ const LeaderboardSection = ({ leaderboards, loggedMainChar, searchedChar }) => {
         });
         const additional = Object.entries(positions)?.map(([name, position]) => {
           const entry = list?.find((entry) => entry?.mainChar === name);
-          const key = entry.mainChar === loggedMainChar ? 'loggedMainChar' : 'searchedChar';
+          const isSearched = entry.mainChar === searchedChar;
+          const isLogged = entry.mainChar === loggedMainChar;
           return {
             ...entry,
-            [key]: true,
+            ...(isSearched && { searchedChar: true }),
+            ...(isLogged && { loggedMainChar: true }),
+            ...(!isSearched && !isLogged && { neighbor: true }),
             index: position
           };
         }, []);
-        const rest = players?.slice(0, 10).concat(additional);
+        const rest = players?.slice(0, displayCount).concat(additional);
         const isEmpty = list?.length === 0;
         return (
           <Box
@@ -65,8 +74,15 @@ const LeaderboardSection = ({ leaderboards, loggedMainChar, searchedChar }) => {
               gap: '1rem'
             }}
           >
-            <Typography textAlign={'center'} variant={'h5'} mt={{ xs: 3, lg: 0 }}
-                        mb={{ xs: 3, lg: 1 }}>{sectionName.camelToTitleCase()}</Typography>
+            {sectionName === 'globalRanking' ? <Stack direction={'row'} justifyContent={'center'} alignItems={'center'} gap={1}
+                        mt={{ xs: 3, lg: 0 }} mb={{ xs: 3, lg: 1 }}>
+              <Typography textAlign={'center'} variant={'h5'}>{sectionName.camelToTitleCase()}</Typography>
+              <HtmlTooltip followCursor={false} title="Score is calculated by summing each player's percentile rank across all leaderboard metrics. Higher placement in more categories means a higher score."
+                       arrow placement="top">
+                <IconInfoCircle size={20} />
+              </HtmlTooltip>
+            </Stack> : <Typography textAlign={'center'} variant={'h5'} mt={{ xs: 3, lg: 0 }}
+                        mb={{ xs: 3, lg: 1 }}>{sectionName.camelToTitleCase()}</Typography>}
             {!isEmpty ? <>
               <List dense disablePadding>
                 {rest.map((entry, index) => {
@@ -77,12 +93,14 @@ const LeaderboardSection = ({ leaderboards, loggedMainChar, searchedChar }) => {
 
                   return <Fragment key={`${sectionName}-${index}`}>
                     <ListItem
+                      ref={entry?.searchedChar && sectionName === 'globalRanking' ? (el) => el?.scrollIntoView({ behavior: 'smooth', block: 'center' }) : undefined}
                       disablePadding
                       sx={{
                         borderRadius: index === 0 ? '8px 8px 0 0' : index === rest.length - 1 ? '0 0 8px 8px' : '',
                         '&:hover': {
                           borderRadius: index === 0 ? '8px 8px 0 0' : index === rest.length - 1 ? '0 0 8px 8px' : ''
                         },
+                        marginTop: sectionName === 'globalRanking' && index === displayCount && additional.length > 0 ? 2 : 0,
                         backgroundColor: entry?.loggedMainChar || entry?.searchedChar
                           ? HIGHLIGHTED_BG_COLOR
                           : '#1e262e',
@@ -95,23 +113,45 @@ const LeaderboardSection = ({ leaderboards, loggedMainChar, searchedChar }) => {
                         {specialNotation(sectionName, value)}
                       </Typography>}
                     >
-                      <ListItemButton component={Link} target={'_blank'}
-                                      href={`${process.env.NEXT_PUBLIC_IT_URL}?profile=${entry?.mainChar}`} disableGutters
-                                      sx={{
-                                        pl: 2, py: .5, borderRadius: 'inherit' // Inherits borderRadius from ListItem
-                                      }}>
-                        <ListItemIcon>
-                          {img ? <img width={24} height={24} style={{ objectFit: 'contain' }}
-                                      src={`${prefix}${img}`} alt={''}/> : <PositionCircle inline>
-                            <Typography variant={'body2'}>
-                              {entry?.index ? entry?.index : index + 4}
-                            </Typography>
-                          </PositionCircle>}
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={entry?.mainChar}
-                          slotProps={{ primary: { variant: 'body1' } }}/>
-                      </ListItemButton>
+                      {entry?.mainChar?.startsWith('Anon#') ? (
+                        <ListItemButton component={Link} target={'_blank'}
+                                        href={`${process.env.NEXT_PUBLIC_IT_URL}/account/misc/general?profile=${encodeURIComponent(entry?.mainChar)}`} disableGutters
+                                        sx={{
+                                          pl: 2, pr: 10, py: .5, borderRadius: 'inherit', opacity: 0.85
+                                        }}>
+                          <ListItemIcon>
+                            {img ? <img width={24} height={24} style={{ objectFit: 'contain' }}
+                                        src={`${prefix}${img}`} alt={''}/> : <PositionCircle inline>
+                              <Typography variant={'body2'}>
+                                {entry?.index ? entry?.index : index + 4}
+                              </Typography>
+                            </PositionCircle>}
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={entry?.mainChar}
+                            sx={{ mr: 8 }}
+                            slotProps={{ primary: { variant: 'body1' } }}/>
+                        </ListItemButton>
+                      ) : (
+                        <ListItemButton component={Link} target={'_blank'}
+                                        href={`${process.env.NEXT_PUBLIC_IT_URL}/account/misc/general?profile=${entry?.mainChar}`} disableGutters
+                                        sx={{
+                                          pl: 2, pr: 10, py: .5, borderRadius: 'inherit'
+                                        }}>
+                          <ListItemIcon>
+                            {img ? <img width={24} height={24} style={{ objectFit: 'contain' }}
+                                        src={`${prefix}${img}`} alt={''}/> : <PositionCircle inline>
+                              <Typography variant={'body2'}>
+                                {entry?.index ? entry?.index : index + 4}
+                              </Typography>
+                            </PositionCircle>}
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={entry?.mainChar}
+                            sx={{ mr: 8 }}
+                            slotProps={{ primary: { variant: 'body1' } }}/>
+                        </ListItemButton>
+                      )}
                     </ListItem>
                     {index < rest.length - 1 ? <Divider component="li"/> : null}
                   </Fragment>

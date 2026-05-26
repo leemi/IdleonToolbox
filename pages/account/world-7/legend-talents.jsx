@@ -1,4 +1,4 @@
-import React, { useContext, useState, useMemo } from 'react';
+import React, { useContext, useState } from 'react';
 import { AppContext } from '@components/common/context/AppProvider';
 import { Stack, Card, CardContent, Typography, Box, TextField, Checkbox, FormControlLabel } from '@mui/material';
 import { NextSeo } from 'next-seo';
@@ -11,7 +11,7 @@ import Tooltip from '@components/Tooltip';
 const LegendTalents = () => {
   const { state } = useContext(AppContext);
   const { talents, pointsSpent, pointsOwned } = state?.account?.legendTalents || {};
-  const [searchQuery, setSearchQuery] = useState('');
+const [searchQuery, setSearchQuery] = useState('');
   const [hideMaxed, setHideMaxed] = useLocalStorage({
     key: `${prefix}:legendTalents:hideMaxed`,
     defaultValue: false
@@ -19,46 +19,25 @@ const LegendTalents = () => {
 
   if (!state?.account?.legendTalents) return <MissingData name={'legendTalents'} />;
 
-  // Helper function to check if talent is completed
-  const isCompleted = (talent) => {
-    // Check if talent has max level property (x1 for upgrades, or maxLevel)
-    if (talent.x1 !== undefined) {
-      return talent.level >= talent.x1;
-    }
-    if (talent.maxLevel !== undefined) {
-      return talent.level >= talent.maxLevel;
-    }
-    // If no max level property, consider it incomplete if level is 0
-    return false;
-  };
+  const isCompleted = (talent) => talent.level >= talent.maxLevel;
 
-  const filteredTalents = useMemo(() => {
-    if (!talents) return [];
-
-    let filtered = talents;
-
-    // Filter by search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter((talent) => {
-        const name = cleanUnderscore(talent.name || '').toLowerCase();
-        const description = cleanUnderscore(talent.description || '').toLowerCase();
-        return name.includes(query) || description.includes(query);
-      });
-    }
-
-    // Filter out maxed talents if option is enabled
-    if (hideMaxed) {
-      filtered = filtered.filter((talent) => !isCompleted(talent));
-    }
-
-    return filtered;
-  }, [talents, searchQuery, hideMaxed]);
+  let filteredTalents = talents || [];
+  if (searchQuery.trim()) {
+    const query = searchQuery.toLowerCase();
+    filteredTalents = filteredTalents.filter((talent) => {
+      const name = cleanUnderscore(talent.name || '').toLowerCase();
+      const description = cleanUnderscore(talent.description || '').toLowerCase();
+      return name.includes(query) || description.includes(query);
+    });
+  }
+  if (hideMaxed) {
+    filteredTalents = filteredTalents.filter((talent) => !isCompleted(talent));
+  }
 
   return <>
     <NextSeo
       title="Legend Talents | Idleon Toolbox"
-      description="Keep track of your legend talents and their bonuses"
+      description="View your Legend talent levels, bonus effects, and upgrade costs in Legends of Idleon World 7"
     />
 
     <Stack sx={{ mb: 3 }} direction="row" alignItems="center" gap={2}>
@@ -133,7 +112,7 @@ const LegendTalents = () => {
                     {cleanUnderscore(talent.name)}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Level: {talent.level || 0}{talent.x1 !== undefined ? ` / ${talent.x1}` : talent.maxLevel !== undefined ? ` / ${talent.maxLevel}` : ''}
+                    Level: {talent.level || 0} / {talent.maxLevel}
                   </Typography>
                 </Stack>
               </Stack>

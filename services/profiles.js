@@ -1,17 +1,16 @@
 import { tryToParse } from '@utility/helpers';
 import { getCashMulti, getDropRate } from '@parsers/character';
 import { getMaxDamage } from '@parsers/damage';
-import { calcTotalBoatLevels } from '@parsers/sailing';
+import { calcTotalBoatLevels } from '@parsers/world-5/sailing';
 import { differenceInYears } from 'date-fns';
 
 const url = process.env.NEXT_PUBLIC_PROFILES_URL;
-// const url = 'http://localhost:8787/api';
-export const uploadProfile = async ({ profile, leaderboardConsent }, token) => {
+export const uploadProfile = async ({ profile, profileAccess, leaderboardParticipation }, token) => {
   try {
     const parsedProfile = parseProfile(profile);
     const response = await fetch(`${url}/profiles`, {
       method: 'POST',
-      body: JSON.stringify({ profile: parsedProfile, leaderboardConsent }),
+      body: JSON.stringify({ profile: parsedProfile, profileAccess, leaderboardParticipation }),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': token
@@ -20,7 +19,7 @@ export const uploadProfile = async ({ profile, leaderboardConsent }, token) => {
     if (response?.status !== 200) {
       throw response;
     }
-    return response;
+    return await response?.json();
   } catch (err) {
     console.error('Error has occurred: ', err);
     if (err?.status === 429) {
@@ -34,7 +33,7 @@ export const uploadProfile = async ({ profile, leaderboardConsent }, token) => {
 
 export const getProfile = async ({ mainChar }) => {
   try {
-    const response = await fetch(`${url}/profiles/?profile=${mainChar}`, {
+    const response = await fetch(`${url}/profiles/?profile=${encodeURIComponent(mainChar)}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -43,7 +42,7 @@ export const getProfile = async ({ mainChar }) => {
     if (!response) return null
     return await response?.json();
   } catch (e) {
-    console.error(`${__filename} -> Error has occurred while getting profile for ${mainChar}`);
+    console.error(`profiles.js -> Error has occurred while getting profile for ${mainChar}`);
     throw e;
   }
 }
@@ -59,14 +58,14 @@ export const fetchLeaderboard = async (leaderboard) => {
     if (!response) return null
     return await response?.json();
   } catch (e) {
-    console.error(`${__filename} -> Error has occurred while getting leaderboards`);
+    console.error(`profiles.js -> Error has occurred while getting leaderboards`);
     throw e;
   }
 }
 
 export const fetchUserLeaderboards = async (leaderboard, leaderboardUser) => {
   try {
-    const response = await fetch(`${url}/leaderboards?leaderboard=${leaderboard}&leaderboardUser=${leaderboardUser}`, {
+    const response = await fetch(`${url}/leaderboards?leaderboard=${encodeURIComponent(leaderboard)}&leaderboardUser=${encodeURIComponent(leaderboardUser)}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -75,8 +74,22 @@ export const fetchUserLeaderboards = async (leaderboard, leaderboardUser) => {
     if (!response) return null
     return await response?.json();
   } catch (e) {
-    console.error(`${__filename} -> Error has occurred while getting leaderboards`);
+    console.error(`profiles.js -> Error has occurred while getting leaderboards`);
     throw e;
+  }
+}
+
+export const fetchTomePercentiles = async () => {
+  try {
+    const response = await fetch(`${url}/tome-percentiles`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (e) {
+    console.error('profiles.js -> Error fetching tome percentiles');
+    return null;
   }
 }
 
@@ -91,6 +104,8 @@ export const expandLeaderboardInfo = (account, characters) => {
   const greenMushroomKills = account?.deathNote?.[0]?.mobs?.[0]?.kills || 0;
   const totalBoats = calcTotalBoatLevels(account?.sailing?.boats);
   const totalTomePoints = account?.tome?.totalPoints;
+  const tomePoints = (account?.tome?.tome || []).map(t => t?.points ?? 0);
+  const tomeRankThresholds = account?.tome?.tops || [];
   const logbooks = account?.gaming?.logBook?.reduce((sum, { unlocked }) => sum + unlocked, 0);
   const villagers = account?.hole?.villagers?.map(({ expRate }) => expRate.value)?.filter(val => val > 0);
   const highestVillagerExpPerHour = villagers?.length > 0 ? Math.max(...villagers) : 0;
@@ -107,11 +122,14 @@ export const expandLeaderboardInfo = (account, characters) => {
     greenMushroomKills,
     totalBoats,
     totalTomePoints: withDefault(totalTomePoints, 0),
+    tomePoints,
+    tomeRankThresholds,
     highestVillagerExpPerHour,
     topKilledMonsters: account?.topKilledMonsters,
     accountAge: differenceInYears(new Date(), new Date(account?.accountCreateTime)),
     currentWorld: account?.currentWorld,
-    cashMulti: withDefault(cashMulti)
+    cashMulti: withDefault(cashMulti),
+    highestSpelunkingPower: withDefault(account?.spelunking?.power?.value)
   }
 }
 const withDefault = (value, defaultValue = 0) => {

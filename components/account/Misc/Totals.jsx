@@ -1,19 +1,19 @@
 import { Stack, Typography } from '@mui/material';
-import { useMemo } from 'react';
+import React from 'react';
 import { notateNumber, prefix } from 'utility/helpers';
-import { calcStampLevels } from '../../../parsers/stamps';
+import { calcStampLevels } from '@parsers/world-1/stamps';
 import Tooltip from '../../Tooltip';
-import { calcStatueLevels } from '@parsers/statues';
-import { calcShrineLevels } from '@parsers/shrines';
-import { calcBubbleLevels } from '@parsers/alchemy';
+import { calcStatueLevels } from '@parsers/world-1/statues';
+import { calcShrineLevels } from '@parsers/world-3/shrines';
+import { calcBubbleLevels } from '@parsers/world-2/alchemy';
 import { getGiantMobChance } from '@parsers/misc';
 
 const Totals = ({ account, characters }) => {
 
-  const totalBubbleLevels = useMemo(() => calcBubbleLevels(account?.alchemy?.bubbles), [account]);
-  const totalStampLevels = useMemo(() => calcStampLevels(account?.stamps), [account]);
-  const totalStatueLevels = useMemo(() => calcStatueLevels(account?.statues), [account]);
-  const totalShrineLevels = useMemo(() => calcShrineLevels(account?.shrines), [account]);
+  const totalBubbleLevels = calcBubbleLevels(account?.alchemy?.bubbles);
+  const totalStampLevels = calcStampLevels(account?.stamps);
+  const totalStatueLevels = calcStatueLevels(account?.statues);
+  const totalShrineLevels = calcShrineLevels(account?.shrines);
   const giantMob = getGiantMobChance(characters?.[0], account);
 
   return (

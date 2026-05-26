@@ -1,24 +1,25 @@
-import React, { useContext, useMemo } from 'react';
+import React, { useContext } from 'react';
 import { AppContext } from 'components/common/context/AppProvider';
 import { Card, CardContent, Stack, Typography } from '@mui/material';
 import { cleanUnderscore, notateNumber, prefix } from 'utility/helpers';
 import styled from '@emotion/styled';
 import { CardTitleAndValue, PlayersList, TitleAndValue } from '@components/common/styles';
-import { isArtifactAcquired } from '../../../parsers/sailing';
+import { isArtifactAcquired } from '@parsers/world-5/sailing';
 import { NextSeo } from 'next-seo';
 import { getAchievementStatus } from '../../../parsers/achievements';
-import { getSigilBonus, getVialsBonusByStat } from '../../../parsers/alchemy';
+import { getSigilBonus, getVialsBonusByStat } from '@parsers/world-2/alchemy';
 import Timer from '../../../components/common/Timer';
 import Tooltip from '../../../components/Tooltip';
 import InfoIcon from '@mui/icons-material/Info';
-import { getStampsBonusByEffect } from '@parsers/stamps';
+import { getStampsBonusByEffect } from '@parsers/world-1/stamps';
 import { getWinnerBonus } from '@parsers/world-6/summoning';
 import { isJadeBonusUnlocked } from '@parsers/world-6/sneaking';
 import { getVoteBonus } from '@parsers/world-2/voteBallot';
-import { getArcadeBonus } from '@parsers/arcade';
+import { getArcadeBonus } from '@parsers/world-2/arcade';
 import { isEtherealBonusUnlocked } from '@parsers/world-7/spelunking';
-import { getPaletteBonus } from '@parsers/gaming';
+import { getPaletteBonus } from '@parsers/world-5/gaming';
 import { getLegendTalentBonus } from '@parsers/world-7/legendTalents';
+import { getSushiBonus } from '@parsers/world-7/sushiStation';
 
 const Sigils = () => {
   const { state } = useContext(AppContext);
@@ -26,6 +27,7 @@ const Sigils = () => {
   const chilledYarnArtifact = isArtifactAcquired(sailing?.artifacts, 'Chilled_Yarn');
   const hasJadeBonus = isJadeBonusUnlocked(state?.account, 'Ionized_Sigils');
   const hasEtherealBonus = isEtherealBonusUnlocked(state?.account);
+  const hasEclecticBonus = true; // TODO: wire to game unlock when available
 
   const getSigilSpeed = () => {
     const achievement = getAchievementStatus(state?.account?.achievements, 112);
@@ -40,6 +42,8 @@ const Sigils = () => {
     const paletteBonus = getPaletteBonus(state?.account, 20);
     const legendBonus = getLegendTalentBonus(state?.account, 31);
 
+    const sushiBonus = getSushiBonus(state?.account, 41);
+
     return {
       value: (1 + ((achievement ? 20 : 0) + (sigilBonus + (20 * gemStore + (vial + stampBonus)))) / 100)
         * (1 + winnerBonus / 100)
@@ -47,7 +51,8 @@ const Sigils = () => {
         * (1 + anotherVial / 100)
         * (1 + voteBonus / 100)
         * (1 + paletteBonus / 100)
-        * (1 + legendBonus / 100),
+        * (1 + legendBonus / 100)
+        * (1 + sushiBonus / 100),
 
       breakdown: [
         { name: 'Achievement', value: (achievement ? 20 : 0) / 100 },
@@ -60,13 +65,14 @@ const Sigils = () => {
         { name: 'Summoning', value: winnerBonus / 100 },
         { name: 'Vote', value: voteBonus / 100 },
         { name: 'Palette', value: paletteBonus / 100 },
-        { name: 'Legend Talent', value: legendBonus / 100 }
+        { name: 'Legend Talent', value: legendBonus / 100 },
+        { name: 'Sushi Station', value: sushiBonus / 100 }
       ]
     }
   }
 
-  const sigilSpeed = useMemo(() => getSigilSpeed(), [state]);
-  const getSigilCost = ({ unlocked, boostCost, unlockCost, jadeCost, etherealCost }) => {
+  const sigilSpeed = getSigilSpeed();
+  const getSigilCost = ({ unlocked, boostCost, unlockCost, jadeCost, etherealCost, eclecticCost }) => {
     if (unlocked === 0) {
       return boostCost;
     }
@@ -80,6 +86,11 @@ const Sigils = () => {
         return etherealCost;
       }
     }
+    else if (unlocked === 3) {
+      if (hasEclecticBonus && eclecticCost != null) {
+        return eclecticCost;
+      }
+    }
     return unlockCost;
   }
 
@@ -87,7 +98,7 @@ const Sigils = () => {
     (<Stack>
       <NextSeo
         title="Sigils | Idleon Toolbox"
-        description="Sigils information and progression"
+        description="View your sigil levels, unlock progress, and bonus effects for alchemy in Legends of Idleon"
       />
       <Stack direction={'row'} gap={3}>
         <CardTitleAndValue title={'Sigil Speed'}>
@@ -113,6 +124,7 @@ const Sigils = () => {
             unlocked,
             jadeCost,
             etherealCost,
+            eclecticCost,
             bonus,
             characters
           } = sigil;
@@ -144,7 +156,7 @@ const Sigils = () => {
                         ? 'info.light'
                         : ''
                     }}>Effect: {cleanUnderscore(effect?.replace(/{/g, bonus))}</Typography>
-                  {(progress < jadeCost && unlocked < 2) || (progress < etherealCost && unlocked < 3) ? <>
+                  {(progress < jadeCost && unlocked < 2) || (progress < etherealCost && unlocked < 3) || (eclecticCost != null && progress < eclecticCost && unlocked < 4) ? <>
                     <Typography>
                       Progress: {notateNumber(progress, 'Small')}/{notateNumber(cost, 'Small')}
                     </Typography>
@@ -165,7 +177,7 @@ const Sigils = () => {
 
 const SigilIcon = styled.img`
   object-fit: contain;
-  filter: hue-rotate(${({ unlocked }) => (unlocked === 3 ? '60deg' : unlocked === 2 ? '130deg' : unlocked === 1
+  filter: hue-rotate(${({ unlocked }) => (unlocked === 4 ? '280deg' : unlocked === 3 ? '60deg' : unlocked === 2 ? '130deg' : unlocked === 1
     ? '200deg'
     : '0deg')});
 `;

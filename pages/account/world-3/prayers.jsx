@@ -4,7 +4,7 @@ import { Card, CardContent, Divider, Stack, Typography } from '@mui/material';
 import { cleanUnderscore, notateNumber, prefix, round } from 'utility/helpers';
 import styled from '@emotion/styled';
 import { NextSeo } from 'next-seo';
-import { calcPrayerCost } from '../../../parsers/prayers';
+import { calcPrayerCost } from '@parsers/world-3/prayers';
 import Tooltip from 'components/Tooltip';
 
 const Prayers = () => {
@@ -24,7 +24,7 @@ const Prayers = () => {
     <div>
       <NextSeo
         title="Prayers | Idleon Toolbox"
-        description="Prayers information"
+        description="View your active prayers, curse penalties, and soul bonuses to optimize worship in Legends of Idleon"
       />
       <Stack direction={'row'} flexWrap={'wrap'} gap={3}>
         {prayers?.map((prayer, index) => {

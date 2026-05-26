@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import type * as React from "react";
 import {
   Box,
@@ -24,6 +24,7 @@ import StarBorderIcon from "@mui/icons-material/StarBorder";
 import ImageIcon from "@mui/icons-material/Image";
 import { notateNumber } from "@utility/helpers";
 import useBreakdown from "./Breakdown.hook";
+import GameIconNotation from "@components/common/GameIconNotation";
 
 
 interface StatSource {
@@ -49,7 +50,7 @@ interface StatBreakdownData {
 }
 
 interface StatBreakdownTooltipProps {
-  data: StatBreakdownData
+  data?: StatBreakdownData
   children: React.ReactNode
   valueNotation?: string
   skipNotation?: boolean
@@ -64,7 +65,7 @@ export function Breakdown({ data, children, valueNotation = "MultiplierInfo", sk
   const [open, setOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [pinnedSources, setPinnedSources] = useState<Set<string>>(() => {
-    const stored = localStorage.getItem(`pinned-sources-${data.statName}`)
+    const stored = localStorage.getItem(`pinned-sources-${data?.statName}`)
     if (stored) {
       try {
         return new Set(JSON.parse(stored))
@@ -84,8 +85,8 @@ export function Breakdown({ data, children, valueNotation = "MultiplierInfo", sk
   }
 
   useEffect(() => {
-    localStorage.setItem(`pinned-sources-${data.statName}`, JSON.stringify(Array.from(pinnedSources)))
-  }, [pinnedSources, data.statName])
+    if (data?.statName) localStorage.setItem(`pinned-sources-${data.statName}`, JSON.stringify(Array.from(pinnedSources)))
+  }, [pinnedSources, data?.statName])
 
   const toggleCategory = (index: number, event: React.MouseEvent) => {
     event.stopPropagation()
@@ -115,6 +116,7 @@ export function Breakdown({ data, children, valueNotation = "MultiplierInfo", sk
   }
 
   const handleExpandAll = () => {
+    if (!data) return
     const allCategories = new Set(data.categories.map((_, idx) => idx))
     setExpandedCategories(allCategories)
 
@@ -133,7 +135,8 @@ export function Breakdown({ data, children, valueNotation = "MultiplierInfo", sk
   }
 
   const handleCopyBreakdown = () => {
-    let text = `${data.statName}: ${skipNotation ? data.totalValue : notateNumber(data.totalValue, valueNotation)}\n\n`
+    if (!data) return
+    let text = `${data.statName}: ${data.totalValue}\n\n`
 
     data.categories.forEach((category) => {
       text += `${category.name}:\n`
@@ -161,9 +164,8 @@ export function Breakdown({ data, children, valueNotation = "MultiplierInfo", sk
     setFeedbackMessage("Copied text to clipboard")
   }
 
-  const filteredData = useMemo(() => {
-    if (!searchQuery.trim()) return data
-
+  let filteredData = data
+  if (data && searchQuery.trim()) {
     const query = searchQuery.toLowerCase()
     const filteredCategories = data.categories
       .map((category) => {
@@ -201,11 +203,11 @@ export function Breakdown({ data, children, valueNotation = "MultiplierInfo", sk
       })
       .filter(Boolean) as StatCategory[]
 
-    return {
+    filteredData = {
       ...data,
       categories: filteredCategories,
     }
-  }, [data, searchQuery])
+  }
 
   const sortSources = (sources: StatSource[], prefix: string) => {
     if (!sources) return [];
@@ -218,18 +220,6 @@ export function Breakdown({ data, children, valueNotation = "MultiplierInfo", sk
       if (!aPinned && bPinned) return 1
       return 0
     })
-  }
-
-  const sortedData = {
-    ...filteredData,
-    categories: filteredData.categories.map((category, catIdx) => ({
-      ...category,
-      sources: category.sources ? sortSources(category.sources, `${catIdx}`) : undefined,
-      subSections: category.subSections?.map((subSection, subIdx) => ({
-        ...subSection,
-        sources: sortSources(subSection.sources, `${catIdx}-${subIdx}`),
-      })),
-    })),
   }
 
   const togglePin = (sourceKey: string, event: React.MouseEvent) => {
@@ -247,6 +237,20 @@ export function Breakdown({ data, children, valueNotation = "MultiplierInfo", sk
 
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
+
+  if (!data || !filteredData) return <>{children}</>
+
+  const sortedData = {
+    ...filteredData,
+    categories: filteredData.categories.map((category, catIdx) => ({
+      ...category,
+      sources: category.sources ? sortSources(category.sources, `${catIdx}`) : undefined,
+      subSections: category.subSections?.map((subSection, subIdx) => ({
+        ...subSection,
+        sources: sortSources(subSection.sources, `${catIdx}-${subIdx}`),
+      })),
+    })),
+  }
 
   return (
     <>
@@ -323,11 +327,14 @@ export function Breakdown({ data, children, valueNotation = "MultiplierInfo", sk
           >
             <Stack direction="row" alignItems="center" justifyContent="space-between" gap={1.5} width="100%">
               <Typography variant="body1" color="text.secondary" fontWeight={500}>
-                {data.statName}
+                {data?.statName}
               </Typography>
-              <Typography variant="h5" fontWeight={700}>
-                {skipNotation ? data.totalValue : notateNumber(data.totalValue, valueNotation)}
-              </Typography>
+              {typeof data.totalValue === 'string' && /[\[!|棘]/.test(data.totalValue)
+                ? <GameIconNotation value={data.totalValue} sx={{ fontSize: '1.5rem', fontWeight: 700 }}/>
+                : <Typography variant="h5" fontWeight={700}>
+                    {data.totalValue}
+                  </Typography>
+              }
             </Stack>
           </Stack>
 

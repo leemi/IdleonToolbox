@@ -14,7 +14,7 @@ import {
   Typography,
   useMediaQuery
 } from '@mui/material';
-import React, { useContext, useMemo, useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { cleanUnderscore, handleDownload, notateNumber, numberWithCommas, prefix } from '@utility/helpers';
 import { itemsArray } from '@website-data';
 import Button from '@mui/material/Button';
@@ -23,6 +23,7 @@ import Tooltip from '../../components/Tooltip';
 import { findQuantityOwned, getAllItems } from '@parsers/items';
 import { AppContext } from '@components/common/context/AppProvider';
 import { NextSeo } from 'next-seo';
+import StructuredData, { createHowToData } from '@components/common/StructuredData';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import IconButton from '@mui/material/IconButton';
 import EditIcon from '@mui/icons-material/Edit';
@@ -44,15 +45,14 @@ const MaterialTracker = () => {
   const [note, setNote] = useState('');
   const [hoverIcons, setHoverIcons] = useState({});
   const [trackedItems, setTrackedItems] = useState(JSON.parse(localStorage.getItem('material-tracker')) || {});
-  const items = useMemo(() => itemsArray.filter(({
+  const items = itemsArray.filter(({
                                                    itemType,
                                                    typeGen,
                                                    displayName
                                                  }) => displayName !== 'ERROR' && displayName !== 'Blank' &&
     displayName !== 'Filler' && displayName !== 'DONTFILL' && displayName !== 'FILLER' && itemType !== 'Equip'
-  ), []);
-  const totalOwnedItems = useMemo(() => getAllItems(state?.characters, state?.account), [state?.characters,
-    state?.account]);
+  );
+  const totalOwnedItems = getAllItems(state?.characters, state?.account);
   const [errors, setErrors] = useState({ material: false, lowerBound: false, upperBound: false });
 
   const handleAddTracker = (allGreenStacks) => {
@@ -121,6 +121,16 @@ const MaterialTracker = () => {
       title="Material Tracker | Idleon Toolbox"
       description="Add a material, set your own threshold and keep track of your inventory."
     />
+    <StructuredData data={createHowToData(
+      'How to track materials in Legends of Idleon',
+      'Use the Material Tracker to monitor your inventory and get alerts when materials reach your target.',
+      [
+        'Search and select materials you want to track from the item list',
+        'Set lower and upper bound thresholds for each material',
+        'View your current inventory counts updated from your account data',
+        'Export or import your tracking list to save your configuration'
+      ]
+    )}/>
     <CardTitleAndValue title={'Utility'}>
       <Stack sx={{ mt: 1 }} direction={'row'} alignItems={'center'} gap={2}>
         <FileUploadButton onFileUpload={(data) => {

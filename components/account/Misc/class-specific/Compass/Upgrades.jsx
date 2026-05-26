@@ -35,8 +35,8 @@ const Upgrades = ({ upgrades, dusts }) => {
     if (!searchText) return list;
     return list.filter(upgrade =>
       upgrade.description &&
-      cleanUnderscore(upgrade.description).toLowerCase().includes(searchText.toLowerCase()) || (upgrade.name &&
-        cleanUnderscore(upgrade.name).toLowerCase().includes(searchText.toLowerCase())
+      cleanUnderscore(upgrade.description).toLowerCase().includes(searchText.toLowerCase().trim()) || (upgrade.name &&
+        cleanUnderscore(upgrade.name).toLowerCase().includes(searchText.toLowerCase().trim())
       ));
   };
 
@@ -51,7 +51,7 @@ const Upgrades = ({ upgrades, dusts }) => {
     if (description === 'Titan_doesnt_exist') return null;
 
     let iconIndex = index ?? i;
-    if (baseIconIndex >= 0) iconIndex = baseIconIndex + 106;
+    if (baseIconIndex != null && baseIconIndex >= 0) iconIndex = baseIconIndex + 106;
 
     return (
       <Card key={name + iconIndex}>

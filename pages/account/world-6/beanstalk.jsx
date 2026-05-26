@@ -1,4 +1,4 @@
-import React, { useCallback, useContext } from 'react';
+import React, { useContext } from 'react';
 import { AppContext } from '@components/common/context/AppProvider';
 import { NextSeo } from 'next-seo';
 import { isJadeBonusUnlocked } from '@parsers/world-6/sneaking';
@@ -16,7 +16,7 @@ const breakpoints = [10000, 100000, 1e6];
 const Beanstalk = () => {
   const { state } = useContext(AppContext);
   const beanstalkData = state?.account?.sneaking?.beanstalkData;
-  const beanstalkGoldenFoods = ninjaExtraInfo[29].split(' ').filter((str) => isNaN(str))
+  const beanstalkGoldenFoods = ninjaExtraInfo[29].filter((str) => isNaN(str))
     .map((gFood, index) => ({
       ...(items?.[gFood] || {}),
       rawName: gFood,
@@ -25,12 +25,12 @@ const Beanstalk = () => {
       index
     }));
   const unlocked = isJadeBonusUnlocked(state?.account, 'Gold_Food_Beanstalk');
-  const findItem = useCallback((name) => {
+  const findItem = (name) => {
     const equippedItems = addEquippedItems(state?.characters, true);
     const totalItems = getAllItems(state?.characters, state?.account)
     const totalOwnedItems = mergeItemsByOwner([...(totalItems || []), ...(equippedItems || [])]);
     return findItemInInventory(totalOwnedItems, name)
-  }, [state?.characters, state?.account]);
+  };
   const allCharactersMulti = state?.characters?.map((character) => {
     const multi = getGoldenFoodMulti(character, state?.account, state?.characters);
     return {

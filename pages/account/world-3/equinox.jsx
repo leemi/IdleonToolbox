@@ -9,8 +9,8 @@ import Tooltip from '@components/Tooltip';
 import { IconInfoCircleFilled } from '@tabler/icons-react';
 import { PAGES } from '@components/constants';
 import Tabber from '@components/common/Tabber';
-import Upgrades from '@components/account/Worlds/World3/equinox/Upgrades';
-import Challenges from '@components/account/Worlds/World3/equinox/Challenges';
+import Upgrades from '@components/account/Worlds/World3/Equinox/Upgrades';
+import Challenges from '@components/account/Worlds/World3/Equinox/Challenges';
 
 const Equinox = () => {
   const { state } = useContext(AppContext);
@@ -22,7 +22,7 @@ const Equinox = () => {
     <>
       <NextSeo
         title="Equinox | Idleon Toolbox"
-        description="Equinox progression"
+        description="Track your Equinox upgrades, dream bonuses, and unlockable perks for all your Legends of Idleon characters"
       />
       <Stack mb={1} direction={'row'} gap={{ xs: 1, md: 3 }} flexWrap={'wrap'}>
         <CardTitleAndValue title={'Fill rate'}>

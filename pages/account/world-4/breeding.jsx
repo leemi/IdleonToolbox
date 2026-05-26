@@ -1,4 +1,4 @@
-import React, { useContext, useMemo } from 'react';
+import React, { useContext } from 'react';
 import { AppContext } from '@components/common/context/AppProvider';
 import { Stack, Typography } from '@mui/material';
 import BreedingUpgrades from '@components/account/Worlds/World4/Breeding/BreedingUpgrades';
@@ -7,9 +7,9 @@ import Territory from '@components/account/Worlds/World4/Breeding/Territory';
 import { getTabs, notateNumber, prefix } from 'utility/helpers';
 import { NextSeo } from 'next-seo';
 import Pets from '@components/account/Worlds/World4/Breeding/Pets/Pets';
-import { getJewelBonus, getLabBonus } from '@parsers/lab';
-import { getMealsBonusByEffectOrStat } from '@parsers/cooking';
-import { getBubbleBonus } from '@parsers/alchemy';
+import { getJewelBonus, getLabBonus } from '@parsers/world-4/lab';
+import { getMealsBonusByEffectOrStat } from '@parsers/world-4/cooking';
+import { getBubbleBonus } from '@parsers/world-2/alchemy';
 import { getAchievementStatus } from '@parsers/achievements';
 import { isMasteryBonusUnlocked } from '@parsers/misc';
 import Timer from '../../../components/common/Timer';
@@ -38,7 +38,7 @@ const Breeding = () => {
             + (15 * skillMasteryBonus
               + voteBonus))))) / 100) * 1000;
   }
-  const timePerEgg = useMemo(() => calcTimePerEgg(), [state]);
+  const timePerEgg = calcTimePerEgg();
   const now = new Date().getTime();
   return (
     <>

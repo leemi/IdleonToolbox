@@ -7,6 +7,8 @@
 
 # testing
 /coverage
+e2e/smoke-*.spec.js
+/test-results
 
 # next.js
 /.next/
@@ -18,6 +20,7 @@
 # misc
 .DS_Store
 *.pem
+*.tsbuildinfo
 
 # debug
 npm-debug.log*
@@ -33,9 +36,3 @@ yarn-error.log*
 
 # vercel
 .vercel
-
-# Sentry Config File
-.sentryclirc
-
-# Sentry Config File
-.env.sentry-build-plugin

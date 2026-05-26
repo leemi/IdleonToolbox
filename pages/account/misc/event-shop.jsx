@@ -1,17 +1,24 @@
 import { Card, CardContent, Divider, Stack, Typography } from '@mui/material';
 import { cleanUnderscore, numberWithCommas, prefix } from '@utility/helpers';
 import React, { useContext } from 'react';
+import { NextSeo } from 'next-seo';
 import { AppContext } from '@components/common/context/AppProvider';
 import { CardTitleAndValue } from '@components/common/styles';
 import { ninjaExtraInfo } from '@website-data';
 import { getEventShopBonus } from '@parsers/misc';
+import useCheckbox from '@components/common/useCheckbox';
 
-const shopItems = ninjaExtraInfo?.[39]?.split(' ').toChunks(2).map(([text, price]) => ({ text, price }));
+const shopItems = ninjaExtraInfo?.[39].toChunks(2).map(([text, price]) => ({ text, price }));
 
 const EventShop = () => {
   const { state } = useContext(AppContext);
+  const [HideOwnedCheckbox, hideOwned] = useCheckbox('Hide owned event shop bonuses');
   const ownedBonuses = shopItems.filter((_, index) => getEventShopBonus(state?.account, index));
   return <>
+    <NextSeo
+      title="Event Shop | Idleon Toolbox"
+      description="Track your event shop purchases, star currency, and bonus progression in Legends of Idleon"
+    />
     <Stack direction={'row'} gap={2} flexWrap={'wrap'} alignItems={'center'}>
       <CardTitleAndValue title={'Stars'}
         imgStyle={{ width: 24, height: 24 }}
@@ -19,12 +26,16 @@ const EventShop = () => {
         value={numberWithCommas(state?.account?.accountOptions?.[310])} />
       <CardTitleAndValue title={'Total bonuses'}
         value={`${ownedBonuses.length} / ${shopItems.length}`} />
+      <CardTitleAndValue>
+        <HideOwnedCheckbox/>
+      </CardTitleAndValue>
     </Stack>
     <Divider sx={{ mb: 2 }} />
     <Stack direction={'row'} gap={2} flexWrap={'wrap'} alignItems={'center'}>
       {shopItems?.map(({ text, price }, index) => {
         const [name, description] = text.split('@');
         const hasBonus = getEventShopBonus(state?.account, index);
+        if (hasBonus && hideOwned) return null;
         return <Card
           key={`event-bonus-${index}`}>
           <CardContent sx={{

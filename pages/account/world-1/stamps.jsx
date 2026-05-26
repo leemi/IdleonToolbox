@@ -17,7 +17,7 @@ import {
   Switch,
   Typography
 } from '@mui/material';
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from 'components/common/context/AppProvider';
 import { cleanUnderscore, getCoinsArray, notateNumber, prefix } from '@utility/helpers';
 import styled from '@emotion/styled';
@@ -33,7 +33,7 @@ import {
   getStampsPerDay,
   unobtainableStamps,
   updateStamps
-} from '@parsers/stamps';
+} from '@parsers/world-1/stamps';
 import Grid from '@mui/material/Grid2';
 import { grey } from '@mui/material/colors';
 import Link from '@mui/material/Link';
@@ -42,13 +42,15 @@ import MenuItem from '@mui/material/MenuItem';
 import { useLocalStorage } from '@mantine/hooks';
 import { IconChevronRight, IconDeviceFloppy, IconInfoCircleFilled } from '@tabler/icons-react';
 import Button from '@mui/material/Button';
-import { format, isValid } from 'date-fns';
+import { isValid } from 'date-fns';
+import useFormatDate from '@hooks/useFormatDate';
 import useCheckbox from '@components/common/useCheckbox';
-import { getExaltedStampBonus } from '@parsers/stamps';
+import { getExaltedStampBonus } from '@parsers/world-1/stamps';
 
 const Stamps = () => {
   const router = useRouter();
   const { state } = useContext(AppContext);
+  const formatDate = useFormatDate();
   const [levelsSnapshot, setLevelsSnapshot] = useLocalStorage({
     key: 'stamps:levels',
     defaultValue: { snapshotTime: null, levels: {} }
@@ -105,8 +107,7 @@ const Stamps = () => {
   });
   const [SnapshotCheckboxEl, showSnapshotLevels] = useCheckbox('Show level-up indicator', true);
   const stampReducer = state?.account?.atoms?.stampReducer;
-  const localStamps = useMemo(() => updateStamps(state?.account, state?.characters, forcedGildedStamp, forcedStampReducer, forceMaxCapacity), [forcedGildedStamp,
-    forcedStampReducer, forceMaxCapacity, state]);
+  const localStamps = updateStamps(state?.account, state?.characters, forcedGildedStamp, forcedStampReducer, forceMaxCapacity);
   const exaltedMulti = getExaltedStampBonus(state?.account);
 
   const getStampTypeAndBorder = (stamp, mode) => {
@@ -152,7 +153,7 @@ const Stamps = () => {
     (<div>
       <NextSeo
         title="Stamps | Idleon Toolbox"
-        description="Keep track of your stamps levels and requirements"
+        description="Track your stamp levels, upgrade costs, and bonus effects across all stamp categories in Legends of Idleon"
       />
       <Stack mt={1} direction={'row'} gap={3} justifyContent={'center'} flexWrap={'wrap'}>
         <CardTitleAndValue title={'Legend'} stackProps={{ gap: .7 }}>
@@ -266,7 +267,7 @@ const Stamps = () => {
               Save levels snapshot
             </Button>
             {isValid(levelsSnapshot?.snapshotTime) ? <Typography variant={'caption'}>Snapshotted
-              at: {format(levelsSnapshot?.snapshotTime, 'dd/MM/yyyy HH:MM')}</Typography> : null}
+              at: {formatDate(levelsSnapshot?.snapshotTime)}</Typography> : null}
           </Stack>
         </CardTitleAndValue>
       </Stack>

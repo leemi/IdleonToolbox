@@ -35,9 +35,9 @@ const Upgrades = ({ upgrades, tachyons }) => {
     if (!searchText) return list;
     return list.filter(upgrade =>
       (upgrade.description &&
-        cleanUnderscore(upgrade.description).toLowerCase().includes(searchText.toLowerCase())) ||
+        cleanUnderscore(upgrade.description).toLowerCase().includes(searchText.toLowerCase().trim())) ||
       (upgrade.name &&
-        cleanUnderscore(upgrade.name).toLowerCase().includes(searchText.toLowerCase()))
+        cleanUnderscore(upgrade.name).toLowerCase().includes(searchText.toLowerCase().trim()))
     );
   };
 

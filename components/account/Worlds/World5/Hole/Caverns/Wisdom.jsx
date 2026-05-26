@@ -3,6 +3,7 @@ import { Card, CardContent, Divider, Stack, Typography } from '@mui/material';
 import { cleanUnderscore, commaNotation, msToDate, notateNumber } from '@utility/helpers';
 import React from 'react';
 import { CardWithBreakdown } from '@components/account/Worlds/World5/Hole/commons';
+import ProgressBar from '@components/common/ProgressBar';
 
 const Wisdom = ({ hole }) => {
   return <>
@@ -30,14 +31,23 @@ const Wisdom = ({ hole }) => {
       {hole?.caverns?.wisdom?.monumentAfkReq ? <CardWithBreakdown title={'Afk hours req'} breakdown={hole?.caverns?.wisdom?.monumentAfkReq} /> : null}
       <CardTitleAndValue title={'Next hour reward'}
                          value={`${commaNotation(hole?.caverns?.wisdom?.nextHourBreakpoint?.hours)}hrs: ${cleanUnderscore(hole?.caverns?.wisdom?.nextHourBreakpoint?.reward)}`}/>
+      <CardTitleAndValue title={'Opals found'} icon={'data/Opal.png'} imgStyle={{ width: 24, height: 24 }}
+                         value={hole?.holesObject?.opalsPerCavern?.[12] || 0}/>
     </Stack>
     <Divider sx={{ my: 2 }}/>
     <Stack direction={'row'} gap={2} flexWrap={'wrap'} alignItems={'center'}>
-      {hole?.caverns?.wisdom?.bonuses.map(({ description, level }, index) => {
+      {hole?.caverns?.wisdom?.bonuses.map(({ description, level, bonus, cap, progression, scalingValue, levelToReachCap }, index) => {
         return <Card key={`bonus-${index}`}>
           <CardContent sx={{ width: 300, opacity: level === 0 ? .5 : 1 }}>
-            <Typography>Lv. {level}</Typography>
+            <Typography>Lv. {level}{levelToReachCap !== null ? ` / ${commaNotation(levelToReachCap)}` : ''}</Typography>
             <Typography>{cleanUnderscore(description)}</Typography>
+            {cap === null && <Typography variant={'body2'} sx={{ mt: 1 }}>+{scalingValue} per level</Typography>}
+            {cap !== null && (
+              <ProgressBar
+                percent={progression}
+                tooltipTitle={`${notateNumber(bonus, 'MultiplierInfo')} / ${cap} cap`}
+              />
+            )}
           </CardContent>
         </Card>
       })}

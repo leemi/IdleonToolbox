@@ -1,5 +1,5 @@
-import { getChipsAndJewels } from '../../../../parsers/cooking';
-import React, { useContext, useMemo, useState } from 'react';
+import { getChipsAndJewels } from '@parsers/world-4/cooking';
+import React, { useContext, useState } from 'react';
 import { AppContext } from '../../../common/context/AppProvider';
 import {
   Autocomplete,
@@ -14,20 +14,22 @@ import {
   useMediaQuery
 } from '@mui/material';
 import { format, isValid } from 'date-fns';
+import useFormatDate from '@hooks/useFormatDate';
 import { cleanUnderscore, notateNumber, prefix } from '@utility/helpers';
 import styled from '@emotion/styled';
 import Tooltip from '../../../Tooltip';
 import MenuItem from '@mui/material/MenuItem';
-import { getRequirementAmount } from '@parsers/lab';
+import { getRequirementAmount } from '@parsers/world-4/lab';
 
 const LabRotation = () => {
   const { state } = useContext(AppContext);
+  const formatDate = useFormatDate();
   const isSm = useMediaQuery((theme) => theme.breakpoints.down('sm'), { noSsr: true });
   const [value, setValue] = useState([]);
   const [weeks, setWeeks] = useState(10);
   const [chipThreshold, setChipThreshold] = useState(0);
-  const rotations = useMemo(() => getChipsAndJewels(state?.account, weeks), [state?.account, weeks]);
-  const names = useMemo(() => ([...state?.account?.lab?.chips, ...state?.account?.lab?.jewels]), [state?.account]);
+  const rotations = getChipsAndJewels(state?.account, weeks);
+  const names = [...state?.account?.lab?.chips, ...state?.account?.lab?.jewels];
 
   return <>
     <Stack sx={{ mb: 3 }}>
@@ -92,7 +94,7 @@ const LabRotation = () => {
             <CardContent sx={{ '&:last-child': { p: 3 } }}>
               <Stack key={'rotation' + rotationIndex} gap={2} flexWrap={'wrap'}>
                 <Typography sx={{ textAlign: 'center' }} variant={'h6'}>{isValid(date)
-                  ? `${format(date, 'dd/MM/yyyy HH:mm:ss')} (${format(date, 'MMM do, yyyy')})`
+                  ? `${formatDate(date)} (${format(date, 'MMM do, yyyy')})`
                   : null}</Typography>
                 <Stack direction={'row'} gap={1} flexWrap={'wrap'}>
                   {items?.map(({

@@ -3,7 +3,7 @@ import React, { useContext } from 'react';
 import { AppContext } from 'components/common/context/AppProvider';
 import { cleanUnderscore, commaNotation, notateNumber, prefix } from 'utility/helpers';
 import styled from '@emotion/styled';
-import { getStampBonus } from 'parsers/stamps';
+import { getStampBonus } from '@parsers/world-1/stamps';
 import { NextSeo } from 'next-seo';
 import { CardTitleAndValue } from '@components/common/styles';
 
@@ -43,6 +43,12 @@ const ArcadeShop = () => {
 
   const activeUpgrades = shop?.filter((u) => u.active)?.toSorted((a, b) => a?.rotationIndex - b?.rotationIndex) || [];
   const inactiveUpgrades = shop?.filter((u) => !u.active) || [];
+
+  // Calculate total cost to max for all upgrades
+  const totalCostToMax = shop?.reduce((total, upgrade) => {
+    const upgradeIndex = parseInt(upgrade.iconName.replace('PachiShopICON', ''), 10);
+    return total + getCostToMax(upgrade.level, upgradeIndex);
+  }, 0) || 0;
 
   const renderUpgradeCard = (upgrade, index) => {
     const { level, effect, iconName, bonus } = upgrade;
@@ -87,7 +93,7 @@ const ArcadeShop = () => {
     <Stack>
       <NextSeo
         title="Arcade Shop | Idleon Toolbox"
-        description="Arcade shop upgrades, balls and golden balls"
+        description="Track your arcade shop upgrades, ball counts, golden balls, and bonus effects in Legends of Idleon"
       />
       <Stack direction="row" gap={2} flexWrap={'wrap'}>
         <CardTitleAndValue title="Balls">
@@ -108,6 +114,11 @@ const ArcadeShop = () => {
             <Typography>{royalBalls}</Typography>
           </Stack>
         </CardTitleAndValue>
+        {totalCostToMax > 0 && (
+          <CardTitleAndValue title="Total Cost To Max All">
+            <Typography>{commaNotation(totalCostToMax, 2)}</Typography>
+          </CardTitleAndValue>
+        )}
       </Stack>
 
       <Stack mt={2} direction="row" flexWrap="wrap" gap={2}>

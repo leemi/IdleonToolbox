@@ -13,18 +13,16 @@ import {
 } from 'utility/helpers';
 import Timer from '../common/Timer';
 import Tooltip from '../Tooltip';
-import Activity from './Activity';
 import { TitleAndValue } from '../common/styles';
-import { getAfkGain, getCashMulti, getClassExpMulti, getDropRate, getRespawnRate } from '../../parsers/character';
+import { getAfkGain, getCashMulti, getClassExpMulti, getDropRate, getRespawnRate, notateExpMulti } from '../../parsers/character';
 import { getGoldenFoodMulti } from '../../parsers/misc';
-import React, { useMemo } from 'react';
+import React from 'react';
 import { getMaxDamage, notateDamage } from '../../parsers/damage';
-import processString from 'react-process-string';
-import styled from '@emotion/styled';
 import CoinDisplay from '../common/CoinDisplay';
 import ProgressBar from '@components/common/ProgressBar';
 import { Breakdown } from '@components/common/Breakdown/Breakdown';
 import { getPlayerCrystalChance } from '@parsers/character';
+import GameIconNotation from '@components/common/GameIconNotation';
 
 const colors = {
   strength: 'error.light',
@@ -33,28 +31,25 @@ const colors = {
   luck: 'warning.light'
 };
 
-const Stats = ({ activityFilter, statsFilter, character, lastUpdated, account, characters }) => {
-  const { name, playerId, stats, afkTime, crystalSpawnChance, nextPortal, afkTarget, nonConsumeChance } = character;
-  const { cashMulti, breakdown } = useMemo(() => getCashMulti(character, account, characters) || {},
-    [character, account]);
-  const { dropRate, breakdown: drBreakdown } = useMemo(() => getDropRate(character, account, characters) || {},
-    [character, account]);
-  const { respawnRate, breakdown: rtBreakdown } = useMemo(() => getRespawnRate(character, account) || {},
-    [character, account]);
-  const { afkGains, breakdown: agBreakdown } = useMemo(() => getAfkGain(character, characters, account), [character,
-    account]);
-  const { value: crystalChance, breakdown: crystalChanceBreakdown } = useMemo(() => getPlayerCrystalChance(character, characters, account), [character,
-    account]);
+const Stats = ({ statsFilter, character, lastUpdated, account, characters }) => {
+  const { name, stats, afkTime, crystalSpawnChance, nextPortal, nonConsumeChance } = character;
+  const { dropRate, breakdown: drBreakdown } = getDropRate(character, account, characters) || {};
+  const { respawnRate, breakdown: rtBreakdown } = getRespawnRate(character, account) || {};
+  const { afkGains, breakdown: agBreakdown } = getAfkGain(character, characters, account);
+  const {
+    value: crystalChance,
+    breakdown: crystalChanceBreakdown
+  } = getPlayerCrystalChance(character, characters, account);
   const {
     value: classExp,
     breakdown: classExpBreakdown
-  } = useMemo(() => getClassExpMulti(character, account, characters), [character,
-    account]);
+  } = getClassExpMulti(character, account, characters);
   const {
     value: goldenFoodMulti,
     breakdown: goldenFoodBreakdown
-  } = useMemo(() => getGoldenFoodMulti(character, account, characters), [character, account, characters]);
-  const playerInfo = useMemo(() => getMaxDamage(character, characters, account), [character, account]);
+  } = getGoldenFoodMulti(character, account, characters);
+  const playerInfo = getMaxDamage(character, characters, account);
+  const { cashMulti, breakdown } = getCashMulti(character, account, characters, playerInfo) || {};
 
   const isOvertime = () => {
     const hasUnendingEnergy = character?.activePrayers?.find(({ name }) => name === 'Unending_Energy');
@@ -69,82 +64,83 @@ const Stats = ({ activityFilter, statsFilter, character, lastUpdated, account, c
     return minutes <= 5;
   };
 
-  const getTotalStats = useMemo(() => (character) => {
+  const getTotalStats = (character) => {
     return Object.entries(character?.stats || {})?.reduce((sum, [statName, statValue]) => sum + (statName !== 'level'
       ? statValue
       : 0), 0);
-  }, [character]);
+  };
   return (
     <>
       <Stack gap={2} flexWrap={'wrap'}>
-        {activityFilter ?
-          <Activity afkTarget={afkTarget} divStyle={character?.divStyle} playerId={playerId} account={account} character={character} characters={characters} /> : null}
         {statsFilter ? <>
-          <Stack sx={{ minWidth: 250 }} flexWrap={'wrap'} gap={1} divider={<Divider />}>
-            <Stat title={'Total Stats'} value={getTotalStats(character)} />
+          <Stack sx={{ minWidth: 250 }} flexWrap={'wrap'} gap={1} divider={<Divider/>}>
+            <Stat title={'Total Stats'} value={commaNotation(getTotalStats(character))}/>
             {Object.entries(stats || {})?.map(([statName, statValue], index) => {
               return statName !== 'level' ? (
                 <Stack key={`${name}-${statName}-${index}`} direction={'row'} justifyContent={'space-between'}>
                   <Typography component={'span'}
-                    variant={'body1'}
-                    color={colors?.[statName] || 'info.light'}>
+                              variant={'body1'}
+                              color={colors?.[statName] || 'info.light'}>
                     {pascalCase(statName)}
                   </Typography>
                   <Typography variant={'body1'}
-                    component={'span'}>{Math.floor(statValue)}</Typography>
+                              component={'span'}>{commaNotation(statValue)}</Typography>
                 </Stack>
               ) : null;
             })}
             <NewStat title={'Cash Multiplier'} useDoubleColumn value={`${cashFormatter(cashMulti, 2)}x`}
-              breakdown={breakdown} breakdownNotation={'Smaller'} />
+                     breakdown={breakdown} breakdownNotation={'Smaller'}/>
             <NewStat title={'Golden Food'}
-              value={`${notateNumber(Math.max(0, 100 * (goldenFoodMulti - 1)), 'MultiplierInfo')}%`}
-              breakdown={goldenFoodBreakdown} breakdownNotation={'Smaller'} />
-            <Stat title={'HP'} value={notateNumber(playerInfo?.maxHp)} />
-            <Stat title={'MP'} value={notateNumber(playerInfo?.maxMp)} />
+                     value={`${notateNumber(Math.max(0, 100 * (goldenFoodMulti - 1)), 'MultiplierInfo')}%`}
+                     breakdown={goldenFoodBreakdown} breakdownNotation={'Smaller'}/>
+            <Stat title={'HP'} value={notateNumber(playerInfo?.maxHp)}/>
+            <Stat title={'MP'} value={notateNumber(playerInfo?.maxMp)}/>
             <Stat title={'Kills Per Hour'}
-              value={playerInfo?.finalKillsPerHour > 1e6
-                ? notateNumber(playerInfo?.finalKillsPerHour)
-                : numberWithCommas(Math.floor(playerInfo?.finalKillsPerHour))} />
-            <NewStat title={'Defence'} value={notateNumber(playerInfo?.defence?.value)}
-              breakdown={playerInfo?.defence?.breakdown} />
-            <Stat title={'Critical Chance'} value={`${notateNumber(playerInfo?.critChance)}%`} />
-            <Stat title={'Critical Damage'} value={`${notateNumber(playerInfo?.critDamage, 'MultiplierInfo')}x`} />
-            <Stat title={'Accuracy'} value={notateNumber(playerInfo?.accuracy)} />
-            <Stat title={'Movement Speed'} value={notateNumber(playerInfo?.movementSpeed)} />
-            <Stat title={'Mining Efficiency'} value={notateNumber(playerInfo?.miningEff)} />
-            <Stat title={'Damage'} damage value={notateDamage(playerInfo)} />
-            <NewStat title={'Drop Rate'} value={`${notateNumber(dropRate, 'MultiplierInfo')}x`}
-              breakdown={drBreakdown} breakdownNotation={'ThreeDecimals'} useDoubleColumn />
+                  value={playerInfo?.finalKillsPerHour > 1e6
+                    ? notateNumber(playerInfo?.finalKillsPerHour)
+                    : numberWithCommas(Math.floor(playerInfo?.finalKillsPerHour))}/>
+            <NewStat title={'Defence'} value={commaNotation(playerInfo?.defence?.value)}
+                     breakdown={playerInfo?.defence?.breakdown}/>
+            <Stat title={'Critical Chance'} value={`${notateNumber(playerInfo?.critChance)}%`}/>
+            <Stat title={'Critical Damage'} value={`${notateNumber(playerInfo?.critDamage, 'MultiplierInfo')}x`}/>
+            <Stat title={'Accuracy'} value={notateNumber(playerInfo?.accuracy)}/>
+            <Stat title={'Movement Speed'} value={notateNumber(playerInfo?.movementSpeed)}/>
+            <Stat title={'Mining Efficiency'} value={notateNumber(playerInfo?.miningEff)}/>
+            <Stat title={'Damage'} damage value={notateDamage(playerInfo)}
+                  breakdownData={playerInfo?.damageBreakdown} breakdownNotation={'ThreeDecimals'}/>
+<NewStat title={'Drop Rate'} value={`${notateNumber(dropRate, 'MultiplierInfo')}x`}
+                     breakdown={drBreakdown} breakdownNotation={'ThreeDecimals'} useDoubleColumn/>
             <NewStat title={'Respawn Time'}
-              value={`${notateNumber(respawnRate, 'MultiplierInfo')}%`}
-              breakdown={rtBreakdown} breakdownNotation={'Smaller'} />
+                     value={`${notateNumber(respawnRate, 'MultiplierInfo')}%`}
+                     breakdown={rtBreakdown} breakdownNotation={'Smaller'}/>
             <Stat title={'AFK Gains'}
-              useDoubleColumn
-              value={`${notateNumber(afkGains * 100, 'MultiplierInfo')}%`}
-              breakdown={agBreakdown} breakdownNotation={'Smaller'} />
+                  useDoubleColumn
+                  value={`${notateNumber(afkGains * 100, 'MultiplierInfo')}%`}
+                  breakdown={agBreakdown} breakdownNotation={'Smaller'}/>
             <Stat title={'Non Consume Chance'}
-              value={`${kFormatter(nonConsumeChance, 2)}%`}
+                  value={`${kFormatter(nonConsumeChance, 2)}%`}
             />
             <Stack direction={'row'} gap={2}>
               <Typography color={'info.light'}>Exp</Typography>
               <ProgressBar
                 boxSx={{ width: '100%' }}
                 tooltipTitle={`${notateNumber(character?.skillsInfo?.character?.exp)} / ${notateNumber(character?.skillsInfo?.character?.expReq)}`}
-                percent={character?.skillsInfo?.character?.exp / character?.skillsInfo?.character?.expReq * 100} />
+                percent={character?.skillsInfo?.character?.exp / character?.skillsInfo?.character?.expReq * 100}/>
             </Stack>
-            <NewStat title={'Exp multi'} value={`${notateNumber(classExp, 'MultiplierInfo')}x`}
-              breakdown={classExpBreakdown} breakdownNotation={'Smaller'} useDoubleColumn />
+            <NewStat title={'Exp multi'}
+                     value={<GameIconNotation value={notateExpMulti(classExp)}
+                                              sx={classExpBreakdown ? { borderBottom: '1px dotted', lineHeight: 1 } : {}}/>}
+                     breakdown={classExpBreakdown} breakdownNotation={'Smaller'} useDoubleColumn/>
             <Stat title={'Money'}
-              value={<CoinDisplay title={''}
-                money={getCoinsArray(character?.money ? character?.money : 0)} />}
+                  value={<CoinDisplay title={''}
+                                      money={getCoinsArray(character?.money ? character?.money : 0)}/>}
             />
             {nextPortal?.goal > 10 && nextPortal?.current < nextPortal?.goal ? (
               <Card variant={'outlined'}>
                 <CardContent>
                   <Typography color={'info.light'}>Next Portal</Typography>
                   <Stack direction={'row'} alignItems={'center'} gap={1}>
-                    <img width={32} height={32} src={`${prefix}data/${nextPortal?.currentIcon}.png`} alt="" />
+                    <img width={32} height={32} src={`${prefix}data/${nextPortal?.currentIcon}.png`} alt=""/>
                     <Typography>{`${kFormatter(nextPortal?.current)} / ${kFormatter(nextPortal?.goal)}`}</Typography>
                   </Stack>
                 </CardContent>
@@ -158,7 +154,7 @@ const Stats = ({ activityFilter, statsFilter, character, lastUpdated, account, c
               <Stack direction={'row'} gap={1}>
                 <Typography>{`1 in ${Math.floor(1 / crystalSpawnChance?.value)}`} ({notateNumber(crystalSpawnChance?.value * 100, 'MultiplierInfo')?.replace('.00', '')}%)</Typography>
                 <Breakdown data={crystalSpawnChance?.breakdown}>
-                  <InfoIcon />
+                  <InfoIcon/>
                 </Breakdown>
               </Stack>
             </CardContent>
@@ -168,11 +164,11 @@ const Stats = ({ activityFilter, statsFilter, character, lastUpdated, account, c
               <Typography color={'info.light'}>Afk time</Typography>
               <Stack direction={'row'} alignItems={'center'} gap={1} color={isOvertime() ? 'error.light' : ''}>
                 {isActive() ? <Typography color={'success.light'}>Active</Typography> : <Timer type={'up'}
-                  date={afkTime}
-                  lastUpdated={lastUpdated} />}
+                                                                                               date={afkTime}
+                                                                                               lastUpdated={lastUpdated}/>}
                 {isOvertime() ? (
                   <Tooltip title={'This character is afk more than 10 hours with Unending Energy prayer'}>
-                    <InfoIcon />
+                    <InfoIcon/>
                   </Tooltip>
                 ) : null}
               </Stack>
@@ -184,51 +180,44 @@ const Stats = ({ activityFilter, statsFilter, character, lastUpdated, account, c
   );
 };
 
-const Stat = ({ title, value, breakdown = '', breakdownNotation = 'Smaller', damage, useDoubleColumn }) => {
+const Stat = ({ title, value, breakdown = '', breakdownNotation = 'Smaller', damage, useDoubleColumn, breakdownData, skipNotation }) => {
+  const hasBreakdown = breakdown || breakdownData;
+  const content = !damage ? (
+    <Typography component={'span'} sx={hasBreakdown
+      ? { alignItems: 'center', borderBottom: '1px dotted', lineHeight: 1 }
+      : {}}
+    >{value}</Typography>
+  ) : (
+    <GameIconNotation value={value} sx={breakdownData ? { borderBottom: '1px dotted', lineHeight: 1 } : {}}/>
+  );
+
   return (
-    (<Stack direction={'row'} justifyContent={'space-between'} alignItems={breakdown ? 'center' : 'flex-start'}>
+    (<Stack direction={'row'} justifyContent={'space-between'} alignItems={hasBreakdown ? 'center' : 'flex-start'}>
       <Typography color={'info.light'}>{title}</Typography>
-      <Tooltip maxWidth={500} title={breakdown ? <BreakdownTooltip breakdown={breakdown} useDoubleColumn={useDoubleColumn} notate={breakdownNotation} /> : ''}>
-        {!damage ? <Typography component={'span'} sx={breakdown
-          ? { alignItems: 'center', borderBottom: '1px dotted', lineHeight: 1 }
-          : {}}
-        >{value}</Typography> : <Typography color={'#fffcc9'} sx={{ display: 'flex', alignItems: 'center', gap: .5 }}>
-          {processString([{
-            regex: /[\[!|]/g,
-            fn: (key, match) => {
-              const modifier = match.at(0);
-              let iconName = 'M';
-              if (modifier === '!') iconName = 'T';
-              else if (modifier === '|') iconName = 'D';
-              return <DamageIcon key={key} src={`${prefix}etc/Damage_${iconName}.png`} alt="" />
-            }
-          }])(value)}
-        </Typography>}
-      </Tooltip>
+      {breakdownData ? (
+        <Breakdown data={breakdownData} skipNotation={skipNotation}>
+          {content}
+        </Breakdown>
+      ) : (
+        <Tooltip maxWidth={500}
+                 title={breakdown ? <BreakdownTooltip breakdown={breakdown} useDoubleColumn={useDoubleColumn}
+                                                      notate={breakdownNotation}/> : ''}>
+          {content}
+        </Tooltip>
+      )}
     </Stack>)
   );
 }
 
-const NewStat = ({ title, value, breakdown = '', breakdownNotation = 'Smaller', damage }) => {
+const NewStat = ({ title, value, breakdown = '', breakdownNotation = 'Smaller', skipNotation }) => {
   return (
     (<Stack direction={'row'} justifyContent={'space-between'} alignItems={breakdown ? 'center' : 'flex-start'}>
       <Typography color={'info.light'}>{title}</Typography>
-      <Breakdown data={breakdown} valueNotation={breakdownNotation}>
-        {!damage ? <Typography component={'span'} sx={breakdown
-          ? { alignItems: 'center', borderBottom: '1px dotted', lineHeight: 1 }
-          : {}}
-        >{value}</Typography> : <Typography color={'#fffcc9'} sx={{ display: 'flex', alignItems: 'center', gap: .5 }}>
-          {processString([{
-            regex: /[\[!|]/g,
-            fn: (key, match) => {
-              const modifier = match.at(0);
-              let iconName = 'M';
-              if (modifier === '!') iconName = 'T';
-              else if (modifier === '|') iconName = 'D';
-              return <DamageIcon key={key} src={`${prefix}etc/Damage_${iconName}.png`} alt="" />
-            }
-          }])(value)}
-        </Typography>}
+      <Breakdown data={breakdown} valueNotation={breakdownNotation} skipNotation={skipNotation}>
+        <Typography component={'span'} sx={breakdown
+          ? { alignItems: 'center', borderBottom: '1px dotted', lineHeight: 1 } : {}}>
+          {value}
+        </Typography>
       </Breakdown>
     </Stack>)
   );
@@ -239,7 +228,7 @@ const BreakdownTooltip = ({ breakdown, titleWidth = 170, notate = '', useDoubleC
 
   const renderItem = ({ name, value, title }, index, prefix = '') => {
     if (title) return <Typography sx={{ fontWeight: 500 }} key={`${prefix}${name}-${index}`}>{title}</Typography>;
-    if (!name) return <Divider sx={{ my: 1 }} key={`${prefix}${name}-${index}`} />;
+    if (!name) return <Divider sx={{ my: 1 }} key={`${prefix}${name}-${index}`}/>;
 
     return (
       <TitleAndValue
@@ -263,11 +252,5 @@ const BreakdownTooltip = ({ breakdown, titleWidth = 170, notate = '', useDoubleC
     </Stack>
   );
 }
-
-const DamageIcon = styled.img`
-  width: 16px;
-  height: 16px;
-  object-fit: contain;
-`
 
 export default Stats;

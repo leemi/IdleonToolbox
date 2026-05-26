@@ -1,4 +1,5 @@
-import { useContext, useMemo } from 'react';
+import { useContext } from 'react';
+import { NextSeo } from 'next-seo';
 import { AppContext } from '@components/common/context/AppProvider';
 import { Card, CardContent, Divider, Stack, Typography } from '@mui/material';
 import { CardTitleAndValue } from '@components/common/styles';
@@ -12,13 +13,17 @@ import useCheckbox from '@components/common/useCheckbox';
 const ArmorSmithy = () => {
   const { state } = useContext(AppContext);
   const { days, sets, unlockedSets, isSmithyUnlocked } = state?.account?.armorSmithy || {};
-  const equippedItems = useMemo(() => addEquippedItems(state?.characters, true), []);
-  const totalItems = useMemo(() => getAllItems(state?.characters, state?.account), [state?.characters, state?.account])
-  const allItems = useMemo(() => mergeItemsByOwner(equippedItems, totalItems), [equippedItems, totalItems]);
+  const equippedItems = addEquippedItems(state?.characters, true);
+  const totalItems = getAllItems(state?.characters, state?.account);
+  const allItems = mergeItemsByOwner(equippedItems, totalItems);
   const [CheckboxEl, hideUnlocked] = useCheckbox('Hide unlocked');
   const [BonusCheckboxEl, showBonusOnly] = useCheckbox('Show bonus only', true);
 
   return <>
+    <NextSeo
+      title="Armor Smithy | Idleon Toolbox"
+      description="Track your armor smithy set completion progress, set bonuses, and required items in Legends of Idleon"
+    />
     <Stack direction={'row'} gap={2} alignItems={'center'}>
       <CardTitleAndValue title={'Completed sets'} value={`${unlockedSets.length} / ${sets.length}`}/>
       {!isSmithyUnlocked ? <CardTitleAndValue title={'Unlock smithy in'} value={`${30 - days} days`}/> : null}

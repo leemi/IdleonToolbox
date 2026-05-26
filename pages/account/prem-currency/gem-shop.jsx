@@ -103,7 +103,7 @@ const GemShop = () => {
   return <>
     <NextSeo
       title="Gem Shop | Idleon Toolbox"
-      description="View all gem shop upgrades, bonuses and more"
+      description="Browse all gem shop purchases, upgrade bonuses, and premium currency spending in Legends of Idleon"
     />
     <Stack direction={'row'} flexWrap={'wrap'} gap={3} mb={2}>
       <CardTitleAndValue title={'Gems'} value={numberWithCommas(state?.account?.currencies?.gems)} icon={'data/PremiumGem.png'}
@@ -135,6 +135,7 @@ const GemShop = () => {
       
     </Stack>
     {gemShop?.map(({ name, sections }) => {
+      const isPastCategory = name === 'past_limited_specials';
       // Filter sections to only those with visible items
       const visibleSections = Object.entries(sections).filter(([sectionName, sectionItems]) => {
         const isAllBlanks = sectionItems?.every(({ rawName }) => rawName === 'Blank');
@@ -146,7 +147,7 @@ const GemShop = () => {
       if (visibleSections.length === 0) return null;
 
       return <Stack key={name} gap={2}>
-        <Typography sx={{ mt: 5 }} variant={'h4'}>{name.capitalize()}</Typography>
+        <Typography sx={{ mt: 5 }} variant={'h4'}>{cleanUnderscore(name).capitalize()}</Typography>
         {visibleSections.map(([sectionName, sectionItems]) => {
           // Filter items to only visible ones
           const visibleItems = sectionItems?.filter(item => isItemVisible(item, sectionName));
@@ -203,7 +204,7 @@ const GemShop = () => {
                               <img width={32} height={32} src={`${prefix}data/PremiumGem.png`} alt={'gem'} />
                               <Typography variant={'body1'}>{cost + (isNaN(addedCost) ? 0 : addedCost)}</Typography>
                             </Stack>
-                            <Typography variant={'body1'}>{purchased} / {maxPurchases}</Typography>
+                            <Typography variant={'body1'}>{isPastCategory ? `?? / ${maxPurchases}` : `${purchased} / ${maxPurchases}`}</Typography>
                           </Stack>
                         </Stack>
                       </CardContent>

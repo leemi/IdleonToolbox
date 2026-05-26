@@ -1,5 +1,5 @@
 import { AppContext } from 'components/common/context/AppProvider';
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Card, CardContent, Checkbox, FormControlLabel, Stack, Typography } from '@mui/material';
 import { cleanUnderscore, getTabs, groupByKey, notateNumber, prefix } from 'utility/helpers';
 import styled from '@emotion/styled';
@@ -93,7 +93,7 @@ const Looty = () => {
     <>
       <NextSeo
         title="Storage | Idleon Toolbox"
-        description="A list of your storage items"
+        description="Browse your full storage inventory with item counts, chest slots, and capacity in Legends of Idleon"
       />
       <Tabber tabs={getTabs(PAGES.ACCOUNT.misc.categories, 'storage')}>
         <Stack>

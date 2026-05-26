@@ -1,35 +1,38 @@
 import { styled } from '@mui/material/styles';
 import MuiAppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import Box from '@mui/material/Box';
 import NavItemsList from './NavItemsList';
 import LoginButton from './LoginButton';
 import AppDrawer from './AppDrawer';
 import { drawerWidth, navBarHeight } from '../../constants';
 import { useRouter } from 'next/router';
-import { handleLoadJson, isProd, shouldDisplayDrawer } from '@utility/helpers';
-import { Adsense } from '@ctrl/react-adsense';
-import { Stack, Typography, useMediaQuery } from '@mui/material';
+import { shouldDisplayDrawer } from '@utility/helpers';
+import { Link, Stack, Typography, useMediaQuery } from '@mui/material';
 import { AppContext } from '../context/AppProvider';
 import Pin from '@components/common/favorites/Pin';
 import QuickSearch from '@components/common/QuickSearch';
 import UserMenu from '@components/common/NavBar/UserMenu';
-import { format } from 'date-fns';
-import IconButton from '@mui/material/IconButton';
-import FileCopyIcon from '@mui/icons-material/FileCopy';
+
+import useFormatDate from '@hooks/useFormatDate';
 import { CONTENT_PERCENT_SIZE } from '@utility/consts';
 import AuthSkeleton from './AuthSkeleton';
+import { BottomBannerAd, SidebarAd } from '@components/common/Ads/AdUnit';
+import useAdBlockDetection from '../../../hooks/useAdBlockDetection';
+import ProfileBanner from './ProfileBanner';
+import CookiePolicyDialog from '@components/common/Etc/CookiePolicyDialog';
 
 const NavBar = ({ children }) => {
-  const { dispatch, state } = useContext(AppContext);
+  const { state } = useContext(AppContext);
   const router = useRouter();
   const isXs = useMediaQuery((theme) => theme.breakpoints.down('sm'), { noSsr: true });
   const displayDrawer = shouldDisplayDrawer(router?.pathname);
-
-  const handlePaste = async () => {
-    await handleLoadJson(dispatch);
-  }
+  const pathname = router?.pathname || '';
+  const isHomePage = pathname === '/' || pathname === '';
+  const isInnerPage = !isHomePage && pathname !== '/patch-notes';
+  const [openPolicy, setOpenPolicy] = useState(false);
+  const formatDate = useFormatDate();
 
   // Render the authentication section based on loading state
   const renderAuthSection = () => {
@@ -39,13 +42,14 @@ const NavBar = ({ children }) => {
 
     return (
       <>
+        {!state?.signedIn && !state?.profile && process.env.NODE_ENV !== 'production' && <UserMenu/>}
         {state?.signedIn || state?.profile ? <UserMenu/> : <LoginButton/>}
         {state?.signedIn ? (
-          <Stack sx={{ p: 1, width: 120, flexShrink: 0 }}>
+          <Stack sx={{ p: 1, flexShrink: 0, whiteSpace: 'nowrap' }}>
             <Typography sx={{ fontWeight: 'bold', fontSize: 14 }}>{state?.characters?.[0]?.name}</Typography>
             {state?.lastUpdated ? (
               <Typography variant={'caption'}>
-                {state?.lastUpdated ? format(state?.lastUpdated, 'dd/MM/yy HH:mm') : 'xx/xx/xx xx:xx'}
+                {formatDate(state?.lastUpdated, { showSeconds: false, shortYear: true })}
               </Typography>
             ) : null}
           </Stack>
@@ -61,19 +65,19 @@ const NavBar = ({ children }) => {
           <AppDrawer/>
           <NavItemsList/>
           <QuickSearch/>
-          {!isProd ? <IconButton data-cy={'paste-data'} color="inherit" onClick={handlePaste}>
-            <FileCopyIcon/>
-          </IconButton> : null}
-          {renderAuthSection()}
+{renderAuthSection()}
         </Toolbar>
       </AppBar>
     </Box>
     <AppDrawer permanent/>
     <Box component={'main'} sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      minHeight: `calc(100vh - ${navBarHeight}px)`,
       pt: 3,
       pr: 3,
       pl: { xs: 3, lg: displayDrawer ? `${drawerWidth + 24}px` : 3 },
-      mb: isXs ? '75px' : '110px'
+      pb: 'var(--nitro-ad-height, 0px)'
     }}>
       {(router?.pathname?.includes('account') || router?.pathname?.includes('tools')) ? <Pin/> : null}
       <ContentWrapper isTools={router?.pathname?.includes('tools')} isLoading={state?.isLoading}>
@@ -83,10 +87,9 @@ const NavBar = ({ children }) => {
   </>
 };
 
-const ContentWrapper = ({ isTools, isLoading, children }) => {
-  const showWideSideBanner = useMediaQuery('(min-width: 1600px)', { noSsr: true });
+const ContentWrapper = ({ showSidebar, children }) => {
   const showNarrowSideBanner = useMediaQuery('(min-width: 850px)', { noSsr: true });
-  const router = useRouter();
+  const adBlocked = useAdBlockDetection();
 
   return !isTools ? children : <Stack direction={'row'} gap={2} justifyContent={'space-between'} sx={{ width: '100%' }}>
     <Stack

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import debounce from 'lodash.debounce';
 import {
   Box,
@@ -21,6 +21,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TableSortLabel,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
@@ -31,6 +32,7 @@ import { IconInfoCircleFilled, IconList, IconTable } from '@tabler/icons-react';
 import Tooltip from '@components/Tooltip';
 import useCheckbox from '@components/common/useCheckbox';
 import { useLocalStorage } from '@mantine/hooks';
+import { getLegendTalentBonus } from '@parsers/world-7/legendTalents';
 
 const maxUpgradesOptions = [5, 10, 25, 50, 100, 200, 300];
 const groupModes = ['None', 'Upgrade', 'Summary'];
@@ -68,11 +70,20 @@ const GenericUpgradeOptimizer = ({
     key: `${resourceKey}:genericUpgradeOptimizer:customMaxUpgrades`,
     defaultValue: 10
   });
+  const [costSortOrder, setCostSortOrder] = useLocalStorage({
+    key: `${resourceKey}:genericUpgradeOptimizer:costSortOrder`,
+    defaultValue: 'none'
+  });
   const [groupMode, setGroupMode] = useLocalStorage({
     key: `${resourceKey}:genericUpgradeOptimizer:groupMode`,
     defaultValue: 'None'
   });
-  const [AffordableCheckboxEl, onlyAffordable] = useCheckbox('Only show affordable upgrades');
+  const [AffordableCheckboxEl, onlyAffordable] = useCheckbox('Only affordable');
+  // const [MasterclassReductionCheckbox, masterClassReduction] = useCheckbox('Masterclass reduction');
+  const [masterClassReduction, setMasterClassReduction] = useLocalStorage({
+    key: `${resourceKey}:genericUpgradeOptimizer:masterClassReduction`,
+    defaultValue: getLegendTalentBonus(account, 23) ?? 0
+  });
   const [resourcePerHour, setResourcePerHour] = useLocalStorage({
     key: `${resourceKey}:genericUpgradeOptimizer:resourcePerHour`,
     defaultValue: (() => {
@@ -91,6 +102,15 @@ const GenericUpgradeOptimizer = ({
     });
     return obj;
   });
+  useEffect(() => {
+    const obj = {};
+    Object.keys(resourceNames).forEach(key => {
+      obj[key] = resourcePerHour[key] !== undefined && resourcePerHour[key] !== null && resourcePerHour[key] !== ''
+        ? resourcePerHour[key].toLocaleString()
+        : '';
+    });
+    setResourcePerHourInput(obj);
+  }, [resourcePerHour, resourceNames]);
   const [rphDialogOpen, setRphDialogOpen] = useState(false);
   const [optimizationMethod, setOptimizationMethod] = useLocalStorage({
     key: `${resourceKey}:genericUpgradeOptimizer:optimizationMethod`,
@@ -98,181 +118,163 @@ const GenericUpgradeOptimizer = ({
   });
   const valueCommitDebouncersRef = useRef({});
 
-  useEffect(() => {
-    setResourcePerHourInput(
-      Object.fromEntries(
-        Object.entries(resourcePerHour).map(([key, value]) => [
-          key,
-          value !== undefined && value !== null && value !== '' ? Number(value).toLocaleString() : ''
-        ])
-      )
-    );
-  }, [resourcePerHour]);
-
   useEffect(() => () => {
     Object.values(valueCommitDebouncersRef.current).forEach(fn => fn?.cancel?.());
   }, []);
-
-  const optimizedUpgrades = useMemo(() => {
-    if (!character) return [];
+  let optimizedUpgrades = [];
+  if (character) {
     const maxToUse = maxUpgradesMode === 'custom'
       ? Math.max(0, parseInt(customMaxUpgrades || 0, 10) || 0)
       : maxUpgrades;
-    return getOptimizedUpgradesFn(character, account, category, maxToUse, {
+    optimizedUpgrades = getOptimizedUpgradesFn(character, account, category, maxToUse, {
       onlyAffordable,
+      masterClassReduction: isNaN(masterClassReduction) ? 0 : masterClassReduction,
       resourcePerHour: optimizationMethod === 'rph' ? resourcePerHour : undefined,
       getResourceType
     });
-  }, [character, category, maxUpgradesMode, customMaxUpgrades, maxUpgrades, account, getOptimizedUpgradesFn,
-    onlyAffordable, resourcePerHour,
-    optimizationMethod, getResourceType]);
+  }
 
   // Group upgrades by name if consolidation is enabled
-  const displayUpgrades = useMemo(() => {
-    if (groupMode === 'Upgrade') {
-      // Group consecutive upgrades of the same type while preserving order
-      const consolidatedUpgrades = [];
-      let currentGroup = null;
-      const currentLevels = {};
-      optimizedUpgrades.forEach((upgrade, index) => {
-        const upgradeName = upgrade.name;
-        // Determine the start level for this group
-        const startLevel = currentGroup && currentGroup.name === upgradeName
-          ? currentGroup.startLevel
-          : (currentLevels[upgradeName] ?? upgrade.level);
-        if (!currentGroup || currentGroup.name !== upgradeName) {
-          if (currentGroup) {
-            // After finishing a group, update the current level and push
-            currentGroup.finalLevel = currentGroup.startLevel + currentGroup.sequence.length - 1;
-            currentLevels[currentGroup.name] = currentGroup.finalLevel;
-            consolidatedUpgrades.push(currentGroup);
-          }
-          // Start new group
-          currentGroup = {
-            ...upgrade,
-            upgradeIndex: index,
-            sequence: [{ ...upgrade, originalIndex: index }],
-            startLevel
-          };
+  let displayUpgrades;
+  if (groupMode === 'Upgrade') {
+    // Group consecutive upgrades of the same type while preserving order
+    const consolidatedUpgrades = [];
+    let currentGroup = null;
+    optimizedUpgrades.forEach((upgrade, index) => {
+      const upgradeName = upgrade.name;
+      const startLevel = currentGroup && currentGroup.name === upgradeName
+        ? currentGroup.startLevel
+        : upgrade.level;
+      if (!currentGroup || currentGroup.name !== upgradeName) {
+        if (currentGroup) {
+          currentGroup.finalLevel = currentGroup.startLevel + currentGroup.sequence.length - 1;
+          consolidatedUpgrades.push(currentGroup);
         }
-        else {
-          currentGroup.sequence.push({ ...upgrade, originalIndex: index });
-        }
-      });
-      // Push the last group
-      if (currentGroup) {
-        currentGroup.finalLevel = currentGroup.startLevel + currentGroup.sequence.length - 1;
-        currentLevels[currentGroup.name] = currentGroup.finalLevel;
-        consolidatedUpgrades.push(currentGroup);
-      }
-      // Calculate combined stats for each group
-      return consolidatedUpgrades.map(upgrade => {
-        if (!upgrade.sequence || upgrade.sequence.length <= 1) {
-          return upgrade;
-        }
-        // Calculate total stats
-        const combinedStats = {};
-        let totalCost = 0;
-        const resourceType = getResourceType(upgrade);
-        upgrade.sequence.forEach(seq => {
-          totalCost += seq.cost;
-          if (category !== 'all') {
-            seq.statChanges.forEach(statChange => {
-              if (!combinedStats[statChange.stat]) {
-                combinedStats[statChange.stat] = {
-                  stat: statChange.stat,
-                  change: 0,
-                  percentChange: 0
-                };
-              }
-              combinedStats[statChange.stat].change += statChange.change;
-              combinedStats[statChange.stat].percentChange += statChange.percentChange;
-            });
-          }
-        });
-        return {
+        currentGroup = {
           ...upgrade,
-          combinedStatChanges: Object.values(combinedStats),
-          totalCost,
-          resourceType,
-          startLevel: upgrade.startLevel,
-          finalLevel: upgrade.finalLevel,
-          numberOfUpgrades: upgrade.sequence.length
+          upgradeIndex: index,
+          sequence: [{ ...upgrade, originalIndex: index }],
+          startLevel
         };
-      });
+      }
+      else {
+        currentGroup.sequence.push({ ...upgrade, originalIndex: index });
+      }
+    });
+    if (currentGroup) {
+      currentGroup.finalLevel = currentGroup.startLevel + currentGroup.sequence.length - 1;
+      consolidatedUpgrades.push(currentGroup);
     }
-    else if (groupMode === 'Summary') {
-      const grouped = {};
-      optimizedUpgrades.forEach((upgrade, index) => {
-        if (!grouped[upgrade.name]) {
-          grouped[upgrade.name] = {
-            ...upgrade,
-            upgradeIndex: index,
-            startLevel: upgrade.level,
-            finalLevel: upgrade.level,
-            sequence: [],
-            totalCost: 0,
-            combinedStatChanges: {} // temp object for merging
-          };
-        }
-
-        const g = grouped[upgrade.name];
-        g.sequence.push(upgrade);
-        g.finalLevel = Math.max(g.finalLevel, upgrade.level);
-        g.totalCost += upgrade.cost;
-
-        if (upgrade.statChanges) {
-          upgrade.statChanges.forEach(statChange => {
-            if (!g.combinedStatChanges[statChange.stat]) {
-              g.combinedStatChanges[statChange.stat] = {
+    displayUpgrades = consolidatedUpgrades.map(upgrade => {
+      if (!upgrade.sequence || upgrade.sequence.length <= 1) {
+        return upgrade;
+      }
+      const combinedStats = {};
+      let totalCost = 0;
+      const resourceType = getResourceType(upgrade);
+      upgrade.sequence.forEach(seq => {
+        totalCost += seq.cost;
+        if (category !== 'all') {
+          seq.statChanges.forEach(statChange => {
+            if (!combinedStats[statChange.stat]) {
+              combinedStats[statChange.stat] = {
                 stat: statChange.stat,
                 change: 0,
                 percentChange: 0
               };
             }
-            g.combinedStatChanges[statChange.stat].change += statChange.change;
-            g.combinedStatChanges[statChange.stat].percentChange += statChange.percentChange;
+            combinedStats[statChange.stat].change += statChange.change;
+            combinedStats[statChange.stat].percentChange += statChange.percentChange;
           });
         }
       });
-
-      const summary = Object.values(grouped).map(g => ({
-        ...g,
-        combinedStatChanges: Object.values(g.combinedStatChanges)
-      }));
-
-      return summary;
-    }
-    return optimizedUpgrades.map((upgrade, index) => ({ ...upgrade, upgradeIndex: index }));
-  }, [optimizedUpgrades, groupMode, getResourceType]);
-
-  // Calculate total resource costs by type
-  const resourceUsage = useMemo(() => {
-    const usage = {};
-    optimizedUpgrades.forEach(upgrade => {
-      const resourceType = getResourceType(upgrade);
-      const resourceName = resourceNames[resourceType] || resourceType;
-      if (!usage[resourceName]) {
-        usage[resourceName] = {
-          name: resourceName,
-          cost: 0,
-          currentAmount: 0
+      return {
+        ...upgrade,
+        combinedStatChanges: Object.values(combinedStats),
+        totalCost,
+        resourceType,
+        startLevel: upgrade.startLevel,
+        finalLevel: upgrade.finalLevel,
+        numberOfUpgrades: upgrade.sequence.length
+      };
+    });
+  }
+  else if (groupMode === 'Summary') {
+    const grouped = {};
+    optimizedUpgrades.forEach((upgrade, index) => {
+      if (!grouped[upgrade.name]) {
+        grouped[upgrade.name] = {
+          ...upgrade,
+          upgradeIndex: index,
+          startLevel: upgrade.level,
+          finalLevel: upgrade.level,
+          sequence: [],
+          totalCost: 0,
+          combinedStatChanges: {}
         };
       }
-      usage[resourceName].cost += upgrade.cost;
-    });
-    // Add current amounts
-    const resourceArr = resourceKey.split('.').reduce((obj, key) => obj?.[key], account) || [];
-    resourceArr.forEach((resource, idx) => {
-      const name = resourceNames[idx] || resource.name;
-      if (usage[name]) {
-        usage[name].currentAmount = getResourceAmount
-          ? getResourceAmount(resource, idx, resourceNames)
-          : resource.value ?? resource;
+
+      const g = grouped[upgrade.name];
+      g.sequence.push(upgrade);
+      g.finalLevel = Math.max(g.finalLevel, upgrade.level);
+      g.totalCost += upgrade.cost;
+
+      if (upgrade.statChanges) {
+        upgrade.statChanges.forEach(statChange => {
+          if (!g.combinedStatChanges[statChange.stat]) {
+            g.combinedStatChanges[statChange.stat] = {
+              stat: statChange.stat,
+              change: 0,
+              percentChange: 0
+            };
+          }
+          g.combinedStatChanges[statChange.stat].change += statChange.change;
+          g.combinedStatChanges[statChange.stat].percentChange += statChange.percentChange;
+        });
       }
     });
-    return Object.values(usage);
-  }, [optimizedUpgrades, account, resourceKey, resourceNames, getResourceAmount, getResourceType]);
+
+    displayUpgrades = Object.values(grouped).map(g => ({
+      ...g,
+      combinedStatChanges: Object.values(g.combinedStatChanges)
+    }));
+  }
+  else {
+    displayUpgrades = optimizedUpgrades.map((upgrade, index) => ({ ...upgrade, upgradeIndex: index }));
+  }
+
+  // Apply sorting if enabled
+  if (costSortOrder !== 'none') {
+    displayUpgrades = [...displayUpgrades].sort((a, b) => {
+      const costA = a.totalCost || a.cost;
+      const costB = b.totalCost || b.cost;
+      return costSortOrder === 'asc' ? costA - costB : costB - costA;
+    });
+  }
+  // Calculate total resource costs by type
+  const resourceUsageMap = {};
+  optimizedUpgrades.forEach(upgrade => {
+    const resourceType = getResourceType(upgrade);
+    const resourceName = resourceNames[resourceType] || resourceType;
+    if (!resourceUsageMap[resourceName]) {
+      resourceUsageMap[resourceName] = {
+        name: resourceName,
+        cost: 0,
+        currentAmount: 0
+      };
+    }
+    resourceUsageMap[resourceName].cost += upgrade.cost;
+  });
+  const resourceArr = resourceKey.split('.').reduce((obj, key) => obj?.[key], account) || [];
+  resourceArr.forEach((resource, idx) => {
+    const name = resourceNames[idx] || resource.name;
+    if (resourceUsageMap[name]) {
+      resourceUsageMap[name].currentAmount = getResourceAmount
+        ? getResourceAmount(resource, idx, resourceNames)
+        : resource.value ?? resource;
+    }
+  });
+  const resourceUsage = Object.values(resourceUsageMap);
 
   // Format for display
   const formatChange = (change) => {
@@ -352,6 +354,18 @@ const GenericUpgradeOptimizer = ({
       handleValueCommit(key, rawValue);
     });
     setRphDialogOpen(false);
+  };
+
+  const handleCostSort = () => {
+    if (costSortOrder === 'none') {
+      setCostSortOrder('asc');
+    }
+    else if (costSortOrder === 'asc') {
+      setCostSortOrder('desc');
+    }
+    else {
+      setCostSortOrder('none');
+    }
   };
 
   return (
@@ -439,10 +453,27 @@ const GenericUpgradeOptimizer = ({
             ))}
           </Select>
         </FormControl>
-        <AffordableCheckboxEl />
-        <Tooltip title={tooltipText}>
-          <IconInfoCircleFilled />
-        </Tooltip>
+        <TextField
+          size="small"
+          type="number"
+          inputProps={{ min: 0 }}
+          sx={{ width: 160 }}
+          label="Masterclass reductions"
+          value={masterClassReduction}
+          onChange={(e) => {
+            const v = parseInt(e.target.value, 10);
+            if (isNaN(v)) {
+              setMasterClassReduction('');
+            }
+            else {
+              setMasterClassReduction(Math.max(0, v));
+            }
+          }}
+        />
+        <Tooltip title={tooltipText}> <IconInfoCircleFilled size={16} /> </Tooltip>
+        <Stack>
+          <AffordableCheckboxEl />
+        </Stack>
         <Divider sx={{ my: 1 }} flexItem orientation={'vertical'} />
         {resourceUsage.map((resource) => {
           const resourceTypeKey = Object.keys(resourceNames).find(key => resourceNames[key] === resource.name) || resource.name;
@@ -528,7 +559,7 @@ const GenericUpgradeOptimizer = ({
         </Dialog>
       )}
 
-      <Typography variant="h6">Recommended Upgrade Sequence</Typography>
+      <Typography variant="h6" data-testid="optimizer-heading">Recommended Upgrade Sequence</Typography>
       {displayUpgrades.length > 0 ? (
         viewMode === 'grid' ? (
           <Stack direction="row" gap={2} flexWrap="wrap">
@@ -597,7 +628,15 @@ const GenericUpgradeOptimizer = ({
                   <TableCell>Name</TableCell>
                   <TableCell>Level</TableCell>
                   <TableCell>Stat Changes</TableCell>
-                  <TableCell>Cost</TableCell>
+                  <TableCell>
+                    <TableSortLabel
+                      active={costSortOrder !== 'none'}
+                      direction={costSortOrder === 'none' ? 'asc' : costSortOrder}
+                      onClick={handleCostSort}
+                    >
+                      Cost
+                    </TableSortLabel>
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -625,7 +664,7 @@ const GenericUpgradeOptimizer = ({
                                 variant="caption">Levels {upgrade.startLevel} → {upgrade.finalLevel}</Typography>
                               {upgrade.combinedStatChanges.map((statChange, i) => (
                                 <div key={i}>
-                                  {statChange.stat.charAt(0).toUpperCase() + statChange.stat.slice(1)}: {formatChange(statChange.change)} ({formatPercentChange(statChange.percentChange)})
+                                  {statChange.stat.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase()).trim()}: {formatChange(statChange.change)} ({formatPercentChange(statChange.percentChange)})
                                 </div>
                               ))}
                             </>
@@ -635,7 +674,7 @@ const GenericUpgradeOptimizer = ({
                               ? cleanUnderscore(upgrade.description)
                               : upgrade.statChanges.map((statChange, i) => (
                                 <div key={i}>
-                                  {statChange.stat.charAt(0).toUpperCase() + statChange.stat.slice(1)}: {formatChange(statChange.change)} ({formatPercentChange(statChange.percentChange)})
+                                  {statChange.stat.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase()).trim()}: {formatChange(statChange.change)} ({formatPercentChange(statChange.percentChange)})
                                 </div>
                               ))
                           )
@@ -671,4 +710,4 @@ const GenericUpgradeOptimizer = ({
   );
 };
 
-export default GenericUpgradeOptimizer; 
+export default GenericUpgradeOptimizer;

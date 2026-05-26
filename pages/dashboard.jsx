@@ -1,23 +1,22 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { AppContext } from '@components/common/context/AppProvider';
-import { Box, Stack, ToggleButton, ToggleButtonGroup, useMediaQuery } from '@mui/material';
+import { Stack, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import Characters from '../components/dashboard/Characters';
 import Account from '../components/dashboard/Account';
-import { isProd, tryToParse } from '@utility/helpers';
+import { tryToParse } from '@utility/helpers';
 import Etc from '../components/dashboard/Etc';
 import { NextSeo } from 'next-seo';
 import { getRawShopItems } from '@parsers/shops';
-import { Adsense } from '@ctrl/react-adsense';
+import { getRawRefinerySalts } from '@parsers/misc';
 import DashboardSettings from '../components/common/DashboardSettings';
-import { CONTENT_PERCENT_SIZE } from '@utility/consts';
 import Button from '@mui/material/Button';
 import { migrateConfig } from '@utility/migrations';
 import { IconSettingsFilled } from '@tabler/icons-react';
-import { getPrinterExclusions } from '@parsers/printer';
+import { getPrinterExclusions } from '@parsers/world-3/printer';
 import { getCrystalCountdownSkills } from '@parsers/talents';
 
 const baseTrackers = {
-  version: 33,
+  version: 52,
   account: {
     General: {
       tasks: {
@@ -53,7 +52,13 @@ const baseTrackers = {
           { name: 'newCharacters', checked: true },
           { name: 'gemsFromBosses', checked: true },
           { name: 'familyObols', checked: true },
-          { name: 'freeCompanion', checked: true }
+          { name: 'freeCompanion', checked: true },
+          { name: 'petMartGems', checked: true },
+          {
+            name: 'dailyCrystals',
+            checked: true,
+            helperText: 'Alert when daily guaranteed crystal kills remain'
+          }
         ]
       }
     },
@@ -120,7 +125,12 @@ const baseTrackers = {
         checked: true,
         options: [
           { name: 'general', checked: true, helperText: 'Alert when Killroy is available' },
-          { name: 'underHundredKills', checked: true, helperText: 'Alert when current Killroy has monsters below 100 kills (for equinox)' }
+          {
+            name: 'underHundredKills',
+            checked: true,
+            helperText: 'Alert when current Killroy has monsters below 100 kills (for equinox)'
+          },
+          { name: 'skulls', checked: true, helperText: 'Alert when you have unspent killroy skulls' }
         ]
       },
       kangaroo: {
@@ -152,14 +162,27 @@ const baseTrackers = {
       },
       library: {
         checked: true,
-        options: [{ name: 'books', checked: true }]
+        options: [{
+          name: 'books',
+          type: 'input',
+          props: { label: 'Book threshold', value: 20, minValue: 1 },
+          checked: true
+        }]
       },
       construction: {
         checked: true, options: [
           { name: 'flags', checked: true },
           { name: 'buildings', checked: true },
-          { name: 'materials', category: 'refinery', checked: true },
-          { name: 'rankUp', checked: true }
+          {
+            name: 'materials', type: 'array', props: { value: getRawRefinerySalts(), type: 'img' },
+            checked: true,
+            category: 'Materials'
+          },
+          {
+            name: 'rankUp', type: 'array', props: { value: getRawRefinerySalts(), type: 'img' },
+            checked: true,
+            category: 'Refinery Rank up'
+          }
         ]
       },
       hatRack: {
@@ -256,6 +279,8 @@ const baseTrackers = {
             checked: true
           },
           { name: 'motherlode', checked: true },
+          { name: 'evertree', checked: true },
+          { name: 'bottomlessTrench', checked: true },
           {
             name: 'bravery',
             checked: true,
@@ -303,7 +328,9 @@ const baseTrackers = {
             type: 'input',
             props: { label: 'Last looted', value: 120, minValue: 0, helperText: 'in minutes' },
             checked: true
-          }
+          },
+          { name: 'remainingPristineRolls', checked: true },
+          { name: 'remainingSymbolRolls', checked: true }
         ]
       },
       farming: {
@@ -389,6 +416,42 @@ const baseTrackers = {
       construction: {
         checked: true,
         options: [{ name: 'jeweledCogs', checked: true }]
+      },
+      minehead: {
+        checked: true,
+        options: [{ name: 'dailyTries', checked: true }]
+      },
+      research: {
+        checked: true,
+        options: [
+          {
+            name: 'insightLevel',
+            type: 'input',
+            props: { label: 'Insight level threshold', value: 3, minValue: 1 },
+            checked: true
+          },
+          { name: 'observationRollsLeft', checked: true }
+        ]
+      },
+      sushiStation: {
+        checked: true,
+        options: [
+          { name: 'fuelFull', checked: true },
+          {
+            name: 'shakerUses',
+            type: 'array',
+            props: { value: { SushiUpg17: true, SushiUpg18: true, SushiUpg19: true }, type: 'img' },
+            checked: true
+          },
+          { name: 'knowledgeLevelUp', checked: true },
+        ]
+      },
+      theButton: {
+        checked: true,
+        options: [
+          { name: 'instaSkipAvailable', checked: true },
+          { name: 'taskReady', checked: true }
+        ]
       }
     }
   },
@@ -478,8 +541,16 @@ const baseTrackers = {
     classSpecific: {
       checked: true,
       options: [
-        { name: 'wrongItems', checked: true, helperText: 'Alert when using class-specific form items while outside form' },
-        { name: 'betterWeapon', checked: true, helperText: 'Alert when there\'s a better form class-specific weapon in your inventory' }
+        {
+          name: 'wrongItems',
+          checked: true,
+          helperText: 'Alert when using class-specific form items while outside form'
+        },
+        {
+          name: 'betterWeapon',
+          checked: true,
+          helperText: 'Alert when there\'s a better form class-specific weapon in your inventory'
+        }
       ]
     }
   },
@@ -496,15 +567,16 @@ const baseTrackers = {
     },
     Etc: {
       library: { checked: true, options: [] },
-      minibosses: { checked: true, options: [] }
+      minibosses: { checked: true, options: [] },
+      bonusTimeLeft: { checked: true, options: [] },
+      meritocracyTimeLeft: { checked: true, options: [] }
     },
-    'World 1': {
-      featherRestart: { checked: true, options: [] },
-      megaFeatherRestart: { checked: true, options: [] }
-    },
-    'World 2': {
-      fisherooReset: { checked: true, options: [] },
-      greatestCatch: { checked: true, options: [] }
+    Clickers: {
+      featherRestart: { checked: true, options: [], category: 'Orion' },
+      megaFeatherRestart: { checked: true, options: [] },
+      fisherooReset: { checked: true, options: [], category: 'Poppy' },
+      greatestCatch: { checked: true, options: [] },
+      megaFleshRestart: { checked: true, options: [], category: 'Bubba' },
     },
     'World 3': {
       printer: { checked: true, options: [] },
@@ -517,7 +589,13 @@ const baseTrackers = {
       monument: { checked: true, options: [] },
       justice: { checked: true, options: [] },
       wisdom: { checked: true, options: [] },
-      villagers: { checked: true, options: [] }
+      villagers: { checked: true, options: [] },
+      coinFill: { checked: true, options: [] },
+      marbleFill: { checked: true, options: [] }
+    },
+    'World 7': {
+      researchLevelUp: { checked: true, options: [] },
+      sushiFuelFull: { checked: true, options: [] }
     }
   }
 }
@@ -526,21 +604,19 @@ const Dashboard = () => {
   const { dispatch, state } = useContext(AppContext);
   const { characters, account, lastUpdated } = state;
   const [open, setOpen] = useState(false);
-  const [config, setConfig] = useState();
-  const [filters, setFilters] = React.useState(tryToParse(localStorage.getItem('dashboard-filters')) || ['account',
-    'characters', 'timers']);
-  const showWideSideBanner = useMediaQuery('(min-width: 1600px)', { noSsr: true });
-  const showNarrowSideBanner = useMediaQuery('(min-width: 850px)', { noSsr: true });
-
-  useEffect(() => {
+  const [config, setConfig] = useState(() => {
     const migratedConfig = migrateConfig(baseTrackers, state?.trackers);
-    setConfig({
+
+    return {
       account: migratedConfig.account,
       characters: migratedConfig.characters,
       timers: migratedConfig.timers,
       version: baseTrackers?.version
-    })
-  }, []);
+    };
+  });
+  const [filters, setFilters] = React.useState(tryToParse(localStorage.getItem('dashboard-filters')) || ['account',
+    'characters', 'timers']);
+
 
   const handleConfigChange = (updatedConfig) => {
     setConfig(updatedConfig);
@@ -568,49 +644,30 @@ const Dashboard = () => {
       title="Dashboard | Idleon Toolbox"
       description="Provides key information about your account and alerts you when there are unfinished tasks"
     />
-    <Stack direction="row" gap={2} justifyContent={'space-between'}>
-      <Stack sx={{ maxWidth: !showNarrowSideBanner && !showWideSideBanner ? '100%' : CONTENT_PERCENT_SIZE }}>
-        <Stack mb={2} direction={'row'} alignItems={'center'} gap={3} flexWrap={'wrap'}>
-          <ToggleButtonGroup value={filters} onChange={handleFilters}>
-            <ToggleButton value="account">Account</ToggleButton>
-            <ToggleButton value="characters">Characters</ToggleButton>
-            <ToggleButton value="timers">Timers</ToggleButton>
-          </ToggleButtonGroup>
-          <Button variant={'outlined'} sx={{ textTransform: 'none', height: 32 }}
-            startIcon={<IconSettingsFilled size={20} />}
-            onClick={() => setOpen(true)}>
-            Configure alerts
-          </Button>
-        </Stack>
-        <Stack gap={2}>
-          {isDisplayed('account') ? <Account trackers={config?.account} characters={characters}
-            account={account} lastUpdated={lastUpdated} /> : null}
-          {isDisplayed('characters') ? <Characters trackers={config?.characters} characters={characters}
-            account={account} lastUpdated={lastUpdated} /> : null}
-          {isDisplayed('timers') ? <Etc characters={characters} account={account} trackers={config?.timers}
-            lastUpdated={lastUpdated} /> : null}
-        </Stack>
+    <Stack>
+      <Stack mb={2} direction={'row'} alignItems={'center'} gap={3} flexWrap={'wrap'}>
+        <ToggleButtonGroup value={filters} onChange={handleFilters}>
+          <ToggleButton value="account">Account</ToggleButton>
+          <ToggleButton value="characters">Characters</ToggleButton>
+          <ToggleButton value="timers">Timers</ToggleButton>
+        </ToggleButtonGroup>
+        <Button variant={'outlined'} sx={{ textTransform: 'none', height: 32 }}
+                startIcon={<IconSettingsFilled size={20}/>}
+                onClick={() => setOpen(true)}>
+          Configure alerts
+        </Button>
       </Stack>
-      <DashboardSettings onFileUpload={handleFileUpload} onChange={handleConfigChange} open={open}
-        onClose={() => setOpen(false)} config={config} />
-      {showWideSideBanner || showNarrowSideBanner ? <Box
-        sx={{
-          backgroundColor: isProd ? '' : '#d73333',
-          width: showWideSideBanner ? 300 : showNarrowSideBanner ? 160 : 0,
-          height: 600,
-          position: 'sticky',
-          top: 100
-        }}>
-        {isProd && showWideSideBanner ? <Adsense
-          client="ca-pub-1842647313167572"
-          slot="2700532291"
-        /> : null}
-        {isProd && showNarrowSideBanner && !showWideSideBanner ? <Adsense
-          client="ca-pub-1842647313167572"
-          slot="8040203474"
-        /> : null}
-      </Box> : null}
+      <Stack gap={2}>
+        {isDisplayed('account') ? <Account trackers={config?.account} characters={characters}
+                                           account={account} lastUpdated={lastUpdated}/> : null}
+        {isDisplayed('characters') ? <Characters trackers={config?.characters} characters={characters}
+                                                 account={account} lastUpdated={lastUpdated}/> : null}
+        {isDisplayed('timers') ? <Etc characters={characters} account={account} trackers={config?.timers}
+                                      lastUpdated={lastUpdated}/> : null}
+      </Stack>
     </Stack>
+    <DashboardSettings onFileUpload={handleFileUpload} onChange={handleConfigChange} open={open}
+                       onClose={() => setOpen(false)} config={config}/>
   </>
 };
 

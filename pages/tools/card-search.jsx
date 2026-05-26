@@ -1,6 +1,5 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react';
-import { Chip, Checkbox, FormControlLabel, InputAdornment, Stack, TextField, Typography } from '@mui/material';
-import ProgressBar from 'components/common/ProgressBar';
+import React, { useContext, useState } from 'react';
+import { Checkbox, Chip, FormControlLabel, InputAdornment, Stack, TextField, Typography } from '@mui/material';
 import { cleanUnderscore, prefix } from 'utility/helpers';
 import { cards, cardSets, stats } from 'data/website-data';
 import ClearIcon from '@mui/icons-material/Clear';
@@ -9,6 +8,8 @@ import { AppContext } from 'components/common/context/AppProvider';
 import { CardAndBorder } from '@components/common/styles';
 import { NextSeo } from 'next-seo';
 import { useLocalStorage } from '@mantine/hooks';
+import { isMasteryBonusUnlocked } from '@parsers/misc';
+import { getUpgradeVaultBonus } from '@parsers/misc/upgradeVault';
 
 const categoriesOrder = ['Card Sets', 'Blunder_Hills', 'Yum_Yum_Desert', 'Easy_Resources',
   'Medium_Resources', 'Frostbite_Tundra', 'Hard_Resources', 'Hyperion_Nebula', 'Smolderin\'_Plateau',
@@ -36,6 +37,17 @@ const additionalEffects = {
   luk: [stats.AllStat]
 }
 
+const isSkillMasteryPassiveCards = ({ effect, rawName, account }) => {
+  const miningCardsArePassives = effect?.includes('Mining') && isMasteryBonusUnlocked(account?.rift, account?.totalSkillsLevels?.mining?.rank, 2);
+  const fishingCardsArePassives = rawName?.includes('Fish') && isMasteryBonusUnlocked(account?.rift, account?.totalSkillsLevels?.fishing?.rank, 2);
+  const choppingCardsArePassives = rawName?.includes('Tree') && isMasteryBonusUnlocked(account?.rift, account?.totalSkillsLevels?.chopping?.rank, 2);
+  const trappingCardsArePassives = rawName?.includes('Critter') && isMasteryBonusUnlocked(account?.rift, account?.totalSkillsLevels?.trapping?.rank, 2);
+  const worshipCardsArePassives = rawName?.includes('Soul') && isMasteryBonusUnlocked(account?.rift, account?.totalSkillsLevels?.worship?.rank, 2);
+  const spelunkingCardsArePassives = effect?.includes('Spelunking') && isMasteryBonusUnlocked(account?.rift, account?.totalSkillsLevels?.spelunking?.rank, 2);
+  const dropRateCardsArePassives = effect?.includes('Card_Drop_Chance') && getUpgradeVaultBonus(account?.upgradeVault?.upgrades, 44);
+  return miningCardsArePassives || fishingCardsArePassives || choppingCardsArePassives || trappingCardsArePassives || worshipCardsArePassives || dropRateCardsArePassives || spelunkingCardsArePassives;
+}
+
 export default function CardSearch() {
   const { state } = useContext(AppContext);
   const [value, setValue] = useState('');
@@ -43,7 +55,7 @@ export default function CardSearch() {
     key: 'card-search:hidePassives',
     defaultValue: false
   });
-  
+
   const mapCards = (cardsArray, cardSets) => {
     const cardSetsObject = Object.values(cardSets).reduce((res, cardSet, realIndex) => ({
       ...res,
@@ -57,11 +69,24 @@ export default function CardSearch() {
     }, {});
     return { ...cards, ['Card Sets']: Object.values(cardSetsObject) };
   }
-  const cardsObject = useMemo(() => mapCards(cards, cardSets), [state.account]);
-  const [localCardObject, setLocalCardObject] = useState(cardsObject);
+  const cardsObject = mapCards(cards, cardSets);
+  const localCardObject = Object.keys(cardsObject).reduce((res, cardSet) => {
+    const cardsArr = cardsObject[cardSet];
+    const sortedCardArr = cardsArr.filter(({ rawName, effect }) => {
+      const isSkillMasteryPassive = isSkillMasteryPassiveCards({ rawName, effect, account: state?.account });
+      if (hidePassives && (effect?.includes('(Passive)') || effect?.includes('(P)') || isSkillMasteryPassive)) {
+        return false;
+      }
+      const cleanEffect = effect.replace(/[+%{]+_/, '').replace(/_/g, ' ');
+      const isEffect = cleanEffect?.toLowerCase()?.includes(value.toLowerCase())
+      const additionalEffect = additionalEffects[value.toLowerCase()]?.includes(cleanUnderscore(cleanEffect));
+      return isEffect || additionalEffect;
+    });
+    return { ...res, [cardSet]: sortedCardArr };
+  }, {});
+
   const preConfiguredStats = [
     'Show All',
-    'Multikill',
     'Afk',
     'Choppin',
     'Mining',
@@ -70,8 +95,8 @@ export default function CardSearch() {
     'Trapping',
     'Cooking',
     'Worship',
-    'Lab',
     'Spelunking',
+    'Lab',
     'Crystal Mob',
     'Accuracy',
     'Money',
@@ -89,22 +114,6 @@ export default function CardSearch() {
     'LUK'
   ];
 
-  useEffect(() => {
-    const newCards = Object.keys(cardsObject).reduce((res, cardSet) => {
-      const cardsArr = cardsObject[cardSet];
-      const sortedCardArr = cardsArr.filter(({ effect }) => {
-        if (hidePassives && (effect?.includes('(Passive)') || effect?.includes('(P)'))) {
-          return false;
-        }
-        const cleanEffect = effect.replace(/[+%{]+_/, '').replace(/_/g, ' ');
-        const isEffect = cleanEffect?.toLowerCase()?.includes(value.toLowerCase())
-        const additionalEffect = additionalEffects[value.toLowerCase()]?.includes(cleanUnderscore(cleanEffect));
-        return isEffect || additionalEffect;
-      });
-      return { ...res, [cardSet]: sortedCardArr };
-    }, {});
-    setLocalCardObject(newCards);
-  }, [value, hidePassives, cardsObject]);
   return (
     <>
       <NextSeo
@@ -117,7 +126,7 @@ export default function CardSearch() {
             InputProps={{
               endAdornment: (
                 <StyledInputAdornment onClick={() => setValue('')} position="end">
-                  <ClearIcon />
+                  <ClearIcon/>
                 </StyledInputAdornment>
               )
             }}
@@ -129,7 +138,7 @@ export default function CardSearch() {
           <FormControlLabel
             control={
               <Checkbox
-                size='small'
+                size="small"
                 checked={hidePassives}
                 onChange={(e) => setHidePassives(e.target.checked)}
               />
@@ -169,31 +178,38 @@ export default function CardSearch() {
                 <React.Fragment key={cardSet + '' + cardSetIndex}>
                   {isCardSets ? <Typography my={1} variant={'h4'}>Card Sets</Typography> :
                     <img src={`${prefix}etc/${cardSet}_Card_Header.png`}
-                      style={{ margin: '20px 0 10px 0' }}
-                      alt=""
+                         style={{ margin: '20px 0 10px 0' }}
+                         alt=""
                     />}
                   <Stack direction={'row'} flexWrap={'wrap'} gap={2} sx={{ maxWidth: 600 }}>
                     {cardsArr.map((card, index) => {
-                      const { displayName, name, realIndex } = card;
+                      const { displayName, name, realIndex, rawName, effect } = card;
                       let {
                         stars,
                         amount,
                         nextLevelReq
                       } = state?.account?.cards?.[displayName] || {};
+                      const isSkillMasteryPassive = isSkillMasteryPassiveCards({
+                        rawName,
+                        effect,
+                        account: state?.account
+                      });
                       if (isCardSets) {
                         stars = Math.floor(cardsObject?.['Card Sets'][realIndex]?.totalStars / Math.max(cardsObject[name].length, 1)) - 1;
                         amount = cardsObject?.['Card Sets'][realIndex]?.totalStars;
                         nextLevelReq = Math.floor(cardsObject[name].length) * (Math.min(6, Math.floor(cardsObject?.['Card Sets'][realIndex]?.totalStars / Math.max(cardsObject[name].length, 1))) + 1);
                       }
+
                       return (
                         <div style={{ position: 'relative' }} key={displayName + '' + index}>
                           <CardAndBorder nextLevelReq={nextLevelReq} amount={amount}
-                            variant={isCardSets ? 'cardSet' : ''} showInfo
-                            {...{
-                              ...card, stars
-                            }}
+                                         variant={isCardSets ? 'cardSet' : ''} showInfo
+                                         {...{
+                                           ...card,
+                                           stars,
+                                           displayName: isSkillMasteryPassive ? `${displayName} (P)` : displayName
+                                         }}
                           />
-                          <Stack sx={{textAlign: 'center'}} marginTop={'7px'}><Typography>{nextLevelReq-amount}</Typography></Stack>
                         </div>
                       );
                     })}

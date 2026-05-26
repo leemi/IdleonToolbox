@@ -1,14 +1,14 @@
 import { Checkbox, FormControl, FormControlLabel, InputLabel, Select, Stack } from '@mui/material';
-import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from 'components/common/context/AppProvider';
 import Kitchens from 'components/account/Worlds/World4/Kitchens';
 import Meals from '@components/account/Worlds/World4/Meals';
 import { NextSeo } from 'next-seo';
 import Tabber from '../../../components/common/Tabber';
 import { getTabs, tryToParse } from '@utility/helpers';
-import { parseKitchens } from '@parsers/cooking';
+import { parseKitchens } from '@parsers/world-4/cooking';
 import MenuItem from '@mui/material/MenuItem';
-import { getPlayerLabChipBonus } from '@parsers/lab';
+import { getPlayerLabChipBonus } from '@parsers/world-4/lab';
 import InfoIcon from '@mui/icons-material/Info';
 import Tooltip from '@components/Tooltip';
 import { PAGES } from '@components/constants';
@@ -20,39 +20,37 @@ const Cooking = () => {
   const [selectedCharacter, setSelectedCharacter] = useState(characters?.[0]);
   const [enableNanoChip, setEnableNanoChip] = useState(false);
 
-  const hasNanoAndGordonius = useCallback(
-    () => {
-      const hasChip = getPlayerLabChipBonus(selectedCharacter, state?.account, 15);
-      const hasGordonius = selectedCharacter?.starSigns?.find(({ starName }) => starName === 'Gordonius_Major');
-      return !!hasChip && !!hasGordonius;
-    }, [selectedCharacter]);
+  const hasChip = getPlayerLabChipBonus(selectedCharacter, state?.account, 15);
+  const isGordoniusInfiniteStar = state?.account?.starSigns?.find(({ starName, isInfiniteStar }) => starName === 'Gordonius_Major' && isInfiniteStar);
+  const hasGordonius = selectedCharacter?.starSigns?.find(({ starName }) => starName === 'Gordonius_Major');
+  const hasNanoAndGordonius = !!hasChip && (!!hasGordonius || !!isGordoniusInfiniteStar);
 
   useEffect(() => {
-    setEnableNanoChip(hasNanoAndGordonius());
-  }, [selectedCharacter]);
+    setEnableNanoChip(hasNanoAndGordonius);
+  }, [hasNanoAndGordonius]);
 
-  const kitchens = useMemo(() => {
-    const idleonData = tryToParse(localStorage.getItem('rawJson'));
-    if (idleonData) {
-      const cookingRaw = tryToParse(idleonData?.data?.Cooking)
-      const atomsRaw = tryToParse(idleonData?.data?.Atoms)
-      return parseKitchens(cookingRaw, atomsRaw, state?.characters, state?.account, {
-        characterIndex: selectedCharacter?.playerId,
-        enableNanoChip
-      });
-    }
-    return cooking?.kitchens;
-  }, [selectedCharacter, enableNanoChip, state?.account, state?.characters]);
+  const idleonData = tryToParse(sessionStorage.getItem('rawJson'));
+  let kitchens;
+  if (idleonData) {
+    const cookingRaw = tryToParse(idleonData?.data?.Cooking)
+    const atomsRaw = tryToParse(idleonData?.data?.Atoms)
+    kitchens = parseKitchens(cookingRaw, atomsRaw, state?.characters, state?.account, {
+      characterIndex: selectedCharacter?.playerId,
+      enableNanoChip
+    });
+  } else {
+    kitchens = cooking?.kitchens;
+  }
 
-  const totalMealSpeed = useMemo(() => kitchens?.reduce((sum, kitchen) => sum + (kitchen.status === 3
+  const totalMealSpeed = kitchens?.reduce((sum, kitchen) => sum + (kitchen.status === 3
     ? 0
-    : kitchen.mealSpeed), 0), [kitchens]);
+    : kitchen.mealSpeed), 0);
 
   return (
     <>
       <NextSeo
         title="Cooking | Idleon Toolbox"
-        description="Keep track of your kitchens and meals progression"
+        description="Track your kitchen meal levels, cooking speed, and recipe bonuses for all meals in Legends of Idleon"
       />
       <Stack my={3} direction={'row'} gap={2} alignItems={'center'}>
         <FormControl sx={{ width: 170 }}>
@@ -74,15 +72,15 @@ const Cooking = () => {
         <Stack direction={'row'} alignItems={'center'}>
           <FormControlLabel
             control={<Checkbox name={'enableNanoChip'}
-              disabled={hasNanoAndGordonius()}
+              disabled={hasNanoAndGordonius}
               checked={enableNanoChip}
               size={'small'}
+              onChange={(e) => setEnableNanoChip(e.target.checked)}
             />}
-            onChange={(e) => setEnableNanoChip(!enableNanoChip)}
             label={'Enable nano chip'} />
-          <Tooltip title={'Enabling nano chip assumes you have gordonius major star sign *active*'}>
+          {!isGordoniusInfiniteStar ? <Tooltip title={'Enabling nano chip assumes you have gordonius major star sign *active*'}>
             <InfoIcon fontSize={'small'}></InfoIcon>
-          </Tooltip>
+          </Tooltip> : null}
         </Stack>
       </Stack>
       <Tabber tabs={getTabs(PAGES.ACCOUNT['world 4'].categories, 'cooking')}>

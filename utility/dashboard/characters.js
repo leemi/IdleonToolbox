@@ -1,8 +1,8 @@
 import { differenceInHours, differenceInMinutes, isPast } from 'date-fns';
-import { getPostOfficeBonus } from '../../parsers/postoffice';
+import { getPostOfficeBonus } from '@parsers/world-3/postoffice';
 import { items, randomList } from '@website-data';
 import { getExpReq, isArenaBonusActive, isCompanionBonusActive } from '../../parsers/misc';
-import { getPlayerAnvil, getTimeTillCap } from '../../parsers/anvil';
+import { getPlayerAnvil, getTimeTillCap } from '@parsers/world-1/anvil';
 import {
   checkCharClass,
   CLASSES,
@@ -23,7 +23,7 @@ export const anvilAlerts = (account, characters, character, lastUpdated, options
     } = getPlayerAnvil(characters?.[character?.playerId], characters, account);
     const production = prod?.filter(({ hammers }) => hammers > 0);
     const numOfHammers = production?.reduce((res, { hammers }) => res + hammers, 0);
-    alerts.missingHamemrs = maxProducts - numOfHammers;
+    alerts.missingHammers = maxProducts - numOfHammers;
   }
 
   if (options?.anvil?.unspentPoints?.checked && character?.anvil?.anvilStats?.availablePoints >= options?.anvil?.unspentPoints?.props?.value) {
@@ -188,10 +188,11 @@ export const isTalentReady = (character, options) => {
   }, []);
 }
 export const crystalCooldownSkillsReady = (character, options) => {
+  // -1 != e.indexOf("Crystal")
   if (checkCharClass(character?.class, CLASSES.Maestro)) {
     return Object.entries(character?.skillsInfo || {})?.reduce((res, [name, data]) => {
       if (data?.index < 10 && name !== 'character' && options?.crystalCountdown?.skills?.props?.value?.[data?.icon]) {
-        const crystalCountdown = getTalentBonus(character?.flatTalents, 'CRYSTAL_COUNTDOWN', null, null, character.addedLevels, true);
+        const crystalCountdown = getTalentBonus(character?.flatTalents, 'CRYSTAL_COUNTDOWN');
         const expReq = getExpReq(data?.index, data?.level);
         const reduction = (1 - data?.expReq / expReq) * 100;
         const ready = reduction > 0;

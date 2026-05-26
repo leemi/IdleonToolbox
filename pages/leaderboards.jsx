@@ -2,11 +2,13 @@ import {
   Alert,
   CircularProgress,
   Divider,
+  FormControlLabel,
   IconButton,
   InputAdornment,
   Skeleton,
   Snackbar,
   Stack,
+  Switch,
   TextField,
   Typography,
   useMediaQuery
@@ -20,67 +22,120 @@ import { fetchLeaderboard, fetchUserLeaderboards } from '../services/profiles';
 import Box from '@mui/material/Box';
 import { IconSearch } from '@tabler/icons-react';
 import { useRouter } from 'next/router';
-import { format } from 'date-fns';
+import useFormatDate from '@hooks/useFormatDate';
 import { numberWithCommas } from '@utility/helpers';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-const tabs = ['General', 'Tasks', 'Skills', 'Character', 'Misc', 'Caverns'];
+const tabs = ['Global', 'General', 'Tasks', 'Skills', 'Character', 'Misc', 'Caverns'];
 const Leaderboards = () => {
   const { state } = useContext(AppContext);
+  const formatDate = useFormatDate();
   const isSm = useMediaQuery((theme) => theme.breakpoints.down('sm'), { noSsr: true });
   const loggedMainChar = state?.characters?.[0]?.name;
-  const [leaderboards, setLeaderboards] = useState(null);
-  const [error, setError] = React.useState('');
+  const [loggedLeaderboardName, setLoggedLeaderboardName] = useState(loggedMainChar);
+  useEffect(() => {
+    if (state?.uid) {
+      const anonId = localStorage.getItem(`${state.uid}/anonId`);
+      setLoggedLeaderboardName(anonId || loggedMainChar);
+    } else {
+      setLoggedLeaderboardName(loggedMainChar);
+    }
+  }, [state?.uid, loggedMainChar]);
   const [inputValue, setInputValue] = useState('');
   const [searchedChar, setSearchChar] = useState('');
   const router = useRouter();
   const { t } = router.query;
-  const [selectedTab, setSelectedTab] = useState(t?.toLowerCase() || 'general');
+  const [selectedTab, setSelectedTab] = useState(t?.toLowerCase() || 'global');
   const [loadingSearchedChar, setLoadingSearchedChar] = useState(false);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'info' });
+  const [showAnonymous, setShowAnonymous] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return localStorage.getItem('leaderboard:showAnonymous') !== 'false';
+  });
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const getLeaderboards = async () => {
-      try {
-        const tempLeaderboards = await fetchLeaderboard(selectedTab.toLowerCase());
-        setLeaderboards(tempLeaderboards);
-        setError('');
-      } catch (e) {
-        setError('Error has occurred while getting leaderboards');
+  const searchUserAndAppend = (data, username, userStats, { isLoggedUser } = {}) => {
+    const appendToList = (list, stat) => {
+      if (!Array.isArray(list)) return list;
+      const tag = isLoggedUser ? { _loggedUser: true } : { _searched: true };
+      if (Array.isArray(stat)) {
+        const newEntries = stat
+          .filter(e => !list.some(item => item.mainChar === e.mainChar))
+          .map(e => ({ ...e, ...tag }));
+        return [...list, ...newEntries].sort((a, b) => (a.rank ?? Infinity) - (b.rank ?? Infinity));
       }
+      const found = list.some(item => item.mainChar === username);
+      if (found) return list;
+      if (stat !== undefined && stat !== null) {
+        return [...list, { mainChar: username, ...stat, ...tag }];
+      }
+      return [...list, { mainChar: username, ...tag }];
     };
 
-    getLeaderboards();
-  }, [selectedTab]);
-
-  const isUserFullyExistLocally = (data, username) => {
-    for (const category in data) {
-      if (!data[category].some(item => item.mainChar === username)) {
-        return false;
-      }
-    }
-    return true;
-  }
-  const searchUserAndAppend = (data, username, userStats) => {
     const newData = {};
-    for (const category in data) {
-      const categoryData = data[category];
-      const found = categoryData.some(item => item.mainChar === username);
-
-      if (!found) {
-        // Append the user's actual stats if they exist
-        if (userStats[category] !== undefined) {
-          newData[category] = [...categoryData, { mainChar: username, ...userStats[category] }];
+    for (const key in data) {
+      const value = data[key];
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        const nested = {};
+        for (const stat in value) {
+          nested[stat] = appendToList(value[stat], userStats[stat]);
         }
-        else {
-          newData[category] = [...categoryData, { mainChar: username }];
-        }
+        newData[key] = nested;
+      } else if (Array.isArray(value)) {
+        newData[key] = appendToList(value, userStats[key]);
       } else {
-        // Keep the existing array reference if user already exists
-        newData[category] = categoryData;
+        newData[key] = value;
       }
     }
     return newData;
   }
+
+  const AGGREGATION_INTERVAL = 1000 * 60 * 30; // 30 minutes
+
+  const { data: leaderboards, isLoading, error } = useQuery({
+    queryKey: ['leaderboard', selectedTab.toLowerCase()],
+    queryFn: () => fetchLeaderboard(selectedTab.toLowerCase()),
+    staleTime: (query) => {
+      const createdAt = query.state.data?.createdAt;
+      if (!createdAt) return AGGREGATION_INTERVAL;
+      const nextRefresh = createdAt + AGGREGATION_INTERVAL;
+      return Math.max(nextRefresh - Date.now(), 0);
+    }
+  });
+
+  // Auto-fetch logged user and searched user after leaderboard data loads
+  useEffect(() => {
+    if (!leaderboards) return;
+    const tab = selectedTab.toLowerCase();
+    const data = leaderboards[tab];
+    if (!data) return;
+
+    const usersToFetch = [loggedLeaderboardName].filter(Boolean);
+    const fetchUsers = async () => {
+      let updated = false;
+      let updatedData = data;
+      for (const user of usersToFetch) {
+        const userExists = Object.values(updatedData).some(value => {
+          const lists = typeof value === 'object' && !Array.isArray(value) ? Object.values(value) : [value];
+          return lists.every(list => Array.isArray(list) && list.some(item => item.mainChar === user));
+        });
+        if (!userExists) {
+          const userStats = await fetchUserLeaderboards(tab, user);
+          if (userStats && !userStats.error) {
+            updatedData = searchUserAndAppend(updatedData, user, userStats, { isLoggedUser: true });
+            updated = true;
+          }
+        }
+      }
+      if (updated) {
+        queryClient.setQueryData(['leaderboard', tab], (old) => {
+          if (!old) return old;
+          return { ...old, [tab]: updatedData };
+        });
+      }
+    };
+    fetchUsers();
+  }, [leaderboards, loggedLeaderboardName]);
 
   const handleKeyDown = (event) => {
     if (!inputValue || loadingSearchedChar) return;
@@ -89,34 +144,76 @@ const Leaderboards = () => {
     }
   }
 
+  const removeSearchedEntries = (data) => {
+    if (!data) return data;
+    const newData = {};
+    for (const key in data) {
+      const value = data[key];
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        const nested = {};
+        for (const stat in value) {
+          nested[stat] = Array.isArray(value[stat])
+            ? value[stat].filter(item => !item._searched)
+            : value[stat];
+        }
+        newData[key] = nested;
+      } else if (Array.isArray(value)) {
+        newData[key] = value.filter(item => !item._searched);
+      } else {
+        newData[key] = value;
+      }
+    }
+    return newData;
+  };
+
   const handleUserSearch = async () => {
     if (!inputValue) return;
     const searchValue = inputValue.trim();
     if (!searchValue) return;
 
+    const prevSearched = searchedChar;
     setSearchChar(searchValue);
-    const userFullyExistsLocally = isUserFullyExistLocally(leaderboards[selectedTab.toLowerCase()], searchValue);
-    if (!userFullyExistsLocally) {
-      setLoadingSearchedChar(true);
-      const response = await fetchUserLeaderboards(selectedTab.toLowerCase(), searchValue);
-      if (!response || response?.error) {
-        setLoadingSearchedChar(false);
-        setToast({ open: true, message: response?.error || 'Error fetching user data', severity: 'error' });
-        return;
-      }
-      const updateLeaderboards = searchUserAndAppend(leaderboards[selectedTab.toLowerCase()], searchValue, response);
-      setLeaderboards({ ...leaderboards, [selectedTab.toLowerCase()]: updateLeaderboards });
-      setLoadingSearchedChar(false);
-      setToast({ open: true, message: 'User added to leaderboards', severity: 'success' });
-    } else {
-      setToast({ open: true, message: 'User already exists in leaderboards', severity: 'info' });
+
+    const tab = selectedTab.toLowerCase();
+
+    // Remove all previously searched entries (only those added by search, not original top 10)
+    if (prevSearched && prevSearched !== searchValue) {
+      queryClient.setQueryData(['leaderboard', tab], (old) => {
+        if (!old?.[tab]) return old;
+        return { ...old, [tab]: removeSearchedEntries(old[tab]) };
+      });
     }
+
+    const data = leaderboards?.[tab];
+
+    // Skip fetch if user is already in all visible lists
+    if (data && tab !== 'global') {
+      const isInTopN = Object.values(data).some(value => {
+        const lists = typeof value === 'object' && !Array.isArray(value) ? Object.values(value) : [value];
+        return lists.every(list => Array.isArray(list) && list.some(item => item.mainChar === searchValue));
+      });
+      if (isInTopN) return;
+    }
+
+    setLoadingSearchedChar(true);
+    const response = await fetchUserLeaderboards(tab, searchValue);
+    if (!response || response?.error) {
+      setLoadingSearchedChar(false);
+      setToast({ open: true, message: response?.error || 'Error fetching user data', severity: 'error' });
+      return;
+    }
+    // Update the cached query data
+    queryClient.setQueryData(['leaderboard', tab], (old) => {
+      if (!old?.[tab]) return old;
+      return { ...old, [tab]: searchUserAndAppend(old[tab], searchValue, response) };
+    });
+    setLoadingSearchedChar(false);
   }
 
   return <>
     <NextSeo
       title="Leaderboards | Idleon Toolbox"
-      description="Leaderboards for Legends Of Idleon MMO"
+      description="View Legends of Idleon leaderboards for skills, tasks, characters, caverns, and more with player rankings and stats"
     />
     <Box sx={{ maxWidth: '300px', margin: '16px auto 0 auto', border: 'none' }}>
       <TextField
@@ -141,7 +238,7 @@ const Leaderboards = () => {
         globally</Typography>
     </Box>
     <Box sx={{ maxWidth: '300px', margin: '16px auto', textAlign: 'center' }}>
-      {!leaderboards?.totalUsers || !leaderboards?.createdAt ? <Skeleton sx={{ width: 300, margin: '0 auto' }}
+      {!leaderboards?.totalUsers ? <Skeleton sx={{ width: 300, margin: '0 auto' }}
         variant={'text'} /> : <Stack direction={'row'}
           gap={1}
           justifyContent={'center'}
@@ -151,40 +248,47 @@ const Leaderboards = () => {
             orientation={'vertical'} />}>
         <Stack flexWrap={'wrap'} direction={'row'} gap={1} justifyContent={'center'} alignItems={'center'}>
           <Typography sx={{ fontSize: 14 }} component={'div'}>{numberWithCommas(leaderboards?.totalUsers)}</Typography>
-
           <Typography sx={{ fontSize: 14 }}>Accounts</Typography>
         </Stack>
-        <Stack flexWrap={'wrap'} direction={'row'} gap={1} justifyContent={'center'} alignItems={'center'}>
+        {leaderboards?.createdAt ? <Stack flexWrap={'wrap'} direction={'row'} gap={1} justifyContent={'center'} alignItems={'center'}>
           <Typography sx={{ fontSize: 14 }}>Updated at</Typography>
-          <Typography sx={{ fontSize: 14 }} component={'div'}>{format(leaderboards?.createdAt, 'HH:mm:ss')}</Typography>
-        </Stack>
+          <Typography sx={{ fontSize: 14 }} component={'div'}>{formatDate(leaderboards?.createdAt, { timeOnly: true })}</Typography>
+        </Stack> : null}
       </Stack>}
-
+    </Box>
+    <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
+      <FormControlLabel
+        control={<Switch checked={showAnonymous} onChange={() => {
+          const next = !showAnonymous;
+          setShowAnonymous(next);
+          localStorage.setItem('leaderboard:showAnonymous', String(next));
+        }} />}
+        label="Show anonymous players"
+      />
     </Box>
     <Tabber
       tabs={tabs} onTabChange={(selected) => {
         setSelectedTab(tabs?.[selected]);
-        setLeaderboards(null);
-        setError('');
-        setSearchChar('');
       }}>
-      <LeaderboardSection leaderboards={leaderboards?.general} loggedMainChar={loggedMainChar}
-        searchedChar={searchedChar} />
-      <LeaderboardSection leaderboards={leaderboards?.tasks} loggedMainChar={loggedMainChar}
-        searchedChar={searchedChar} />
-      <LeaderboardSection leaderboards={leaderboards?.skills} loggedMainChar={loggedMainChar}
-        searchedChar={searchedChar} />
-      <LeaderboardSection leaderboards={leaderboards?.character} loggedMainChar={loggedMainChar}
-        searchedChar={searchedChar} />
-      <LeaderboardSection leaderboards={leaderboards?.misc} loggedMainChar={loggedMainChar}
-        searchedChar={searchedChar} />
-      <LeaderboardSection leaderboards={leaderboards?.caverns} loggedMainChar={loggedMainChar}
-        searchedChar={searchedChar} />
+      <LeaderboardSection leaderboards={showAnonymous ? leaderboards?.global?.anonymous : leaderboards?.global?.public}
+        loggedMainChar={loggedLeaderboardName} searchedChar={searchedChar} />
+      <LeaderboardSection leaderboards={showAnonymous ? leaderboards?.general?.anonymous : leaderboards?.general?.public}
+        loggedMainChar={loggedLeaderboardName} searchedChar={searchedChar} />
+      <LeaderboardSection leaderboards={showAnonymous ? leaderboards?.tasks?.anonymous : leaderboards?.tasks?.public}
+        loggedMainChar={loggedLeaderboardName} searchedChar={searchedChar} />
+      <LeaderboardSection leaderboards={showAnonymous ? leaderboards?.skills?.anonymous : leaderboards?.skills?.public}
+        loggedMainChar={loggedLeaderboardName} searchedChar={searchedChar} />
+      <LeaderboardSection leaderboards={showAnonymous ? leaderboards?.character?.anonymous : leaderboards?.character?.public}
+        loggedMainChar={loggedLeaderboardName} searchedChar={searchedChar} />
+      <LeaderboardSection leaderboards={showAnonymous ? leaderboards?.misc?.anonymous : leaderboards?.misc?.public}
+        loggedMainChar={loggedLeaderboardName} searchedChar={searchedChar} />
+      <LeaderboardSection leaderboards={showAnonymous ? leaderboards?.caverns?.anonymous : leaderboards?.caverns?.public}
+        loggedMainChar={loggedLeaderboardName} searchedChar={searchedChar} />
     </Tabber>
-    {!leaderboards && !error
+    {isLoading && !error
       ? <Stack alignItems={'center'} justifyContent={'center'} mt={3}><CircularProgress /></Stack>
       : error ?
-        <Typography color={'error.light'} textAlign={'center'} variant={'h6'}>{error}</Typography> : null}
+        <Typography color={'error.light'} textAlign={'center'} variant={'h6'}>Error has occurred while getting leaderboards</Typography> : null}
     <Snackbar
       open={toast.open}
       autoHideDuration={6000}

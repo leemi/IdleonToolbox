@@ -1,5 +1,5 @@
 import { Card, CardContent, FormControl, InputLabel, Select, Stack, Typography } from '@mui/material';
-import React, { useContext, useMemo, useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { AppContext } from 'components/common/context/AppProvider';
 import { fillArrayToLength, notateNumber, prefix } from 'utility/helpers';
 import styled from '@emotion/styled';
@@ -7,15 +7,15 @@ import Timer from 'components/common/Timer';
 import Tooltip from '../../../components/Tooltip';
 import { CardTitleAndValue, TitleAndValue } from '@components/common/styles';
 import { NextSeo } from 'next-seo';
-import { calcTotalCritters, getTrapsBonuses } from '../../../parsers/traps';
+import { calcTotalCritters, getTrapsBonuses } from '@parsers/world-3/traps';
 import MenuItem from '@mui/material/MenuItem';
 
 const Traps = () => {
   const { state } = useContext(AppContext);
   const { traps } = state?.account || {};
   const [bonus, setBonus] = useState('max');
-  const bonuses = useMemo(() => getTrapsBonuses(state?.account, state?.characters), [state]);
-  const totals = useMemo(() => calcTotalCritters(state?.account, bonuses?.[bonus]), [state, bonus]);
+  const bonuses = getTrapsBonuses(state?.account, state?.characters);
+  const totals = calcTotalCritters(state?.account, bonuses?.[bonus]);
 
   return <>
     <NextSeo

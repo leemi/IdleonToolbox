@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { calcMealTime, calcTimeToNextLevel, getMealLevelCost, getRibbonBonus } from 'parsers/cooking';
+import React, { useEffect, useState } from 'react';
+import { calcMealTime, calcTimeToNextLevel, getMealLevelCost, getRibbonBonus } from '@parsers/world-4/cooking';
 import {
   cleanUnderscore,
   commaNotation,
@@ -18,10 +18,11 @@ import Timer from 'components/common/Timer';
 import InfoIcon from '@mui/icons-material/Info';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import MenuItem from '@mui/material/MenuItem';
-import { getJewelBonus, getLabBonus } from '@parsers/lab';
+import { getJewelBonus, getLabBonus } from '@parsers/world-4/lab';
 import { isJadeBonusUnlocked } from '@parsers/world-6/sneaking';
 import { getWinnerBonus } from '@parsers/world-6/summoning';
 import { checkCharClass, CLASSES } from '@parsers/talents';
+import { isCompanionBonusActive } from '@parsers/misc';
 
 const maxTimeValue = 8.64e15;
 
@@ -56,7 +57,7 @@ const Meals = ({ account, characters, meals, totalMealSpeed, mealMaxLevel, achie
     }
     return baseMeals;
   }
-  const noMealLeftBehind = useMemo(() => getNoMealLeftBehind(meals, mealMaxLevel), [meals, mealMaxLevel]);
+  const noMealLeftBehind = getNoMealLeftBehind(meals, mealMaxLevel);
   const sortMealsBy = (meals, index, level = 0) => {
     if (index === 0) return defaultMeals;
     const mealsCopy = [...defaultMeals];
@@ -131,7 +132,7 @@ const Meals = ({ account, characters, meals, totalMealSpeed, mealMaxLevel, achie
       return res;
     }, { value: 0, character: '' });
   }
-  const overflowingLadleBonus = useMemo(() => getHighestOverflowingLadle(), [characters]);
+  const overflowingLadleBonus = getHighestOverflowingLadle();
   const calcMeals = (meals, overflow) => {
     if (!meals) return []
     return meals?.map((meal) => {
@@ -169,7 +170,7 @@ const Meals = ({ account, characters, meals, totalMealSpeed, mealMaxLevel, achie
       };
     });
   };
-  const defaultMeals = useMemo(() => calcMeals(meals), [meals, mealSpeed, localEquinoxUpgrades]);
+  const defaultMeals = calcMeals(meals);
 
   useEffect(() => {
     const tempFoodLust = equinoxUpgrades?.find(({ name }) => name === 'Food_Lust')?.bonus;
@@ -349,7 +350,8 @@ const Meals = ({ account, characters, meals, totalMealSpeed, mealMaxLevel, achie
           const winBonus = getWinnerBonus(account, '<x Meal Bonuses');
           const ribbonIndex = account?.grimoire?.ribbons?.[28 + mealIndex];
           const ribbonBonus = getRibbonBonus(account, ribbonIndex);
-          const realEffect = (1 + (blackDiamondRhinestone + shinyMulti) / 100) * (1 + winBonus / 100) * ribbonBonus * level * baseStat;
+          const companion162 = isCompanionBonusActive(account, 162) ? (account?.companions?.list?.at(162)?.bonus ?? 0) : 0;
+          const realEffect = (1 + (blackDiamondRhinestone + shinyMulti) / 100) * (1 + winBonus / 100) * (1 + (25 * companion162) / 100) * ribbonBonus * level * baseStat;
           const effectNotation = realEffect < 1e7 ? commaNotation(realEffect) : notateNumber(realEffect, 'Big');
 
           return (
@@ -430,7 +432,8 @@ const Meals = ({ account, characters, meals, totalMealSpeed, mealMaxLevel, achie
 const MealTooltip = ({ account, level, baseStat, effect, blackDiamondRhinestone, shinyMulti, index }) => {
   const winBonus = getWinnerBonus(account, '<x Meal Bonuses');
   const ribbonBonus = getRibbonBonus(account, account?.grimoire?.ribbons?.[28 + index]);
-  const realEffect = (1 + (blackDiamondRhinestone + shinyMulti) / 100) * (1 + winBonus / 100) * (level + 1) * ribbonBonus * baseStat;
+  const companion162 = isCompanionBonusActive(account, 162) ? (account?.companions?.list?.at(162)?.bonus ?? 0) : 0;
+  const realEffect = (1 + (blackDiamondRhinestone + shinyMulti) / 100) * (1 + winBonus / 100) * (1 + (25 * companion162) / 100) * (level + 1) * ribbonBonus * baseStat;
   const effectNotation = realEffect < 1e7 ? commaNotation(realEffect) : notateNumber(realEffect, 'Big')
   return (
     <>

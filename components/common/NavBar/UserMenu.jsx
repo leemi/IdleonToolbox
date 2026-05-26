@@ -1,30 +1,32 @@
-import { IconLogin2, IconLogout2, IconUserCircle } from '@tabler/icons-react';
+import { IconCopy, IconDatabase, IconLogin2, IconLogout2, IconSettings, IconUser } from '@tabler/icons-react';
 import IconButton from '@mui/material/IconButton';
 import {
-  Box,
-  Divider,
-  listClasses,
-  ListItemIcon,
-  ListItemText,
-  ListSubheader,
-  Menu,
-  Stack,
-  Typography
+  Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
+  Divider, listClasses, ListItemIcon, ListItemText, Menu
 } from '@mui/material';
 import MenuItem from '@mui/material/MenuItem';
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { AppContext } from '@components/common/context/AppProvider';
-import { format } from 'date-fns';
 import LoginDialog from '@components/common/NavBar/LoginDialog';
 import { useRouter } from 'next/router';
+import { IconClipboard } from '@tabler/icons-react';
+import { copyForSupport, copyRawData, handleLoadJson, isProd } from '@utility/helpers';
 
 const UserMenu = () => {
-  const { state, logout, dispatch } = useContext(AppContext);
+  const { dispatch, state, logout } = useContext(AppContext);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [prevSignedIn, setPrevSignedIn] = useState(state?.signedIn);
   const open = Boolean(anchorEl);
   const router = useRouter();
   const { profile, ...queryParams } = router.query;
+
+  if (state?.signedIn !== prevSignedIn) {
+    setPrevSignedIn(state?.signedIn);
+    setDialogOpen(false);
+    setAnchorEl(null);
+  }
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -33,14 +35,33 @@ const UserMenu = () => {
     setAnchorEl(null);
   };
 
-  useEffect(() => {
-    setDialogOpen(false);
-    handleClose()
-  }, [state?.signedIn]);
+  const handleCopyForSupport = async () => {
+    try {
+      await copyForSupport(state?.account, state?.characters);
+    } catch (err) {
+      console.error(err);
+    }
+    handleClose();
+  };
+
+  const handleCopyRawData = async () => {
+    try {
+      await copyRawData();
+    } catch (err) {
+      console.error(err);
+    }
+    handleClose();
+  };
 
   const handleLogout = () => {
+    handleClose();
+    setLogoutConfirmOpen(true);
+  };
+
+  const handleLogoutConfirm = () => {
+    setLogoutConfirmOpen(false);
     logout();
-  }
+  };
 
   const handleBackToAccount = () => {
     router.push({ url: router.pathname, query: queryParams });
@@ -50,11 +71,19 @@ const UserMenu = () => {
   return <>
     <IconButton onClick={handleClick}
                 size="small"
-                sx={{ ml: 1 }}
+                sx={{
+                  ml: 1, flexShrink: 0,
+                  width: 'fit-content',
+                  border: '1px solid rgba(255, 255, 255, 0.23)',
+                  borderRadius: '16px',
+                  height: '32px',
+                  padding: '4px 8px'
+                }}
                 aria-controls={open ? 'account-menu' : undefined}
                 aria-haspopup="true"
                 aria-expanded={open ? 'true' : undefined}>
-      <IconUserCircle size={28}/>
+      <IconUser stroke={'grey'} size={16}/>
+      {/*<IconChevronDown size={14} style={{ transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}/>*/}
     </IconButton>
     <Menu
       anchorEl={anchorEl}
@@ -80,18 +109,54 @@ const UserMenu = () => {
       anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
     >
       <Box sx={{ mb: 1 }}/>
+      <MenuItem onClick={() => {
+        router.push({ pathname: '/settings', query: router.query });
+        handleClose();
+      }}>
+        <ListItemIcon><IconSettings/></ListItemIcon>
+        <ListItemText>Settings</ListItemText>
+      </MenuItem>
+      {(state?.signedIn || state?.profile || state?.manualImport) ? [
+        <Divider key="copy-divider"/>,
+        <MenuItem key="copy-support" onClick={handleCopyForSupport}>
+          <ListItemIcon><IconCopy/></ListItemIcon>
+          <ListItemText>Copy for support</ListItemText>
+        </MenuItem>,
+        <MenuItem key="copy-raw" onClick={handleCopyRawData}>
+          <ListItemIcon><IconDatabase/></ListItemIcon>
+          <ListItemText>Copy raw data</ListItemText>
+        </MenuItem>
+      ] : null}
+      {!isProd ? [
+        <Divider key="paste-divider"/>,
+        <MenuItem key="paste-data" onClick={async () => { await handleLoadJson(dispatch); handleClose(); }}>
+          <ListItemIcon><IconClipboard/></ListItemIcon>
+          <ListItemText>Paste data</ListItemText>
+        </MenuItem>
+      ] : null}
+      <Divider sx={{ my: 1 }}/>
       {state?.profile && !state.signedIn ? <MenuItem onClick={() => setDialogOpen(true)}>
         <ListItemIcon><IconLogin2/></ListItemIcon>
         <ListItemText>Login</ListItemText>
       </MenuItem> : state.profile && state.signedIn ? <MenuItem onClick={handleBackToAccount}>
         <ListItemIcon><IconLogout2/></ListItemIcon>
         <ListItemText>Back to my account</ListItemText>
-      </MenuItem> : <MenuItem onClick={handleLogout}>
-        <ListItemIcon><IconLogout2/></ListItemIcon>
+      </MenuItem> : <MenuItem sx={{ color: 'error.light' }} onClick={handleLogout}>
+        <ListItemIcon sx={{ color: 'inherit' }}><IconLogout2/></ListItemIcon>
         <ListItemText>Logout</ListItemText>
       </MenuItem>}
     </Menu>
     <LoginDialog open={dialogOpen} setOpen={setDialogOpen} onClose={() => setDialogOpen(false)}/>
+    <Dialog open={logoutConfirmOpen} onClose={() => setLogoutConfirmOpen(false)}>
+      <DialogTitle>Logout</DialogTitle>
+      <DialogContent>
+        <DialogContentText>Are you sure you want to logout?</DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setLogoutConfirmOpen(false)}>Cancel</Button>
+        <Button color="error" onClick={handleLogoutConfirm}>Logout</Button>
+      </DialogActions>
+    </Dialog>
   </>
 };
 

@@ -1,15 +1,15 @@
 import { Card, CardContent, Divider, Stack, Typography } from '@mui/material';
-import React, { useContext, useMemo } from 'react';
+import React, { useContext } from 'react';
 import { AppContext } from 'components/common/context/AppProvider';
 import { growth, notateNumber, prefix } from 'utility/helpers';
 import styled from '@emotion/styled';
 import Tooltip from '../../../components/Tooltip';
 import { Breakdown, CardTitleAndValue, TitleAndValue } from '@components/common/styles';
-import { isGodEnabledBySorcerer } from '../../../parsers/lab';
+import { isGodEnabledBySorcerer } from '@parsers/world-4/lab';
 import { NextSeo } from 'next-seo';
 import { CLASSES, getCharacterByHighestTalent, getHighestMaxLevelTalentByClass } from '../../../parsers/talents';
-import { getAtomColliderThreshold } from '../../../parsers/atomCollider';
-import { calcTotals } from '../../../parsers/printer';
+import { getAtomColliderThreshold } from '@parsers/world-3/atomCollider';
+import { calcTotals } from '@parsers/world-3/printer';
 
 const Printer = () => {
   const { state } = useContext(AppContext);

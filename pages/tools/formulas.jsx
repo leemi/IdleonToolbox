@@ -11,7 +11,7 @@ import {
   Typography
 } from '@mui/material';
 import { cashFormatter, cleanUnderscore, notateNumber, prefix } from '@utility/helpers';
-import React, { useContext, useMemo, useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { AppContext } from '@components/common/context/AppProvider';
 import DataLoadingWrapper from '@components/common/DataLoadingWrapper';
 import Autocomplete from '@mui/material/Autocomplete';
@@ -19,8 +19,8 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { getCashMulti, getClassExpMulti, getDropRate, getRespawnRate } from '@parsers/character';
 import Highlighter from '@components/common/Highlighter';
 import { getCropEvolution } from '@parsers/world-6/farming';
-import { getPrinterMulti } from '@parsers/printer';
-import { getBitsMulti } from '@parsers/gaming';
+import { getPrinterMulti } from '@parsers/world-3/printer';
+import { getBitsMulti } from '@parsers/world-5/gaming';
 import { getGoldenFoodMulti } from '@parsers/misc';
 import { NextSeo } from 'next-seo';
 import { getDoubleStatueDrop, getDoubleGoldenFoodDrop } from '@parsers/misc';
@@ -33,18 +33,17 @@ const Formulas = () => {
   const [selectedChar, setSelectedChar] = useState(state?.characters?.[0] || {});
   const [selectedFormula, setSelectedFormula] = useState(null);
 
-  const formulas = useMemo(() => {
-    const respawnRate = getRespawnRate(selectedChar, state?.account);
-    const cashMulti = getCashMulti(selectedChar, state?.account, state?.characters);
-    const expMulti = getClassExpMulti(selectedChar, state?.account, state?.characters);
-    const dropRate = getDropRate(selectedChar, state?.account, state?.characters);
-    const cropEvo = getCropEvolution(state?.account, selectedChar, state?.account?.farming?.plot?.[0])
-    const printerMulti = getPrinterMulti(state?.account, state?.characters);
-    const bitMulti = getBitsMulti(state?.account, state?.characters);
-    const goldenFoodMulti = getGoldenFoodMulti(selectedChar, state?.account, state?.characters);
-    const doubleStatueDropChance = getDoubleStatueDrop(state?.account, selectedChar, state?.characters);
-    const doubleGoldenFoodDropChance = getDoubleGoldenFoodDrop(state?.account, selectedChar, state?.characters);
-    return [
+  const respawnRate = getRespawnRate(selectedChar, state?.account);
+  const cashMulti = getCashMulti(selectedChar, state?.account, state?.characters);
+  const expMulti = getClassExpMulti(selectedChar, state?.account, state?.characters);
+  const dropRate = getDropRate(selectedChar, state?.account, state?.characters);
+  const cropEvo = getCropEvolution(state?.account, selectedChar, state?.account?.farming?.plot?.[0])
+  const printerMulti = getPrinterMulti(state?.account, state?.characters);
+  const bitMulti = getBitsMulti(state?.account, state?.characters);
+  const goldenFoodMulti = getGoldenFoodMulti(selectedChar, state?.account, state?.characters);
+  const doubleStatueDropChance = getDoubleStatueDrop(state?.account, selectedChar, state?.characters);
+  const doubleGoldenFoodDropChance = getDoubleGoldenFoodDrop(state?.account, selectedChar, state?.characters);
+  const formulas = [
       {
         id: 'crystalChance',
         name: 'Crystal Chance',
@@ -160,12 +159,10 @@ const Formulas = () => {
         description: 'Double golden food drop chance from all sources'
       }
     ];
-  }, [selectedChar]);
 
-  const filteredFormulas = useMemo(() => {
-    if (!selectedFormula) return formulas;
-    return formulas.filter(formula => formula.name === selectedFormula);
-  }, [formulas, selectedFormula]);
+  const filteredFormulas = selectedFormula
+    ? formulas.filter(formula => formula.name === selectedFormula)
+    : formulas;
 
   const handleCharChange = (e) => {
     setSelectedChar(state?.characters?.[e.target.value]);
@@ -178,7 +175,7 @@ const Formulas = () => {
   return <>
     <NextSeo
       title="Formulas | Idleon Toolbox"
-      description="A list of formulas of varius game mechanics"
+      description="Browse formulas and calculations for various Legends of Idleon game mechanics including damage, drop rates, and more"
     />
     <Stack gap={2} mt={2}>
       <Stack direction={'row'} alignItems={'center'} gap={1} flexWrap={'wrap'}>

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { getGuilds } from '../firebase';
 import {
   CircularProgress,
@@ -21,36 +21,35 @@ import ErrorIcon from '@mui/icons-material/Error';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import Box from '@mui/material/Box';
-import { format, isValid } from 'date-fns';
+import { isValid } from 'date-fns';
+import useFormatDate from '@hooks/useFormatDate';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import Tooltip from '../components/Tooltip';
 import { getGuildLevel } from '../parsers/guild';
 
 const Guilds = () => {
+  const formatDate = useFormatDate();
   const [listener, setListener] = useState({ func: null });
   const [guilds, setGuilds] = useState(null);
   const [openIndex, setOpenIndex] = useState(null);
   const snapshotDate = tryToParse(sessionStorage.getItem('snapshotDate'));
   const [error, setError] = useState('');
 
-  const parseGuildsData = useCallback(
-    (topGuilds) => {
-      return topGuilds?.slice(0, 100)?.map((guild) => {
-        const leader = guild?.members?.find(({ g }) => g === 0);
-        const topContributors = guild?.members?.sort((a, b) => b?.e - a?.e)
-          ?.slice(0, 5)?.map(({ a, e }) => ({ name: a, gpEarned: e }));
-        return {
-          guildIcon: guild?.guildIcon,
-          guildName: guild?.guildName,
-          totalGp: guild?.totalGp,
-          membersCount: guild?.members?.length,
-          leader,
-          topContributors
-        }
-      });
-    },
-    [],
-  );
+  const parseGuildsData = (topGuilds) => {
+    return topGuilds?.slice(0, 100)?.map((guild) => {
+      const leader = guild?.members?.find(({ g }) => g === 0);
+      const topContributors = guild?.members?.sort((a, b) => b?.e - a?.e)
+        ?.slice(0, 5)?.map(({ a, e }) => ({ name: a, gpEarned: e }));
+      return {
+        guildIcon: guild?.guildIcon,
+        guildName: guild?.guildName,
+        totalGp: guild?.totalGp,
+        membersCount: guild?.members?.length,
+        leader,
+        topContributors
+      }
+    });
+  };
 
 
   const handleGuildsUpdate = ({ guilds, error }) => {
@@ -90,13 +89,13 @@ const Guilds = () => {
   return <>
     <NextSeo
       title="Guilds | Idleon Toolbox"
-      description="Top guilds in idleon"
+      description="Browse the top Legends of Idleon guilds ranked by guild points, with member details, levels, and leadership info"
     />
     <Typography variant={'h2'}>Guilds Leaderboard</Typography>
     <Stack direction={'row'} alignItems={'center'} gap={1}>
       <Stack gap={2} direction="row">Last Updated: {!guilds ?
         <CircularProgress size={'22px'} disableShrink/> : isValid(snapshotDate)
-          ? format(snapshotDate, 'dd/MM/yyyy HH:mm:ss')
+          ? formatDate(snapshotDate)
           : null}</Stack>
       <Tooltip title={'Reload guild data'}>
         <span><IconButton disabled={!guilds} onClick={handleRefresh}><RefreshIcon/></IconButton></span>

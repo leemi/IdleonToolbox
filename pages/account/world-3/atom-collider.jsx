@@ -1,21 +1,21 @@
-import React, { useContext, useMemo } from 'react';
+import React, { useContext } from 'react';
 import { AppContext } from '../../../components/common/context/AppProvider';
 import { Card, CardContent, Divider, Stack, Typography } from '@mui/material';
 import { cleanUnderscore, commaNotation, msToDate, notateNumber, prefix } from '@utility/helpers';
 import processString from 'react-process-string';
 import { NextSeo } from 'next-seo';
-import { calcTotals } from '../../../parsers/printer';
+import { calcTotals } from '@parsers/world-3/printer';
 import { CardTitleAndValue } from '@components/common/styles';
 import Timer from '@components/common/Timer';
 
 const AtomCollider = ({}) => {
   const { state } = useContext(AppContext);
   const { atoms, particles, stampReducer } = state?.account?.atoms || {};
-  const totals = useMemo(() => calcTotals(state?.account), [state?.account]);
+  const totals = calcTotals(state?.account);
   return <>
     <NextSeo
       title="Atom Collider | Idleon Toolbox"
-      description="Atom Collider bonuses and progression"
+      description="Track your Atom Collider upgrade levels, stamp bonuses, and particle costs in Legends of Idleon"
     />
     <Stack direction={'row'} gap={2}>
       <CardTitleAndValue title={'Particles'}>

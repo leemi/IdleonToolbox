@@ -1,14 +1,13 @@
 import { AppContext } from '@components/common/context/AppProvider';
-import React, { forwardRef, useContext, useMemo, useState } from 'react';
+import React, { forwardRef, useContext, useState } from 'react';
 import { Box, FormControl, FormControlLabel, FormLabel, Radio, RadioGroup, Stack } from '@mui/material';
 import { cleanUnderscore, notateNumber, prefix } from '@utility/helpers';
 import HtmlTooltip from '@components/Tooltip';
 import { NextSeo } from 'next-seo';
 import Image from 'next/image';
 import { CardTitleAndValue } from '@components/common/styles';
-import { getSlabBonus } from '@parsers/sailing';
-import { hover } from 'framer-motion';
-
+import { getSlabBonus } from '@parsers/world-5/sailing';
+import { isSuperbitUnlocked } from '@parsers/world-5/gaming';
 
 const Slab = () => {
   const { state } = useContext(AppContext);
@@ -22,23 +21,22 @@ const Slab = () => {
     else if (itemDisplay === 'unobtainable' && item?.unobtainable) return true;
   }
 
-  const slabItems = useMemo(() => state?.account?.looty?.slabItems?.filter((item) => shouldDisplayItem(item, display)), [display]);
-  const slabBonuses = useMemo(() => {
-    return [
-      { name: 'Tot. Dmg', icon: 'Arti2', value: state?.account?.sailing?.artifacts?.[2]?.bonus ?? 0 },
-      { name: 'Sail Spd', icon: 'Arti10', value: state?.account?.sailing?.artifacts?.[10]?.bonus ?? 0 },
-      { name: 'Divinity', icon: 'Arti18', value: state?.account?.sailing?.artifacts?.[18]?.bonus ?? 0 },
-      { name: 'Bits', icon: 'Arti20', value: state?.account?.sailing?.artifacts?.[20]?.bonus ?? 0 },
-      { name: 'Jade', icon: 'Slab4', value: state?.account?.sneaking?.jadeEmporium?.[8]?.bonus ?? 0 },
-      { name: 'Essence', icon: 'Slab5', value: state?.account?.sneaking?.jadeEmporium?.[6]?.bonus ?? 0 },
-      { name: 'Pow', icon: 'CaveShopUpg17', value: getSlabBonus(state?.account, 6) ?? 0 }
-    ];
-  }, [state]);
+  const slabItems = state?.account?.looty?.slabItems?.filter((item) => shouldDisplayItem(item, display));
+  const slabBonuses = [
+    { name: 'Tot. Dmg', icon: 'Arti2', value: state?.account?.sailing?.artifacts?.[2]?.bonus ?? 0 },
+    { name: 'Sail Spd', icon: 'Arti10', value: state?.account?.sailing?.artifacts?.[10]?.bonus ?? 0 },
+    { name: 'Divinity', icon: 'Arti18', value: state?.account?.sailing?.artifacts?.[18]?.bonus ?? 0 },
+    { name: 'Bits', icon: 'Arti20', value: state?.account?.sailing?.artifacts?.[20]?.bonus ?? 0 },
+    { name: 'Jade', icon: 'Slab4', value: state?.account?.sneaking?.jadeEmporium?.[8]?.bonus ?? 0 },
+    { name: 'Essence', icon: 'Slab5', value: state?.account?.sneaking?.jadeEmporium?.[6]?.bonus ?? 0 },
+    { name: 'Pow', icon: 'CaveShopUpg17', value: getSlabBonus(state?.account, 6) ?? 0 },
+    { name: 'Research Exp', icon: 'ClassIcons61', value: getSlabBonus(state?.account, 7) ?? 0 },
+  ];
 
   return <Stack>
     <NextSeo
       title="Slab | Idleon Toolbox"
-      description="The Slab consists of a list of items within the game"
+      description="Track your Slab item collection progress and discover missing items in Legends of Idleon World 5"
     />
     <Stack direction={'row'} gap={3} flexWrap={'wrap'}>
       <CardTitleAndValue title={'Looted items'}
@@ -78,10 +76,7 @@ const Slab = () => {
           <Icon src={`${prefix}data/${rawName}.png`}
                 fallback={`${prefix}data/${rawName}_x1.png`}
                 size={50}
-                alt={rawName}
-                sx={{ input: { cursor: 'pointer' } }}
-                onClick={() => window.open(`https://idleon.wiki/wiki/${cleanUnderscore(name)}`, '_blank')}
-          />
+                alt={rawName}/>
         </HtmlTooltip>
       })}
     </Stack>
@@ -99,7 +94,6 @@ const Icon = forwardRef((props, ref) => {
     alt={alt}
     width={size} height={size}
     onError={() => setError(true)}
-    style={{ cursor: 'pointer' }}
   />
 })
 

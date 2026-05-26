@@ -1,10 +1,10 @@
-import React, { useContext, useMemo } from 'react';
+import React, { useContext } from 'react';
 import { AppContext } from 'components/common/context/AppProvider';
 import { Badge, Card, CardContent, Divider, Stack, Typography } from '@mui/material';
 import { cleanUnderscore, fillArrayToLength, notateNumber, numberWithCommas, prefix } from 'utility/helpers';
 import Timer from 'components/common/Timer';
 import styled from '@emotion/styled';
-import { calcTotals, getPlayerAnvil, getTimeTillCap } from '../../../parsers/anvil';
+import { calcTotals, getPlayerAnvil, getTimeTillCap } from '@parsers/world-1/anvil';
 import { NextSeo } from 'next-seo';
 import Tooltip from '../../../components/Tooltip';
 import ProgressBar from '../../../components/common/ProgressBar';
@@ -14,12 +14,12 @@ const Anvil = () => {
   const { state } = useContext(AppContext);
   const { anvil } = state?.account || {};
 
-  const totals = useMemo(() => calcTotals(state?.account, state?.characters), [state?.account, state?.characters]);
+  const totals = calcTotals(state?.account, state?.characters);
 
   return <>
     <NextSeo
       title="Anvil | Idleon Toolbox"
-      description="Keep track of your characters anvil production"
+      description="Monitor your characters' anvil production rates, craft queues, and smithing progress in Legends of Idleon"
     />
     <Stack direction={'row'} alignItems={'baseline'} gap={1}>
       <Typography variant={'h4'}>Totals</Typography>

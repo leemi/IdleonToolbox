@@ -8,10 +8,10 @@ import { CardTitleAndValue } from '@components/common/styles';
 import { Stack, Typography } from '@mui/material';
 import { commaNotation, notateNumber, prefix } from '@utility/helpers';
 import Tabber from '@components/common/Tabber';
-import Upgrades from '@components/account/Worlds/World7/spelunking/Upgrades';
-import Lore from '@components/account/Worlds/World7/spelunking/Lore';
-import Elixirs from '@components/account/Worlds/World7/spelunking/Elixirs';
-import UpgradeOptimizer from '@components/account/Worlds/World7/spelunking/UpgradeOptimizer';
+import Upgrades from '@components/account/Worlds/World7/Spelunking/Upgrades';
+import Lore from '@components/account/Worlds/World7/Spelunking/Lore';
+import Elixirs from '@components/account/Worlds/World7/Spelunking/Elixirs';
+import UpgradeOptimizer from '@components/account/Worlds/World7/Spelunking/UpgradeOptimizer';
 import { IconInfoCircleFilled } from '@tabler/icons-react';
 import Tooltip from '@components/Tooltip';
 import { Breakdown } from '@components/common/Breakdown/Breakdown';
@@ -35,6 +35,8 @@ const Spelunking = () => {
     power,
     totalGrandDiscoveries,
     overstimRate,
+    overstimLevel,
+    overstimCurrent,
     charactersAtMaxStamina
   } = state?.account?.spelunking || {};
   const denominator = getAmberDenominator(state?.account);
@@ -81,6 +83,12 @@ const Spelunking = () => {
               <IconInfoCircleFilled size={18} />
             </Stack>
           </Breakdown>
+        </Stack>
+      </CardTitleAndValue>
+      <CardTitleAndValue title={'Overstim'}>
+        <Stack direction={'row'} alignItems={'center'} gap={1}>
+          <img style={{ width: 27, height: 27 }} src={`${prefix}data/CaveShopUpg6.png`} alt="" />
+          <Typography>{notateNumber(overstimLevel, "Big")} + {notateNumber(overstimCurrent, "Big")}%</Typography>
         </Stack>
       </CardTitleAndValue>
       <CardTitleAndValue title={'Overstim Rate'}>

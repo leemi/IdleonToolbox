@@ -1,4 +1,5 @@
-import React, { useContext, useMemo, useState } from 'react';
+import React, { useContext, useState } from 'react';
+import { NextSeo } from 'next-seo';
 import { AppContext } from '@components/common/context/AppProvider';
 import { getWeeklyBoss } from '@parsers/world-2/weeklyBosses';
 import { Stack, Typography } from '@mui/material';
@@ -6,11 +7,13 @@ import Tabber from '@components/common/Tabber';
 import WeeklyBoss from '@components/account/Worlds/World2/WeeklyBoss';
 import { cleanUnderscore, numberWithCommas } from '@utility/helpers';
 import Button from '@mui/material/Button';
-import { format, isValid } from 'date-fns';
+import { isValid } from 'date-fns';
+import useFormatDate from '@hooks/useFormatDate';
 import { CardTitleAndValue } from '@components/common/styles';
 
 const WeeklyBosses = () => {
   const { state } = useContext(AppContext);
+  const formatDate = useFormatDate();
   const [weeks, setWeeks] = useState(10);
   const handleCopy = async (data) => {
     try {
@@ -20,8 +23,12 @@ const WeeklyBosses = () => {
     }
   };
 
-  const weeklyBosses = useMemo(() => getWeeklyBoss(state?.account, weeks), [state?.account, weeks]);
+  const weeklyBosses = getWeeklyBoss(state?.account, weeks);
   return weeklyBosses?.length ? <>
+    <NextSeo
+      title="Weekly Bosses | Idleon Toolbox"
+      description="Track your weekly boss fights, trophies, and predicted boss schedules in Legends of Idleon"
+    />
     <Stack direction={'row'} gap={2} mb={3} alignItems={'center'}>
       <CardTitleAndValue title={'Trophies'}
                          icon={'data/Trophie.png'}
@@ -38,7 +45,7 @@ const WeeklyBosses = () => {
       components={weeklyBosses?.map(({ bossName, date }, index) => <Stack key={'boss-' + index}>
         <Typography variant={'body1'} sx={{ textTransform: 'none' }}>{cleanUnderscore(bossName)}</Typography>
         <Typography variant={'caption'} sx={{ textTransform: 'none' }}>{isValid(date)
-          ? format(date, 'dd/MM/yyyy HH:mm:ss')
+          ? formatDate(date)
           : null}</Typography>
       </Stack>)}>
       {weeklyBosses?.map((boss, bossIndex) => <WeeklyBoss key={boss?.bossName + bossIndex}

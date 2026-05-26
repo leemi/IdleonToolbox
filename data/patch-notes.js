@@ -4,6 +4,368 @@ import React from 'react';
 /* eslint-disable react/jsx-key */
 export const patchNotes = [
   {
+    'ver': '3.3.45',
+    'gameVer': '2.3.505',
+    'date': '25/05/2026',
+    'features': [
+      'Sneaking: symbol upgrade border now shows on character equipment slots',
+      'Sneaking: redesigned per-character info card for a cleaner layout',
+      'Bubba: new Mega Flesh row showing all bonuses with unlocked status and totals',
+      'Kangaroo: Mega Fish moved up',
+    ],
+    'fixes': [
+      'The Jars: "Progress per hour" schematic multiplier now correctly labeled as White Rupies (was misnamed Jars Destroyed)',
+    ]
+  },
+  {
+    'ver': '3.3.44',
+    'gameVer': '2.3.505',
+    'date': '24/05/2026',
+    'features': [
+      'The Hole: every cavern card now shows an "Opals found" counter sourced from the per-cavern opal totals',
+      'The Jars: new "Total enhancing levels" card, plus a full breakdown on "Progress per hour" showing the base rate, collectible/measurement multiplier (with each contributing jar listed by name), and the jars-destroyed schematic multiplier',
+      'Dashboard: new alerts for breakable layers in the Evertree and Bottomless Trench caverns (with toggle entries added via migration 52)',
+      'Sailing Artifacts: new tier track on each artifact card showing all 6 tiers (Base → Transcendent) as colored bars, with the current tier label and hover tooltips describing each tier\'s bonus',
+      'Active Calculator: new "Target level" input under the Exp section — shows exp required and ETA to reach any custom level, persisted to localStorage',
+    ],
+    'fixes': [
+      'Sailing: added missing island (The Maw)'
+    ]
+  },
+  {
+    'ver': '3.3.43',
+    'gameVer': '2.3.505',
+    'date': '25/04/2026',
+    'features': [
+      'Updated the website with version 2.3.505 data and assets',
+      'The Hole: 2 new Sentinel Caverns — The Fountain (cavern 16) and The Bottomless Trench (cavern 17).',
+      'The Fountain: full upgrade tree for Blue and Yellow water tiers with graph and list view toggle, marbleization tiers, per-currency wallet cards, and active fountain bar timers (time to full + full cycle)',
+      'The Bottomless Trench: fishing efficiency requirement, depth, and fish caught/required cards',
+      'The Well: per-bucket fill rate display with golden bucket highlight when the Yellow Water "Golden Bucket Boost" upgrade is owned',
+      'Engineer: schematic cap raised from 94 to 99 (5 new schematics 94–98)',
+      'Bolaia studies: new "Sentinel Caverns" group covering studies for the new caverns',
+      'New Bell bonus: "Coins from Fountain" surfaces automatically once cavern 16 is unlocked',
+      'Tournament: new T2a/T2b/T2c companions (Bronze/Silver/Gold Champion Troll) and hats',
+      'Cascading Fountain bonuses applied to: Bravery/Justice/Wisdom monument bonuses, Monument max linear time (Mogmaxing), Harp note EXP (Fine Tuning), Bolaia study rate (Skim Reading), Cosmo villager EXP (Cosmological Boost), class EXP, total damage (Swingy Surge), Orion feather rate, Poppy fish rate, Sailing treasure boost, Motherlode ore requirement, and Well bucket schematic chain',
+      'Tome Rankings: new "Sort" dropdown (Default / Lowest percentile / Smallest gap to target — last option enabled when Target % is set)',
+      'Tome Rankings: expanded calculator now shows the max qty needed to fully max a metric, plus the qty required to reach the global target percentile',
+    ],
+    'fixes': [
+      'Family bonuses: growth formula now uses the level above the unlock threshold (level − x3) instead of level − 1, fixing inflated bonuses for entries that unlock past level 1',
+      'Lab line width: now reads each character\'s own lab skill level instead of the lab tube character data, fixing cases where line width was computed from the wrong character',
+    ]
+  },
+  {
+    'ver': '3.3.42',
+    'gameVer': '2.3.503',
+    'date': '22/04/2026',
+    'features': [
+      'Build editor: the description is now rich-text editors — items render as real inline chips while you type',
+      'Build editor: type "@" to open an inline item and talent search — keep typing to filter, ↑/↓ to navigate, Enter to insert, Esc to cancel. Backspace on a chip removes it atomically',
+      'Build editor: "Insert item" button still there if you prefer picking from a dialog',
+      'Build editor: supports bold (Ctrl+B or **text**), italic (Ctrl+I or *text*), bullet lists (- ), numbered lists (1. ), H3/H4 headings (### , #### ), and links',
+      'Build editor: live character counter below each field, placeholder text, auto-link on paste',
+      'Builds: embedded items render with icon + name chips in the published build, with full hover stats (same tooltip as the item database)',
+    ],
+    'fixes': []
+  },
+  {
+    'ver': '3.3.41',
+    'gameVer': '2.3.503',
+    'date': '22/04/2026',
+    'features': [
+      'Builds: new community-driven Builds page replaces the old hand-curated catalogue — anyone signed in can now publish, like, and share talent builds',
+      'Builds: browse with class and tag filters (AND match), full-text search across titles and descriptions, sort by New or Top',
+      'Build editor: class picker, per-tab talent grid, description, tags, anonymous-publish toggle, and local draft auto-save',
+      'Build editor: "Use as template" on any build starts a new one pre-filled with that layout',
+      'My builds: new tab groups the builds you\'ve published and the ones you\'ve liked; edit or delete your own at any time',
+      'Builds: author name on published builds uses your in-game main character (or "Anonymous" if you toggle it)',
+      'Builds: up to 5 tags per build',
+    ],
+    'fixes': []
+  },
+  {
+    'ver': '3.3.40',
+    'gameVer': '2.3.503',
+    'date': '21/04/2026',
+    'features': [
+      'Tome: new Rankings tab — compare your tome metrics against all Idleon Toolbox players with percentile-based rankings',
+      'Tome Rankings: "Compare within" dropdown to filter by game rank brackets (TOP 0.1% through TOP 95%)',
+      'Tome Rankings: sorted percentile bars with color-coded tiers, click any metric to expand calculator showing quantity, points, and what you need for the next point',
+      'Tome Rankings: global "Target %" input shows the PTS gap for every metric at once',
+      'Tome Rankings: "Group by" selector — group metrics by percentile tier or by customizable classification type (High Priority, Achievable, Time Gated, Luck Gated, Event Gated), saved locally',
+      'Tome Rankings: search filter, "Sort by lowest" toggle, and "Hide maxed" option',
+      'Dashboard: new sushi fuel timer showing countdown until fuel reaches max cap',
+    ],
+    'fixes': [
+      'Research: observations list now includes all entries instead of stopping at the found count, locked observations shown with reduced opacity',
+      'Sushi Station: knowledge section on bonuses tab now shows for undiscovered sushi too',
+    ]
+  },
+  {
+    'ver': '3.3.39',
+    'gameVer': '2.3.503',
+    'date': '18/04/2026',
+    'features': [
+      'Updated the website with version 2.3.503 data and assets',
+      'Sushi Station: 5 new sushi tiers (54-58), added event shop bonus to currency multiplier',
+      'New sushi bonuses applied to gallery bonus multi, research grid all-multi, sailing boat loot, and farming sticker odds',
+      '3 new companions (Poppy, Wickerlight Spirit, Smoke Devil) with bonuses applied: meal multi, jade/stealth/sneaking XP, monument bonus levels. Mama Troll companion is now active',
+    ],
+    'fixes': []
+  },
+  {
+    'ver': '3.3.38',
+    'gameVer': '2.3.502',
+    'date': '14/04/2026',
+    'features': [
+      'Gem Shop: new "Past limited specials" section listing items that used to exist in the shop (Equinox Penguins, Rupie Slug, etc.) — extracted from historical game versions',
+      'Equinox: challenges now show a "Requirements met" highlight on cards that are not in your active 5 but whose goal is already fulfilled',
+      'The Harp (Hole cavern): new Strings row showing which in-game note each harp string slot is tuned to',
+      'The Button: new dashboard alerts for insta-skip availability and task-ready states',
+    ],
+    'fixes': [
+      'Equinox: active challenge count is now capped at 5 to match the game (previously could visually mark more than 5 as active if the "Clouds Owned" upgrade exceeded 5)',
+      'The Button: skill task requirements now use the highest single-character skill level instead of the account-wide total',
+    ]
+  },
+  {
+    'ver': '3.3.37',
+    'gameVer': '2.3.502',
+    'date': '11/04/2026',
+    'features': [
+      'Updated the website with version 2.0.502 data and assets',
+      'Equinox: 41 new dream challenges with Research G8 gating, new Nonstop Studies upgrade, updated fill rate with new cloud bonuses',
+      'Sailing: boat frame 6 (Undead Battalion), per-boat DaveyJones bonus with Research F7',
+      'Research: Nonstop Studies and Optimal Optometry bonuses added to EXP multi, kaleidoscope, and insight rates',
+      'Added new cloud bonuses to ribbon bonus, exotic market, and research grid all-multi'
+    ],
+    'fixes': [
+      'Fixed Minehead depth charges missing superbit, cloud, and jade reductions',
+      'Fixed cash multi missing companion 38 coin drop multiplier',
+      'Fixed capacity missing bundle bonuses',
+      'Observation rolls alert now hides when all available observations are already found',
+    ]
+  },
+  {
+    'ver': '3.3.36',
+    'gameVer': '2.3.501',
+    'date': '08/04/2026',
+    'features': [
+      'New date & time preferences in Settings — choose DD/MM or MM/DD date format and 24-hour or 12-hour clock',
+      'Preferences are saved automatically and apply across the entire site',
+      'Consolidated the old Data page into Settings — profile management, support data, and local storage options are now all in one place',
+    ],
+    'fixes': [
+      'Removed the standalone Data page (all functionality moved to Settings)',
+    ]
+  },
+  {
+    'ver': '3.3.35',
+    'gameVer': '2.3.501',
+    'date': '06/04/2026',
+    'features': [
+      'New "The Button" page under World 7 - track your button presses, task progress, and bonus multipliers',
+      'View all 9 bonus categories with current values, per-press rates, and rotation indicator',
+      'Browse upcoming tasks with auto-detected best character, pagination by cycle, and future requirement tooltips',
+      'Button bonuses are now reflected across 9 parsers (research, minehead, sushi, sailing, summoning, farming, spelunking, cooking, class EXP)',
+      'Companions page now shows all existing companions grouped by category (Legacy, Fallen Spirits, Shallow Waters, Exclusive, Special)',
+    ],
+    'fixes': [
+      'Fixed Sushi Station UpgLvREQ formula (upgrade level requirements were too high)',
+      'Added KillroyBonuses(5) and w7a11 card bonus to Research EXP multiplier',
+    ]
+  },
+  {
+    'ver': '3.3.34',
+    'gameVer': '2.0.497',
+    'date': '01/04/2026',
+    'features': [
+      'Split sushi shaker dashboard alerts into individual toggles (Salt, Pepper, Saffron) so you can enable/disable each one',
+      'Added Grand Discovery chance to the Spelunking boss page — shows the per-cave actual chance with diminishing returns',
+      'Fixed Grand Discovery chance formula (was missing Chapter Bonus and Minehead/Sushi multipliers)',
+      'Moved Coral Kid Upgrades from Coral Reef (W7) to Divinity (W5) for easier navigation',
+    ],
+    'fixes': []
+  },
+  {
+    'ver': '3.3.33',
+    'gameVer': '2.0.497',
+    'date': '30/03/2026',
+    'features': [
+      'New Sushi Station page under World 7 — track your sushi collection, upgrades, and bonuses',
+      'View your 120-slot sushi grid with icons, special slot effects (Hot, Cold, Milktoast), and fireplaces',
+      'Browse all upgrades with icons, levels, costs, and descriptions',
+      'See all "Rest of Game" bonuses with knowledge progress and XP tracking per sushi type',
+      'Track your Bucks, Currency/hr, Fuel, and shaker uses (Salt, Pepper, Saffron) at a glance',
+      'Dashboard alerts: get notified when fuel is full, shakers are available, or knowledge is ready to level up',
+      'Sushi Station bonuses are now reflected across 15+ pages (damage, research, spelunking, farming, and more)',
+    ],
+    'fixes': [
+      'Improved accuracy for Minehead damage (new artifact bonus) and Research grid points',
+      'Added missing equipment bonus (EtcBonus 104) to damage calculations',
+    ]
+  },
+  {
+    'ver': '3.3.32',
+    'gameVer': '2.0.497',
+    'date': '29/03/2026',
+    'features': [],
+    'fixes': [
+      'Updated the website with version 2.0.497 data and assets'
+    ]
+  },
+  {
+    'ver': '3.3.31',
+    'gameVer': '2.0.495',
+    'date': '28/03/2026',
+    'features': [],
+    'fixes': [
+      'Improved damage calculation accuracy with numerous formula fixes',
+      'Fixed lab bonus computation (jewel multiplier, spelunker obol, species count)',
+      'Fixed family bonus level offset calculation',
+      'Fixed refinery total levels counting too many salts',
+      'Fixed boat number display in sailing',
+    ]
+  },
+  {
+    'ver': '3.3.30',
+    'gameVer': '2.0.495',
+    'date': '25/03/2026',
+    'features': [
+      'Implemented a navbar banner that appears when viewing another user’s profile',
+      'Updated damage, class exp multi, cash multi and respawn rate calculation including a detailed breakdown of all sources 🚀',
+      'Improved website loading speed and responsiveness',
+    ],
+    'fixes': [
+      'Fixed bits display and notation',
+      'Fixed monument cap multiplier logic',
+      'Fixed a bug where quests page was displaying empty quest steps',
+      'Many more small fixes and improvements to various calculations',
+    ]
+  },
+  {
+    'ver': '3.3.29',
+    'gameVer': '2.0.494',
+    'date': '17/03/2026',
+    'features': [
+      'Added free Pet Mart gems dashboard alert',
+      'Added passive card filters for Spelunking and Drop Rate cards in card search',
+      'Applied new upgrade vault bonuses across the website',
+      'Improved tournament bracket detection and match display',
+      'Updated bits multi breakdown with companion, card, sticker and vault bonuses'
+    ],
+    'fixes': [
+      'Fixed Rat Token icon path on gaming page',
+      'Fixed crystal spawn chance calculation order',
+      'Fixed upgrade vault bonus calculation for new tiers',
+      'Fixed Bitty Litty talent calculation to exclude super talent levels',
+      'Fixed minehead research grid bonus calculations',
+      'Fixed sticker bonus calculation to include event shop bonus',
+      'Fixed JSON import to include companion and tournament data'
+    ]
+  },
+  {
+    'ver': '3.3.28',
+    'gameVer': '2.0.493a',
+    'date': '12/03/2026',
+    'features': [
+      'Added artifact odds display with prisma support',
+      'Added monument rewards caps and scaling display',
+      'Added Rat King bonus calculation to gaming page',
+      'Added days left until shiny goal display on pet cards',
+      'Enhanced tournament battle view with player/opponent outlines, battle legend and win probability tooltips',
+      'Added missing companions filter option in companions page',
+      'Added total palette levels, research and spelunking leaderboards'
+    ],
+    'fixes': [
+      'Fixed spelunking power breakdown calculation',
+      'Fixed sailing calculations',
+      'Fixed missing logbooks',
+      'Fixed MC reduction calculation',
+      'Fixed palette bonus in atom cost calculation',
+      'Fixed money calculation accuracy',
+      'Fixed amber denominator in odds calculations',
+      'Fixed refinery rank up time display',
+      'Fixed refinery total time calculation'
+    ]
+  },
+  {
+    'ver': '3.3.27',
+    'gameVer': '2.0.493a',
+    'date': '07/03/2026',
+    'features': [
+      'Updated the website with version 2.0.493a data and assets'
+    ],
+    'fixes': []
+  },
+  {
+    'ver': '3.3.26',
+    'gameVer': '2.0.493',
+    'date': '02/03/2026',
+    'features': [
+      'Updated the website with version 2.0.493 data and assets'
+    ],
+    'fixes': []
+  },
+  {
+    'ver': '3.3.25',
+    'gameVer': '2.0.492',
+    'date': '24/02/2026',
+    'features': [
+      'Updated the website with version 2.0.492 assets',
+      'Added Tournament page under Account -> Misc with Companions, matches and leaderboards',
+      'Added Minehead page under Account -> World 7 with Opponents and Upgrades',
+      'Added Glimbo page under Account -> World 7 to track Glimbo trades and bonuses',
+      'Added Stickers tab in Farming page to track sticker bonuses and odds',
+      'Added missing tome bonuses to the tome page'
+    ],
+    'fixes': []
+  },
+  {
+    'ver': '3.3.24',
+    'gameVer': '2.0.492',
+    'date': '20/02/2026',
+    'features': [
+      'Updated the website with version 2.0.492 data',
+      'Added Research page under Account -> World 7 with Observations and Grid'
+    ],
+    'fixes': []
+  },
+  {
+    'ver': '3.3.23',
+    'gameVer': '2.0.491',
+    'date': '05/01/2026',
+    'features': [
+      'Added extra tachyon as a category for tesseract upgrade optimizer',
+      'Added the option to filter the alert (W3 -> construction) of missing materials and rank up based on each salt'
+    ],
+    'fixes': [
+      'Class-specific upgrade search input now search both name and description',
+      'Alchemy bubbles with linearly scaling bonuses now display the % of their previous linear effect',
+      'Updated divinity max level bonus (from coral kid upgrade)',
+      'Added missing upgrade "Abomination Slayer XIX" from "Damage" category of compass upgrade optimizer',
+      'Fixed crystal countdown max % display'
+    ]
+  },
+  {
+    'ver': '3.3.22',
+    'gameVer': '2.0.491',
+    'date': '13/01/2026',
+    'features': [
+      'Added timers to vote ballot page',
+      'Added global total cost for all upgrades in the arcade shop'
+    ],
+    'fixes': [
+      'Fixed spelunking power breakdown (slab bonus was called "sailing bonus")',
+      'Fixed a display bug when sorting studies by time',
+      'Fixed a bug where equinox max level was not being calculated correctly',
+      'Fixed shiny  breedability breakdowns',
+      'Fixed coins display where the largest coin was displayed as a normal number instead of a notated number',
+      'Updated the layout of the image when copying breakdown as an image, so the number and the title doesn\'t overlap'
+    ]
+  },
+  {
     'ver': '3.3.21',
     'gameVer': '2.0.491',
     'date': '26/12/2025',
@@ -31,7 +393,7 @@ export const patchNotes = [
       'Fixed equinox max level calculation',
       'Fixed sampling companion item display tooltip',
       'Fixed a bug with parsing numbers in masterclass resource per hour input',
-      'Drop rate calculations are now more accurate (still not 100% accurate)',
+      'Drop rate calculations are now more accurate (still not 100% accurate)'
     ]
   },
   {
@@ -51,7 +413,7 @@ export const patchNotes = [
     ],
     'fixes': [
       'Applied the new event shop bonuses across the website',
-      'Capped anvil carry capacity to 2B',
+      'Capped anvil carry capacity to 2B'
     ]
   },
   {
@@ -61,7 +423,7 @@ export const patchNotes = [
     'features': [
       'Updated the website with version 2.0.47 data and assets',
       'Added hat rack page under Account -> World 3',
-      'Added hat rack alerts to the dashboard (World 3)',
+      'Added hat rack alerts to the dashboard (World 3)'
     ],
     'fixes': [
       'Updated tome calculation for bubble levels'
@@ -93,7 +455,7 @@ export const patchNotes = [
       'Added breakdown for Reef Day Gains in Coral Reef page',
       'Monument timers are now shown as "current / max soft cap" in the dashboard (with a timer to soft cap on hover)',
       'Added an alert for available cheaper masterclass upgrades (due to a legend talent)',
-      'Added an alert for available exotic market purchases',
+      'Added an alert for available exotic market purchases'
     ],
     'fixes': [
       'Fixed a bug where the activity filter would not show when character is afk in divinity with goat god linked',
@@ -109,7 +471,7 @@ export const patchNotes = [
     'features': [
       'Updated the website with version 2.0.46 data and assets',
       'Added Bubba page under Account -> Clickers with upgrades, bonuses and meatslice rate',
-      'Moved Owl and Kangaroo pages to Account -> Clickers',
+      'Moved Owl and Kangaroo pages to Account -> Clickers'
     ],
     'fixes': []
   },
@@ -159,7 +521,7 @@ export const patchNotes = [
     'gameVer': '2.0.43',
     'date': '28/09/2025',
     'features': [
-      'Updated the website with version 2.0.43 data and assets',
+      'Updated the website with version 2.0.43 data and assets'
     ],
     'fixes': []
   },
@@ -172,7 +534,7 @@ export const patchNotes = [
       'Added a class-specific "Better Weapon" alert to notify when a better form-specific weapon is available in the inventory.',
       'Added navigation links on chests in the storage page to open their corresponding wiki page.',
       'Added time estimation for resource costs in the upgrade optimizer pages, based on resources per hour.',
-      'Added an indicator on character cards in the dashboard to show whether they are currently in a form (Wraith, Tempest, or Arcanist).',
+      'Added an indicator on character cards in the dashboard to show whether they are currently in a form (Wraith, Tempest, or Arcanist).'
     ],
     'fixes': []
   },
@@ -181,7 +543,7 @@ export const patchNotes = [
     'gameVer': '2.0.41',
     'date': '19/08/2025',
     'features': [
-      'Bubbles page visual update',
+      'Bubbles page visual update'
     ],
     'fixes': []
   },
@@ -191,11 +553,11 @@ export const patchNotes = [
     'date': '11/07/2025',
     'features': [
       'Added summoning stones',
-      'Added missing classes for builds page',
+      'Added missing classes for builds page'
     ],
     'fixes': [
       'Fixed "only affordable skills" in optimizers page',
-      'Fixed bits breakdown with missing items',
+      'Fixed bits breakdown with missing items'
 
     ]
   },
@@ -1552,7 +1914,7 @@ export const patchNotes = [
     features: [
       <Typography>Added 2 guild related pages, <Link
         href={'https://idleontoolbox.com/account/guild'}>Guild</Link> page and <Link
-          href={'https://idleontoolbox.com/guilds'}>Guilds</Link> page</Typography>
+        href={'https://idleontoolbox.com/guilds'}>Guilds</Link> page</Typography>
     ],
     fixes: [
       'Fixed a bug with lab line width calculations',
@@ -1650,7 +2012,7 @@ export const patchNotes = [
     features: [
       'Updated the login flow of the website 🎉',
       <Typography component={'span'}><Typography component={'span'}
-        sx={{ fontWeight: 'bold' }}>Deprecated</Typography> the ability to
+                                                 sx={{ fontWeight: 'bold' }}>Deprecated</Typography> the ability to
         paste data into the website (steam data extractor is no longer supported, please use one of the other 3 login
         methods [Email, Google, Apple])</Typography>
 
@@ -2228,10 +2590,10 @@ export const patchNotes = [
     date: '21/03/2023',
     features: [<Typography><Link
       href={'https://idleontoolbox.com/dashboard'}>Dashboard</Link> page!</Typography>,
-    <Typography>Added a tooltip for boss keys + colo tickets on <Link
-      href={'https://idleontoolbox.com/account/general'}>General</Link> page</Typography>,
-    <Typography>Added Stamp Reducer indication on <Link
-      href={'https://idleontoolbox.com/account/world-3/atom-collider'}>Atom Collider</Link> page</Typography>,
+      <Typography>Added a tooltip for boss keys + colo tickets on <Link
+        href={'https://idleontoolbox.com/account/general'}>General</Link> page</Typography>,
+      <Typography>Added Stamp Reducer indication on <Link
+        href={'https://idleontoolbox.com/account/world-3/atom-collider'}>Atom Collider</Link> page</Typography>,
       'Added Subtract Green Stacks option for vials in dashboard (this will subtract 10M from your current amount to make sure you will still have green stack after upgrading)',
       'Added a tooltip for exact quantity for items in storage'],
     fixes: ['Fixed wizard towers max level (from atom collider)', 'Some bug fixes for low level accounts',

@@ -1,12 +1,12 @@
-import { useMemo } from 'react';
+import React from 'react';
 import { Card, CardContent, Stack, Typography } from '@mui/material';
 import { getCoinsArray, kFormatter, notateNumber, prefix } from 'utility/helpers';
 import styled from '@emotion/styled';
 import CoinDisplay from '../common/CoinDisplay';
-import { calcAnvilExp, getPlayerAnvil } from 'parsers/anvil';
+import { calcAnvilExp, getPlayerAnvil } from '@parsers/world-1/anvil';
 
 const AnvilDetails = ({ character, account, characters }) => {
-  const { stats } = useMemo(() => getPlayerAnvil(character, characters, account), [character, characters, account]);
+  const { stats } = getPlayerAnvil(character, characters, account);
   const {
     xpPoints,
     speedPoints,

@@ -1,5 +1,5 @@
 import { crafts, itemsArray } from 'data/website-data';
-import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import {
   Accordion,
   AccordionDetails,
@@ -37,6 +37,7 @@ import styled from '@emotion/styled';
 import ItemsList from 'components/tools/item-planner/ItemsList';
 import Tooltip from 'components/Tooltip';
 import { NextSeo } from 'next-seo';
+import StructuredData, { createHowToData } from '@components/common/StructuredData';
 import GetAppIcon from '@mui/icons-material/GetApp';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 
@@ -58,8 +59,8 @@ const ItemPlanner = ({}) => {
   const [itemCount, setItemCount] = useState(1);
   const [buttons, setButtons] = useState({});
   const [sectionName, setSectionName] = useState();
-  const equippedItems = useMemo(() => addEquippedItems(state?.characters, includeEquippedItems), [includeEquippedItems]);
-  const totalItems = useMemo(() => getAllItems(state?.characters, state?.account), [state?.characters, state?.account]);
+  const equippedItems = addEquippedItems(state?.characters, includeEquippedItems);
+  const totalItems = getAllItems(state?.characters, state?.account);
   const inputRef = useRef();
   const [confirmationDialog, setConfirmationDialog] = useState({ open: false, type: '', data: null });
 
@@ -193,6 +194,16 @@ const ItemPlanner = ({}) => {
         title="Item Planner | Idleon Toolbox"
         description="Useful tool to keep track of your crafting projects by tracking existing and missing materials"
       />
+      <StructuredData data={createHowToData(
+        'How to plan item crafting in Legends of Idleon',
+        'Use the Item Planner to track crafting projects and see which materials you still need.',
+        [
+          'Search and select the item you want to craft from the dropdown',
+          'Set the desired quantity and the planner will show the full material breakdown',
+          'Review which materials you already own and which are still missing',
+          'Export or save your crafting plan for future reference'
+        ]
+      )}/>
       {!state?.characters && !state?.account ?
         <Typography component={'div'} sx={{ mb: 2 }} variant={'caption'}>* This tool will work better if you're logged
           in</Typography> : null}

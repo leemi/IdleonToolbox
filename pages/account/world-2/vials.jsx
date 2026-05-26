@@ -1,51 +1,20 @@
-import React, { useContext, useMemo } from 'react';
+import React, { useContext } from 'react';
 import { AppContext } from 'components/common/context/AppProvider';
 import { Box, Stack, Typography } from '@mui/material';
 import { cleanUnderscore, growth, notateNumber, pascalCase, prefix } from 'utility/helpers';
 import styled from '@emotion/styled';
 import Tooltip from 'components/Tooltip';
-import { vialCostsArray } from '../../../parsers/alchemy';
+import { vialCostsArray } from '@parsers/world-2/alchemy';
 import { NextSeo } from 'next-seo';
 import { CardTitleAndValue } from '@components/common/styles';
 import { isRiftBonusUnlocked } from '../../../parsers/world-4/rift';
 import useCheckbox from '@components/common/useCheckbox';
 import { getUpgradeVaultBonus } from '@parsers/misc/upgradeVault';
-import { getLabBonus } from '@parsers/lab';
+import { getLabBonus } from '@parsers/world-4/lab';
 
 const Vials = () => {
   const { state } = useContext(AppContext);
   const [CheckboxEl, hideMaxed] = useCheckbox('Hide maxed vials');
-
-  const { printer, lab } = state?.account;
-
-  const printingItems = useMemo(() => {
-    return printer?.flat().filter(i => i.active);
-  }, [printer]);
-
-  const VialTooltip = ({ name, itemReq, func, x1, x2, level, desc, multiplier = 1 }) => {
-    const bonus = growth(func, level, x1, x2) * multiplier;
-
-    return <>
-      <Typography variant={'h5'}>{pascalCase(cleanUnderscore(name))}</Typography>
-      <Typography sx={{ color: level > 0 && multiplier > 1 ? 'multi' : '' }}
-                  variant={'body1'}>{cleanUnderscore(desc.replace(/{|\$/g, notateNumber(bonus, 'MultiplierInfo')))}</Typography>
-      <Stack direction={'row'}>
-        {itemReq?.map(({ name, rawName }, index) => {
-
-          const checkPrint = printingItems.find(i => i.item === rawName);
-          const printInfo = checkPrint ? `\n\n(${notateNumber(checkPrint.boostedValue, 'Big')}↑)` : '';
-
-          return name && name !== 'Blank' && name !== 'ERROR' ?
-            <Stack alignItems={'center'} justifyContent={'center'} key={name + '' + index}>
-              <ItemIcon tooltip src={`${prefix}data/${rawName}.png`} alt="vial-required-item-icon"/>
-              <span>{name?.includes('Liquid') ? 3 * level : notateNumber(vialCostsArray[parseFloat(level)], 'Big')}
-              <span>{printInfo}</span>
-            </span>
-            </Stack> : null
-        })}
-      </Stack>
-    </>;
-  }
 
   const getVialBonus = () => {
     let vialMastery = 0;
@@ -62,7 +31,7 @@ const Vials = () => {
   return <>
     <NextSeo
       title="Vials | Idleon Toolbox"
-      description="Vials progressions and upgrade requirements"
+      description="View your vial levels, upgrade costs, and bonus effects for alchemy progression in Legends of Idleon"
     />
     <Stack sx={{ flexDirection: 'row', gap: 2, mb:1 }}>
       <CardTitleAndValue title={'Vial bonus'}
@@ -76,7 +45,6 @@ const Vials = () => {
         const { name, level, mainItem } = vial;
         if (level >= 13 && hideMaxed) return null
         return <Tooltip key={`${name}${index}`} title={<VialTooltip {...vial}/>}><Box position={'relative'}>
-          <ItemIcon src={`${prefix}data/${mainItem}.png`} alt="vial-required-item-icon"/>
           <img key={`${name}${index}`}
                onError={(e) => {
                  e.target.src = `${prefix}data/aVials12.png`;
@@ -85,11 +53,31 @@ const Vials = () => {
                src={`${prefix}data/aVials${level === 0 ? '1' : level}.png`}
                style={{ opacity: level === 0 ? .5 : 1 }}
                alt={'vial image missing'}/>
+          <ItemIcon src={`${prefix}data/${mainItem}.png`} alt="vial-required-item-icon"/>
         </Box></Tooltip>
       })}
     </Stack>
   </>;
 };
+
+const VialTooltip = ({ name, itemReq, func, x1, x2, level, desc, multiplier = 1 }) => {
+  const bonus = growth(func, level, x1, x2) * multiplier;
+  return <>
+    <Typography variant={'h5'}>{pascalCase(cleanUnderscore(name))}</Typography>
+    <Typography sx={{ color: level > 0 && multiplier > 1 ? 'multi' : '' }}
+                variant={'body1'}>{cleanUnderscore(desc.replace(/{|\$/g, notateNumber(bonus, 'MultiplierInfo')))}</Typography>
+    <Stack direction={'row'}>
+      {itemReq?.map(({ name, rawName }, index) => {
+        return name && name !== 'Blank' && name !== 'ERROR' ?
+          <Stack alignItems={'center'} justifyContent={'center'} key={name + '' + index}>
+            <ItemIcon tooltip src={`${prefix}data/${rawName}_x1.png`} alt="vial-required-item-icon"/>
+            <span>{name?.includes('Liquid') ? 3 * level : notateNumber(vialCostsArray[parseFloat(level)], 'Big')}
+          </span>
+          </Stack> : null
+      })}
+    </Stack>
+  </>;
+}
 
 const ItemIcon = styled.img`
   width: ${({ tooltip }) => tooltip ? '45px' : '56px'};

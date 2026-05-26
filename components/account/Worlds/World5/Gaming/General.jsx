@@ -8,7 +8,7 @@ import Mutations from './Mutations';
 import LogBook from '@components/account/Worlds/World5/Gaming/LogBook';
 import Superbits from '@components/account/Worlds/World5/Gaming/Superbits';
 import { PAGES } from '@components/constants';
-import { getBitsMulti } from '@parsers/gaming';
+import { getBitsMulti } from '@parsers/world-5/gaming';
 import { CardWithBreakdown } from '@components/account/Worlds/World5/Hole/commons';
 import Palette from './Palette';
 
@@ -22,7 +22,8 @@ const General = ({ account, characters, lastUpdated }) => {
     envelopes,
     bestNugget,
     superbitsUpgrades,
-    logBook
+    logBook,
+    ratTokens
   } = account?.gaming;
   const ownedLogBooks = logBook?.reduce((sum, { unlocked }) => sum + (unlocked ? 1 : 0), 0);
   const bitMulti = getBitsMulti(account, characters);
@@ -37,7 +38,10 @@ const General = ({ account, characters, lastUpdated }) => {
                          value={numberWithCommas(parseFloat(bestNugget), false)}/>
       <CardTitleAndValue title={'Drops'} value={availableDrops} icon={`etc/GamingDrop.png`}/>
       <CardTitleAndValue title={'Envelopes'} value={notateNumber(envelopes)} icon={`etc/GamingEnvelope.png`}/>
-      <CardTitleAndValue title={'Log book'} value={`${ownedLogBooks} / 72`} icon={`data/GamingPlanth5.png`}
+      <CardTitleAndValue title={'Rat Tokens'} value={notateNumber(ratTokens)} icon={`data/GamingRatCrown.png`}/>
+      <CardTitleAndValue title={'Crowns'} value={`${account?.gaming?.ratKing?.crownsCount ?? 0} / ${account?.gaming?.logBook?.length ?? 0}`} icon={`data/GamingRatCrown.png`}
+                         imgStyle={{ width: 24, height: 24 }}/>
+      <CardTitleAndValue title={'Log book'} value={`${ownedLogBooks} / ${account?.gaming?.logBook?.length ?? 0}`} icon={`data/GamingPlanth5.png`}
                          imgStyle={{ width: 24, height: 24 }}/>
     </Stack>
 

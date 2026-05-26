@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { calcBreedabilityMulti, calcShinyLvMulti } from '@parsers/breeding';
+import React from 'react';
+import { calcBreedabilityMulti, calcShinyLvMulti } from '@parsers/world-4/breeding';
 import Tabber from '../../../../../common/Tabber';
 import Other from '@components/account/Worlds/World4/Breeding/Pets/Other';
 import All from '@components/account/Worlds/World4/Breeding/Pets/All';
@@ -13,11 +13,11 @@ const Pets = ({
                 fencePetsObject
               }) => {
 
-  const shinyMulti = useMemo(() => calcShinyLvMulti(account, characters), [pets]);
-  const breedingMulti = useMemo(() => calcBreedabilityMulti(account, characters), [pets]);
+  const shinyMulti = calcShinyLvMulti(account, characters);
+  const breedingMulti = calcBreedabilityMulti(account, characters);
 
   return <>
-    <Tabber tabs={getTabs(PAGES.ACCOUNT['world 4'].categories, 'breeding', 'Pets')} queryKey={'nt'}>
+    <Tabber tabs={getTabs(PAGES.ACCOUNT['world 4'].categories, 'breeding', 'Mobs')} queryKey={'nt'}>
       <Other fencePets={fencePetsObject} pets={pets.flat()} multi={shinyMulti} isShiny/>
       <Other fencePets={fencePetsObject} pets={pets.flat()} multi={breedingMulti}/>
       <All pets={pets} />

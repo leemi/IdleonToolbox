@@ -1,8 +1,12 @@
-import React, { useContext, useMemo } from 'react';
+import React, { useContext, useState } from 'react';
 import { AppContext } from '@components/common/context/AppProvider';
 import { NextSeo } from 'next-seo';
 import { Box, Card, CardContent, Stack, Typography } from '@mui/material';
-import { cleanUnderscore, commaNotation, getRealDateInMs, notateNumber } from '@utility/helpers';
+import { cleanUnderscore, commaNotation, getTabs, notateNumber } from '@utility/helpers';
+import Tabber from '../../../components/common/Tabber';
+import { PAGES } from '@components/constants';
+import TomeRankings from '@components/account/Worlds/World4/TomeRankings';
+import useRealDate from '@hooks/useRealDate';
 import { CardTitleAndValue, TitleAndValue } from '@components/common/styles';
 import Tooltip from '@components/Tooltip';
 import { IconInfoCircleFilled } from '@tabler/icons-react';
@@ -19,88 +23,83 @@ const getFormattedQuantity = ({ x2, x4 }, quantity) => quantity > 1e9 && x2 === 
 
 const Tome = () => {
   const { state } = useContext(AppContext);
+  const getRealDateInMs = useRealDate();
   const [CheckboxEl, showThresholds] = useCheckbox('Show quantity thresholds');
   const [CheckboxHideMaxedEl, hideMaxed] = useCheckbox('Hide capped');
   const [CheckboxProgressBarsEl, showProgressBars] = useCheckbox('Show progress bars');
   const [CheckboxCalculatorEl, showCalculator] = useCheckbox('Show quantity calculator');
 
-  // Calculate countdown to next tome nametag reset and next 10 resets
-  const { nextResetTime, nextResetTimes } = useMemo(() => {
+  // Calculate countdown to next tome nametag reset and next 10 resets (stable across re-renders)
+  const [{ nextResetTime, nextResetTimes }] = useState(() => {
     const PERIOD_SECONDS = 2628000; // ~30 days 10 hours
     const currentUnixTime = Math.floor(Date.now() / 1000);
     const currentPeriod = Math.floor(currentUnixTime / PERIOD_SECONDS);
     const nextPeriod = currentPeriod + 1;
-    const nextResetUnixTime = nextPeriod * PERIOD_SECONDS;
-    // Convert to milliseconds for Date object
-    const firstReset = nextResetUnixTime * 1000;
-
-    // Calculate next 10 resets
     const resets = [];
     for (let i = 0; i < 10; i++) {
-      const period = nextPeriod + i;
-      const resetUnixTime = period * PERIOD_SECONDS;
-      resets.push(resetUnixTime * 1000);
+      resets.push((nextPeriod + i) * PERIOD_SECONDS * 1000);
     }
-
-    return { nextResetTime: firstReset, nextResetTimes: resets };
-  }, []);
+    return { nextResetTime: resets[0], nextResetTimes: resets };
+  });
 
   return <>
     <NextSeo
       title="Tome | Idleon Toolbox"
-      description="Keep track of your tome bonuses and highscores"
+      description="Track your Tome upgrade bonuses, highscores, and progression rewards in Legends of Idleon World 4"
     />
-    {/*<Typography variant={'caption'}>* Bubble bonus might be inaccurate because it is determined by your active*/}
-    {/*  character.</Typography>*/}
-    <Stack direction={'row'} gap={1} flexWrap={'wrap'}>
-      <CardTitleAndValue title={'Total Points'} value={commaNotation(state?.account?.tome?.totalPoints)} />
-      <CardTitleAndValue title={'Rank'} value={!state?.account?.tome?.tops ? '' : <Tooltip title={<Stack gap={1}>
-        {state?.account?.tome?.tops?.map((score, index) => <Stack direction={'row'} gap={1}
-          key={'rank' + ranks?.[index]}
-          divider={<>-</>}>
-          <Typography sx={{ width: 40 }}>{ranks?.[index]}</Typography>
-          <Typography>{commaNotation(score)}</Typography>
-        </Stack>)}
-      </Stack>}>
-        <IconInfoCircleFilled size={18} />
-      </Tooltip>} icon={`data/TomeTop${state?.account?.tome?.top}.png`} />
-      <CardTitleAndValue title={'Nametag Reward Reset'} value={
-        <Stack direction={'row'} alignItems={'center'} gap={1}>
-          <Timer type="countdown" date={nextResetTime} lastUpdated={state?.lastUpdated || Date.now()} />
-          <Tooltip title={<Stack gap={1}>
-            <Typography variant='body1' color='text.secondary'>Next resets</Typography>
-            {nextResetTimes.map((resetTime, index) => (
-              <Typography variant='body2' key={`reset-${index}`}>
-                {getRealDateInMs(resetTime)}
-              </Typography>
-            ))}
+    <Tabber tabs={getTabs(PAGES.ACCOUNT['world 4'].categories, 'tome')}>
+      <>
+        {/*<Typography variant={'caption'}>* Bubble bonus might be inaccurate because it is determined by your active*/}
+        {/*  character.</Typography>*/}
+        <Stack direction={'row'} gap={1} flexWrap={'wrap'}>
+          <CardTitleAndValue title={'Total Points'} value={commaNotation(state?.account?.tome?.totalPoints)} />
+          <CardTitleAndValue title={'Rank'} value={!state?.account?.tome?.tops ? '' : <Tooltip title={<Stack gap={1}>
+            {state?.account?.tome?.tops?.map((score, index) => <Stack direction={'row'} gap={1}
+              key={'rank' + ranks?.[index]}
+              divider={<>-</>}>
+              <Typography sx={{ width: 40 }}>{ranks?.[index]}</Typography>
+              <Typography>{commaNotation(score)}</Typography>
+            </Stack>)}
           </Stack>}>
             <IconInfoCircleFilled size={18} />
-          </Tooltip>
+          </Tooltip>} icon={`data/TomeTop${state?.account?.tome?.top}.png`} />
+          <CardTitleAndValue title={'Nametag Reward Reset'} value={
+            <Stack direction={'row'} alignItems={'center'} gap={1}>
+              <Timer type="countdown" date={nextResetTime} lastUpdated={state?.lastUpdated || Date.now()} />
+              <Tooltip title={<Stack gap={1}>
+                <Typography variant='body1' color='text.secondary'>Next resets</Typography>
+                {nextResetTimes.map((resetTime, index) => (
+                  <Typography variant='body2' key={`reset-${index}`}>
+                    {getRealDateInMs(resetTime)}
+                  </Typography>
+                ))}
+              </Stack>}>
+                <IconInfoCircleFilled size={18} />
+              </Tooltip>
+            </Stack>
+          } />
+          <Stack direction={'row'} gap={1} flexWrap={'wrap'}>
+            {state?.account?.tome?.bonuses?.map(({ name, bonus, isMulti, icon }, index) => {
+              const formatted = isMulti ? notateNumber(1 + bonus / 100, 'MultiplierInfo') : notateNumber(bonus, 'Big');
+              return <CardTitleAndValue key={name} title={cleanUnderscore(name)} value={`${formatted}${isMulti ? 'x' : '%'}`}
+                icon={icon || `etc/Tome_${index}.png`}>
+              </CardTitleAndValue>
+            })}
+            {state?.account?.spelunking?.loreBonuses?.map((upgrade) => {
+              if (upgrade?.name === 'filler') return null;
+              return <CardTitleAndValue key={upgrade?.name} title={upgrade?.name} value={`${notateNumber(upgrade?.isMulti ? 1 + upgrade?.bonus / 100 : upgrade?.bonus, 'MultiplierInfo')}${upgrade?.isMulti ? 'x' : '%'}`}
+                icon={`etc/Tome_${upgrade?.index + 6}.png`}>
+              </CardTitleAndValue>
+            })}
+          </Stack>
         </Stack>
-      } />
-      <Stack direction={'row'} gap={1} flexWrap={'wrap'}>
-        {state?.account?.tome?.bonuses?.map(({ name, bonus, isMulti, icon }, index) => {
-          const formatted = isMulti ? notateNumber(1 + bonus / 100, 'MultiplierInfo') : notateNumber(bonus, 'Big');
-          return <CardTitleAndValue key={name} title={cleanUnderscore(name)} value={`${formatted}${isMulti ? 'x' : '%'}`}
-            icon={icon || `etc/Tome_${index}.png`}>
-          </CardTitleAndValue>
-        })}
-        {state?.account?.spelunking?.loreBonuses?.map((upgrade) => {
-          if (upgrade?.name === 'filler') return null;
-          return <CardTitleAndValue key={upgrade?.name} title={upgrade?.name} value={`${notateNumber(upgrade?.isMulti ? 1 + upgrade?.bonus / 100 : upgrade?.bonus, 'MultiplierInfo')}${upgrade?.isMulti ? 'x' : '%'}`}
-            icon={`etc/Tome_${upgrade?.index + 6}.png`}>
-          </CardTitleAndValue>
-        })}
-      </Stack>
-    </Stack>
-    <CheckboxEl />
-    <CheckboxHideMaxedEl />
-    <CheckboxProgressBarsEl />
-    <CheckboxCalculatorEl />
+        <CheckboxEl />
+        <CheckboxHideMaxedEl />
+        <CheckboxProgressBarsEl />
+        <CheckboxCalculatorEl />
 
-    <Stack direction={'row'} flexWrap={'wrap'} gap={2}>
-      {state?.account?.tome?.tome?.map((bonus, rIndex) => {
+        <Stack direction={'row'} flexWrap={'wrap'} gap={2}>
+          {state?.account?.tome?.tome?.map((bonus, rIndex) => {
         const {
           name,
           color,
@@ -251,8 +250,11 @@ const Tome = () => {
               : null}
           </CardContent>
         </Card>
-      })}
-    </Stack>
+          })}
+        </Stack>
+      </>
+      <TomeRankings />
+    </Tabber>
   </>
 };
 
@@ -528,29 +530,25 @@ const QuantityCalculator = ({ bonus, maxPoints }) => {
   };
 
   // Calculate result automatically as user types
-  const result = useMemo(() => {
-    if (!targetPoints || targetPoints.trim() === '') {
-      return null;
-    }
-
+  let result = null;
+  if (targetPoints && targetPoints.trim() !== '') {
     const points = parseFloat(targetPoints);
     if (isNaN(points) || points <= 0) {
-      return 'Invalid input';
-    }
-    if (points > maxPoints) {
-      return `Max points is ${commaNotation(maxPoints)}`;
-    }
-    
-    const quantity = calculateRequiredQuantity(points);
-    if (quantity === null) {
-      return 'Unable to calculate';
-    } else if (quantity === Infinity) {
-      return 'Unreachable (asymptotic)';
+      result = 'Invalid input';
+    } else if (points > maxPoints) {
+      result = `Max points is ${commaNotation(maxPoints)}`;
     } else {
-      const formatted = getFormattedQuantity(bonus, quantity);
-      return `Required: ${formatted}`;
+      const quantity = calculateRequiredQuantity(points);
+      if (quantity === null) {
+        result = 'Unable to calculate';
+      } else if (quantity === Infinity) {
+        result = 'Unreachable (asymptotic)';
+      } else {
+        const formatted = getFormattedQuantity(bonus, quantity);
+        result = `Required: ${formatted}`;
+      }
     }
-  }, [targetPoints, bonus, maxPoints]);
+  }
 
   return (
     <Stack gap={0.5} mt={2} p={1} sx={{ bgcolor: (theme) => theme.palette.action.hover, borderRadius: 1 }}>

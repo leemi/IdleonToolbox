@@ -1,9 +1,9 @@
-import React, { useContext, useMemo } from 'react';
+import React, { useContext } from 'react';
 import { AppContext } from 'components/common/context/AppProvider';
 import ConstellationsComp from 'components/account/Misc/Constellations';
 import StarSigns from 'components/account/Misc/StarSigns';
 import { NextSeo } from 'next-seo';
-import { getShinyBonus } from '../../../parsers/breeding';
+import { getShinyBonus } from '@parsers/world-4/breeding';
 import { isRiftBonusUnlocked } from '../../../parsers/world-4/rift';
 import Tabber from '../../../components/common/Tabber';
 import { getTabs } from '@utility/helpers';
@@ -26,15 +26,14 @@ const Constellations = () => {
     return sortedSigns;
   }
 
-  const infiniteStars = useMemo(() => getInfiniteStar(state?.account?.rift, state?.account?.breeding?.pets), [state?.account?.rift,
-    state?.account?.breeding?.pets])
+  const infiniteStars = getInfiniteStar(state?.account?.rift, state?.account?.breeding?.pets);
 
-  const stars = useMemo(() => sortStarSigns(state?.account?.starSigns), [state?.account?.starSigns])
+  const stars = sortStarSigns(state?.account?.starSigns);
 
   return <div>
     <NextSeo
       title="Constellations | Idleon Toolbox"
-      description="Constellation and star signs overview"
+      description="Explore all constellation completions and star sign bonuses for your Legends of Idleon characters"
     />
     <Tabber tabs={getTabs(PAGES.ACCOUNT.misc.categories, 'constellations')} clearOnChange={['nt']}>
       <ConstellationsComp constellations={state?.account?.constellations} characters={state?.characters}/>

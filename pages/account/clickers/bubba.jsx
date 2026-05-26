@@ -27,7 +27,7 @@ const Bubba = () => {
   return <>
     <NextSeo
       title="Bubba | Idleon Toolbox"
-      description="Keep track of your bubba upgrades and progress"
+      description="Track your Bubba minigame upgrades, candy progress, and bonus effects in Legends of Idleon"
     />
 
     <Stack direction={'row'} gap={2} flexWrap={'wrap'}>
@@ -46,6 +46,17 @@ const Bubba = () => {
           value={formattedBonus}
           icon={`etc/Bubba_${index + 1}.png`}
         />
+      })}
+    </Stack>
+    <Stack direction={'row'} gap={2} flexWrap={'wrap'}>
+      {bubba?.megaFlesh?.map(({ description, unlocked, amount, totalBonus }, index) => {
+        const formattedDesc = totalBonus !== undefined
+          ? description.replace('$', totalBonus)
+          : description;
+        return <CardTitleAndValue cardSx={{ my: 1 }} value={amount > 0 ? amount : ''}
+                                  tooltipTitle={cleanUnderscore(formattedDesc)}
+                                  key={'megaflesh' + index} icon={`data/BubbaMF${index}.png`}
+                                  imgStyle={{ width: 32, opacity: unlocked ? 1 : .5 }} imgOnly/>
       })}
     </Stack>
     <Upgrades upgrades={bubba?.upgrades} />

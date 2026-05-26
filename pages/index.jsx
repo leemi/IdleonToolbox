@@ -1,27 +1,27 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
+import Head from 'next/head';
 import { Container, Dialog, DialogContent, DialogTitle, Stack, Typography, useMediaQuery } from '@mui/material';
 import Instructions from 'components/common/Instructions';
-import { getRandomNumbersArray, isProd, prefix } from '@utility/helpers'
-import useInterval from '../components/hooks/useInterval';
+import { getRandomNumbersArray, prefix } from '@utility/helpers'
+import useInterval from '@hooks/useInterval';
 import { animate, AnimatePresence, motion, MotionConfig, useMotionValue } from 'framer-motion'
 import Button from '@mui/material/Button';
 import styled from '@emotion/styled';
 import { patchNotes } from '../data/patch-notes';
 import PatchNotes from './patch-notes';
-import { NextLinkComposed } from '../components/common/NextLinkComposed';
+import { NextLinkComposed } from '@components/common/NextLinkComposed';
 import Link from '@mui/material/Link';
-import { useFlubber } from '../components/hooks/useFlubber';
+import { useFlubber } from '@hooks/useFlubber';
 import Box from '@mui/material/Box';
 import { NextSeo } from 'next-seo';
-import { Adsense } from '@ctrl/react-adsense';
 import Kofi from '@components/common/Kofi';
 import StructuredData, { createFAQData } from '@components/common/StructuredData';
+import { HomeSidebarAds } from '@components/common/Ads/AdUnit';
 
 const Home = () => {
-  const indexes = useMemo(() => getRandomNumbersArray(6, 6), []);
+  const [indexes] = useState(() => getRandomNumbersArray(6, 6));
   const breakpoint = useMediaQuery('(max-width: 1245px)', { noSsr: true });
   const breakpointLg = useMediaQuery('(min-width: 1921px)', { noSsr: true });
-  const showSideAds = useMediaQuery('(min-width: 1650px)', { noSsr: true });
   const [bgIndex, setBgIndex] = useState(0);
   const [open, setOpen] = useState(false);
   const [pathIndex, setPathIndex] = useState(0);
@@ -33,16 +33,16 @@ const Home = () => {
   // FAQ data for structured data
   const faqData = createFAQData([
     {
-      question: "What is Idleon Toolbox?",
-      answer: "Idleon Toolbox is a comprehensive set of tools and resources designed to help Legends of Idleon players optimize their gameplay, character builds, crafting strategies, and more."
+      question: 'What is Idleon Toolbox?',
+      answer: 'Idleon Toolbox is a comprehensive set of tools and resources designed to help Legends of Idleon players optimize their gameplay, character builds, crafting strategies, and more.'
     },
     {
-      question: "Is Idleon Toolbox free to use?", 
-      answer: "Yes, Idleon Toolbox is completely free to use for all Legends of Idleon players."
+      question: 'Is Idleon Toolbox free to use?',
+      answer: 'Yes, Idleon Toolbox is completely free to use for all Legends of Idleon players.'
     },
     {
-      question: "How do I use idleon toolbox?",
-      answer: "You can find detailed instructions by clicking the 'Login' button, which will display information on how to login via varius methods."
+      question: 'How do I use idleon toolbox?',
+      answer: 'You can find detailed instructions by clicking the \'Login\' button, which will display information on how to login via varius methods.'
     }
   ]);
 
@@ -61,6 +61,9 @@ const Home = () => {
 
   return (
     <Container>
+      <Head>
+        <link rel="preload" as="image" href={`${prefix}etc/bg_${indexes[0]}.png`}/>
+      </Head>
       <NextSeo
         title="Home | Idleon Toolbox"
         description="Power up your Legends of Idleon adventure with Idleon Toolbox's essential tools and resources for optimizing gameplay, character builds, crafting, and more."
@@ -76,14 +79,14 @@ const Home = () => {
           </Typography>
           <Typography mt={2} variant={'h6'} style={{ fontWeight: 400, color: '#e3e3e3' }}>Power up your Legends of
             Idleon
-            adventure with Idleon Toolbox's essential tools and resources for optimizing gameplay, character builds,
+            adventure with Idleon Toolbox&#39;s essential tools and resources for optimizing gameplay, character builds,
             crafting, and more.</Typography>
           <Stack direction={'row'} mt={3} gap={3} flexWrap={'wrap'} justifyContent={breakpoint ? 'center' : 'inherit'}>
             <DiscordButton startIcon={<DiscordSvg/>} href={'https://discord.gg/8Devcj7FzV'} target={'_blank'}
                            variant={'contained'}>
               Join the discord
             </DiscordButton>
-            <Kofi />
+            <Kofi/>
           </Stack>
         </Stack>
         <Stack sx={{ width: breakpoint ? '100%' : 'inherit' }} justifyContent={breakpoint ? 'flex-start' : 'center'}>
@@ -105,6 +108,7 @@ const Home = () => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
+                    fetchPriority="high"
                     src={`${prefix}etc/bg_${indexes.at(bgIndex)}.png`}
                     alt={`Idleon Toolbox gameplay feature screenshot ${bgIndex + 1}`}
                   /> : null
@@ -114,7 +118,7 @@ const Home = () => {
           </Box>
         </Stack>
       </Stack>
-      <motion.div style={{ marginTop: breakpoint ? 0 : 80 }} transition={{ duration: .8 }}
+      <motion.div style={{ marginTop: breakpoint ? 0 : 80, marginBottom: 15 }} transition={{ duration: .8 }}
                   initial={{ y: 50, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}>
         <Typography variant={'h4'} mt={2}>IT Patch Notes</Typography>
@@ -134,6 +138,7 @@ const Home = () => {
         </Link>
         <PatchNotes patchNotes={patchNotes.slice(0, 3)}/>
       </motion.div>
+      <span data-ccpa-link="1"></span>
       <Dialog open={open} onClose={() => setOpen(false)}>
         <DialogTitle>Instructions</DialogTitle>
         <DialogContent>

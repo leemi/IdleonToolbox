@@ -1,5 +1,5 @@
 import { Divider, List, ListItem, ListItemIcon, ListItemText, Stack } from '@mui/material';
-import React, { useContext } from 'react';
+import React, { startTransition, useContext } from 'react';
 import { useRouter } from 'next/router';
 import { AppContext } from '../../context/AppProvider';
 import Kofi from '../../Kofi';
@@ -23,7 +23,9 @@ const ToolsDrawer = ({ fromList }) => {
       })
     }
 
-    router.push({ pathname: url });
+    startTransition(() => {
+      router.push({ pathname: url });
+    });
   }
 
   const isSelected = (label) => {
@@ -33,7 +35,7 @@ const ToolsDrawer = ({ fromList }) => {
   return <Stack sx={{ height: '100%' }}>
     <List sx={{ ...(fromList ? { padding: 0 } : {}) }}>
       {Object.entries(PAGES.TOOLS).map(([key, value], index) => {
-        if (!state?.signedIn && !offlineTools[key]) return null;
+        if (!state?.signedIn && !offlineTools[key] && !state?.manualImport) return null;
         const { icon } = value;
         const keyUri = key.split(/(?=[A-Z])/).map((str) => str.toLowerCase()).join('-');
         const formattedKey = key.split(/(?=[A-Z])/).join(' ').capitalize();

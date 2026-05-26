@@ -1,6 +1,6 @@
 import { Divider, Stack, Typography } from '@mui/material';
 import { CardTitleAndValue } from '@components/common/styles';
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '@components/common/context/AppProvider';
 import { cleanUnderscore, commaNotation, getTabs, notateNumber } from '@utility/helpers';
 import InfoIcon from '@mui/icons-material/Info';
@@ -10,7 +10,7 @@ import { PAGES } from '@components/constants';
 import Tabber from '@components/common/Tabber';
 import Upgrades from '@components/account/Misc/class-specific/Grimoire/Upgrades';
 import Monsters from '@components/account/Misc/class-specific/Grimoire/Monsters';
-import { boneNames, getWraithStats } from '@parsers/grimoire';
+import { boneNames, getWraithStats } from '@parsers/class-specific/grimoire';
 import UpgradeOptimizer from '@components/account/Misc/class-specific/Grimoire/UpgradeOptimizer';
 import { checkCharClass, CLASSES } from '@parsers/talents';
 
@@ -19,7 +19,7 @@ const Grimoire = () => {
   const { bones, upgrades, monsterDrops, totalUpgradeLevels, nextUnlock } = state?.account?.grimoire;
   const [selectedChar, setSelectedChar] = useState(0);
   const deathBringers = state?.characters?.filter((character) => checkCharClass(character?.class, CLASSES.Death_Bringer));
-  const wraithStats = useMemo(() => getWraithStats(state?.characters?.[selectedChar], state?.account), [selectedChar]);
+  const wraithStats = getWraithStats(state?.characters?.[selectedChar], state?.account);
 
   useEffect(() => {
     if (deathBringers.length === 1) {
@@ -43,7 +43,7 @@ const Grimoire = () => {
           <InfoIcon/>
         </Stack>
       </Tooltip>}/> : null}
-      {bones?.map((amount, index) => <CardTitleAndValue key={index} value={commaNotation(amount || '0')}
+      {bones?.map((amount, index) => <CardTitleAndValue key={index} value={notateNumber(amount || '0')}
                                                         title={`${boneNames[index]}`}
                                                         icon={`data/Bone${index}_x1.png`}
                                                         imgStyle={{ objectPosition: '0 -6px' }}

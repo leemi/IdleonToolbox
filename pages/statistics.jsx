@@ -4,8 +4,16 @@ import SimpleLoader from '../components/common/SimpleLoader';
 import { Grid, useMediaQuery } from '@mui/material';
 import { classes } from '@website-data';
 import { customColors, getVisualizationMap } from '@components/statistics/consts';
-import BarVisualization from '../components/statistics/BarVisualization';
-import PieVisualization from '../components/statistics/PieVisualization';
+import dynamic from 'next/dynamic';
+
+const BarVisualization = dynamic(
+  () => import('../components/statistics/BarVisualization'),
+  { ssr: false }
+);
+const PieVisualization = dynamic(
+  () => import('../components/statistics/PieVisualization'),
+  { ssr: false }
+);
 
 const API_URL = process.env.NEXT_PUBLIC_PROFILES_URL;
 
@@ -14,6 +22,7 @@ const Statistics = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const isMd = useMediaQuery((theme) => theme.breakpoints.down('lg'), { noSsr: true });
+  const isSm = useMediaQuery((theme) => theme.breakpoints.down('sm'), { noSsr: true });
   const visualizationMap = getVisualizationMap(classes);
 
   useEffect(() => {
@@ -84,6 +93,7 @@ const Statistics = () => {
                 }
               ]}
               isMd={isMd}
+              isSm={isSm}
               {...vizConfig?.props}
             />
           );
@@ -97,9 +107,9 @@ const Statistics = () => {
   return <>
     <NextSeo
       title="Statistics | Idleon Toolbox"
-      description="Statistics page for various aspects of the game"
+      description="Explore community statistics and visualizations for Legends of Idleon including class distribution, skill levels, and player progression data"
     />
-    <div style={{ background: '#141A21', minHeight: '100vh', padding: 20 }}>
+    <div style={{ background: '#141A21', minHeight: '100vh', padding: isSm ? 8 : 20 }}>
       {error && <p style={{ color: '#F56565', textAlign: 'center', fontSize: 14 }}>Error: {error}</p>}
       {!loading && !error && data && (
         <Grid container spacing={3}>
@@ -107,12 +117,13 @@ const Statistics = () => {
             <Grid item xs={12} md={6} key={idx}>
               <div
                 style={{
-                  flex: 1,
-                  height: 400,
-                  minWidth: 300,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: isSm ? 350 : 400,
+                  minWidth: isSm ? 0 : 300,
                   background: '#1C252E',
                   borderRadius: 8,
-                  padding: 32,
+                  padding: isSm ? 12 : 32,
                   border: '1px solid #424242',
                   boxShadow: 'rgba(0, 0, 0, 0.05) 0px 1px 3px 0px, rgba(0, 0, 0, 0.05) 0px 20px 25px -5px, rgba(0, 0, 0, 0.04) 0px 10px 10px'
                 }}

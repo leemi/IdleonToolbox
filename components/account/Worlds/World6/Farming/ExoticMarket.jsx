@@ -1,0 +1,141 @@
+import { Card, CardContent, LinearProgress, Stack, Typography } from '@mui/material';
+import { cleanUnderscore, commaNotation, prefix } from '@utility/helpers';
+import React, { useContext, useEffect, useState } from 'react';
+import Tooltip from '@components/Tooltip';
+import { IconInfoCircleFilled } from '@tabler/icons-react';
+import { AppContext } from '@components/common/context/AppProvider';
+import { findExoticCappedThresholdLevel, getExoticMarketRotations } from '@parsers/world-6/farming';
+
+const formatCountdown = (ms) => {
+  if (ms <= 0) return null;
+  const totalSeconds = Math.floor(ms / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const parts = [];
+  if (days > 0) parts.push(`${days}d`);
+  parts.push(`${hours}h`);
+  parts.push(`${minutes}m`);
+  parts.push(`${seconds}s`);
+  return parts.join(' ');
+};
+
+const Market = ({ market, crop }) => {
+  const { state } = useContext(AppContext);
+  const [now, setNow] = useState(() => new Date());
+
+  const rotations = getExoticMarketRotations(state?.account, 2);
+  const nextRotationDate = rotations?.[1]?.date;
+
+  useEffect(() => {
+    if (!nextRotationDate) return;
+    const interval = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, [nextRotationDate]);
+
+  const countdown = (!nextRotationDate || !(nextRotationDate instanceof Date))
+    ? null
+    : formatCountdown(nextRotationDate.getTime() - now.getTime());
+
+  const currentRotation = market?.filter(u => u.isAvailableThisWeek);
+  const offRotation = market?.filter(u => !u.isAvailableThisWeek);
+
+  const breakpoints = [50, 75, 90, 95, 99].map(pct => ({
+    pct,
+    lvlNeeded: Math.ceil(findExoticCappedThresholdLevel(pct))
+  }));
+
+  const renderCards = (list) =>
+    list?.map((
+      {
+        name,
+        level,
+        value,
+        maxValue,
+        percentOfCap,
+        isCapped,
+        displayText,
+        x2
+      },
+      marketIndex
+    ) => (
+      <Card sx={{ width: 250 }} key={'upgrade' + marketIndex}>
+        <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Stack direction={'row'} gap={2} alignItems={'center'} flexWrap="wrap">
+            <img src={`${prefix}data/FarmCrop${x2}.png`} alt="" width={24} height={24}/>
+            <Typography>{cleanUnderscore(name.toLowerCase().capitalizeAll())}</Typography>
+            <Typography variant="caption">Lv. {level}</Typography>
+          </Stack>
+
+          {isCapped ? (
+            <>
+              <Stack direction="row" alignItems="center" gap={0.5} sx={{ mt: 1 }}>
+                <Typography variant="body2">
+                  Effect: {Math.round(value * 100) / 100} / {maxValue} ({percentOfCap != null
+                  ? Math.round(percentOfCap * 10) / 10
+                  : 0}%)
+                </Typography>
+                <Tooltip
+                  title={`${Math.round(value * 100) / 100} is ${percentOfCap != null ? Math.round(percentOfCap * 10) / 10 : 0}% of hard cap (${maxValue})`}
+                >
+                  <IconInfoCircleFilled size={16} style={{ cursor: 'pointer', flexShrink: 0 }}/>
+                </Tooltip>
+              </Stack>
+              <LinearProgress
+                variant="determinate"
+                value={Math.min(100, percentOfCap ?? 0)}
+                sx={{ mt: 1, mb: 1 }}
+              />
+            </>
+          ) : (
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              Effect: {Math.round(value * 100) / 100} (no cap; scales with level)
+            </Typography>
+          )}
+
+          <Typography mt={isCapped ? 1 : 2}>
+            {cleanUnderscore(displayText)}
+          </Typography>
+        </CardContent>
+      </Card>
+    ));
+
+  return (
+    <Stack gap={4}>
+      <Stack direction="row" gap={3} flexWrap="wrap" alignItems="center">
+        <Typography variant="body2" fontWeight="bold">Cap breakpoints:</Typography>
+        {breakpoints.map(({ pct, lvlNeeded }) => (
+          <Typography key={pct} variant="body2">
+            {pct}%: Lv. {commaNotation(lvlNeeded)}
+          </Typography>
+        ))}
+      </Stack>
+
+      {/* Current Rotation */}
+      <Stack>
+        <Stack direction="row" alignItems="baseline" gap={2} sx={{ mb: 3 }} flexWrap="wrap">
+          <Typography variant="h6">Current Rotation</Typography>
+          {countdown != null && (
+            <Typography variant="caption" color="text.secondary">
+              Next in {countdown}
+            </Typography>
+          )}
+        </Stack>
+        <Stack direction="row" flexWrap="wrap" gap={2}>
+          {renderCards(currentRotation)}
+        </Stack>
+      </Stack>
+
+      {/* Off Rotation */}
+      <Stack>
+        <Typography sx={{ mb: 3 }} variant="h6">Off Rotation</Typography>
+        <Stack direction="row" flexWrap="wrap" gap={2}>
+          {renderCards(offRotation)}
+        </Stack>
+      </Stack>
+    </Stack>
+  );
+};
+
+export default Market;
