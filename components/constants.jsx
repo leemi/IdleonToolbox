@@ -1,8 +1,8 @@
 export const drawerWidth = 240;
 export const navBarHeight = 170;
-export const navItems = ['dashboard', 'characters', 'account', 'tools', 'data'];
+export const navItems = ['dashboard', 'characters', 'account', 'tools'];
 export const drawerPages = ['characters', 'account', 'tools'];
-export const offlinePages = ['tools', 'data'];
+export const offlinePages = ['tools'];
 
 export const PAGES = {
   GENERAL: {
@@ -128,7 +128,7 @@ export const PAGES = {
     'world 4': {
       icon: 'data/Ladle',
       categories: [
-        { label: 'cooking', icon: 'data/ClassIcons51', tabs: ['Meals', 'Kitchens'] },
+        { label: 'cooking', icon: 'data/ClassIcons51', tabs: ['Meals', 'Kitchens', 'Mastery'] },
         {
           label: 'breeding', icon: 'data/ClassIcons52',
           tabs: ['Mobs', 'Territory', 'Upgrades', 'Arena'],
