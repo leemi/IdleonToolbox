@@ -4,6 +4,33 @@ import React from 'react';
 /* eslint-disable react/jsx-key */
 export const patchNotes = [
   {
+    'ver': '3.3.51',
+    'gameVer': '2.3.522',
+    'date': '17/06/2026',
+    'features': [
+      'Updated the website with version 2.3.522 data and assets',
+      'Caverns: new Cavern 18 "Crystal Glunko Cove" — gooey shapes, the Crystal & Jeweled upgrade tabs (with per-upgrade unlock requirements), and the Cove\'s Drop Rate / AFK Gains / Multikill stats'
+    ],
+    'fixes': [
+      'Damage now includes the Crystal Glunko Cove damage upgrade',
+      'Cooking Mastery EXP rate now includes the Green Water bonus'
+    ]
+  },
+  {
+    'ver': '3.3.50',
+    'gameVer': '2.3.509',
+    'date': '11/06/2026',
+    'features': [
+      'Slab: new "Greenstackable" filter showing every item that can be greenstacked, plus a "Greenstacks" card tracking stacked vs greenstackable (e.g. 189 / 769)',
+      'Dashboard: the Villagers timer now lets you pick which villagers\' level-up timers to show',
+      'Arcade Shop: new filters to hide maxed and super upgrades',
+      'Islands: the Rando shop\'s star book now shows Acquired / Not acquired, like the Trash shop'
+    ],
+    'fixes': [
+      'Dashboard: the World 5 statue level-up timer now shows the correct "Bravery" name'
+    ]
+  },
+  {
     'ver': '3.3.49',
     'gameVer': '2.3.509',
     'date': '08/06/2026',
@@ -12,7 +39,9 @@ export const patchNotes = [
       'Cooking: new Mastery tab showing your mastery level, EXP rate (with a full breakdown), rank, purple/yellow points, and the 6 category bonuses',
       'Cooking: meals now show their Cooking Mastery node level and how much it boosts the meal\'s bonus'
     ],
-    'fixes': []
+    'fixes': [
+      'Library: meal bonus now applies again to checkout speed/time (the meal\'s effect text changed in 2.3.509, which made the bonus read as 0)'
+    ]
   },
   {
     'ver': '3.3.48',
