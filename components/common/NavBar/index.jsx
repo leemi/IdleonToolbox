@@ -91,7 +91,7 @@ const ContentWrapper = ({ showSidebar, children }) => {
   const showNarrowSideBanner = useMediaQuery('(min-width: 850px)', { noSsr: true });
   const adBlocked = useAdBlockDetection();
 
-  return !isTools ? children : <Stack direction={'row'} gap={2} justifyContent={'space-between'} sx={{ width: '100%' }}>
+  return false ? children : <Stack direction={'row'} gap={2} justifyContent={'space-between'} sx={{ width: '100%' }}>
     <Stack
       sx={{
         width: '100%',
