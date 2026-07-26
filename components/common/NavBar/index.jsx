@@ -19,7 +19,9 @@ import useFormatDate from '@hooks/useFormatDate';
 import { CONTENT_PERCENT_SIZE } from '@utility/consts';
 import AuthSkeleton from './AuthSkeleton';
 import { BottomBannerAd, SidebarAd } from '@components/common/Ads/AdUnit';
-import useAdBlockDetection from '../../../hooks/useAdBlockDetection';
+import useSidebarAd from '@hooks/useSidebarAd';
+import usePageDataLoading from '@hooks/usePageDataLoading';
+import PageLoadingProvider, { usePageLoadingState } from '@components/common/context/PageLoadingProvider';
 import ProfileBanner from './ProfileBanner';
 import CookiePolicyDialog from '@components/common/Etc/CookiePolicyDialog';
 
@@ -58,7 +60,7 @@ const NavBar = ({ children }) => {
     );
   };
 
-  return <>
+  return <PageLoadingProvider>
     <Box sx={{ display: 'flex' }}>
       <AppBar compopnent={'nav'}>
         <Toolbar>
@@ -88,8 +90,9 @@ const NavBar = ({ children }) => {
 };
 
 const ContentWrapper = ({ showSidebar, children }) => {
-  const showNarrowSideBanner = useMediaQuery('(min-width: 850px)', { noSsr: true });
-  const adBlocked = useAdBlockDetection();
+  const showSidebarAd = useSidebarAd();
+  const { loading } = usePageDataLoading();
+  const pageReportedLoading = usePageLoadingState();
 
   return false ? children : <Stack direction={'row'} gap={2} justifyContent={'space-between'} sx={{ width: '100%' }}>
     <Stack
